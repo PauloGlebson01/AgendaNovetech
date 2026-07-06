@@ -1,0 +1,466 @@
+/* ==================== AGENDA PÚBLICA ==================== */
+.public-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e9edf2 100%);
+}
+
+.public-header {
+    text-align: center;
+    padding: 40px 0 30px;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 30px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.public-header h1 {
+    font-size: 36px;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.public-header h1 span {
+    color: #2563eb;
+}
+
+.public-header p {
+    color: #64748b;
+    margin-top: 8px;
+    font-size: 16px;
+}
+
+/* ==================== LEMBRETE DO LINK ==================== */
+.lembrete-link {
+    margin-top: 12px;
+    padding: 10px 20px;
+    background: #f0f7ff;
+    border-radius: 10px;
+    border: 1px solid #dbeafe;
+    display: inline-block;
+    max-width: 100%;
+}
+
+.lembrete-link i {
+    color: #2563eb;
+    margin-right: 8px;
+}
+
+.lembrete-link span {
+    color: #1e293b;
+    font-size: 14px;
+}
+
+.lembrete-link a {
+    color: #2563eb;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.lembrete-link a:hover {
+    color: #1e40af;
+    text-decoration: underline;
+}
+
+/* ==================== AVISO DE USUÁRIO INTERNO ==================== */
+.aviso-interno {
+    grid-column: 1 / -1;
+    background: #dbeafe;
+    padding: 12px 20px;
+    border-radius: 10px;
+    text-align: center;
+    color: #1e40af;
+    font-weight: 500;
+    border: 1px solid #93c5fd;
+    margin-bottom: 10px;
+}
+
+/* ==================== FILTROS ==================== */
+.public-filters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+    padding: 20px 24px;
+    background: white;
+    border-radius: 16px;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border: 1px solid #eef2ff;
+}
+
+.public-filters input,
+.public-filters select {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    font-family: inherit;
+    font-size: 14px;
+    background: #fafbfc;
+    transition: all 0.2s;
+    flex: 1;
+    min-width: 150px;
+}
+
+.public-filters input:focus,
+.public-filters select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37,99,235,0.08);
+}
+
+.public-filters button {
+    padding: 10px 20px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.public-filters button:hover {
+    background: #1e40af;
+    transform: translateY(-1px);
+}
+
+/* ==================== EVENTO CARD ==================== */
+.evento-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px 24px;
+    border-left: 4px solid #2563eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: all 0.2s;
+    border: 1px solid #eef2ff;
+    border-left-width: 4px;
+}
+
+.evento-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.evento-card .evento-tipo {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.evento-card .evento-tipo.reuniao { background: #dbeafe; color: #1d4ed8; }
+.evento-card .evento-tipo.reuniao_gestor { background: #ede9fe; color: #5b21b6; }
+.evento-card .evento-tipo.treinamento { background: #d1fae5; color: #059669; }
+.evento-card .evento-tipo.treinamento_interno { background: #fef3c7; color: #d97706; }
+.evento-card .evento-tipo.suporte { background: #fef3c7; color: #d97706; }
+.evento-card .evento-tipo.demonstracao { background: #e0e7ff; color: #4338ca; }
+.evento-card .evento-tipo.outro { background: #f1f5f9; color: #475569; }
+
+.evento-card .evento-data-hora {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+    color: #64748b;
+    margin: 6px 0;
+    flex-wrap: wrap;
+}
+
+.evento-card .evento-data-hora i {
+    color: #2563eb;
+    width: 16px;
+}
+
+.evento-card .evento-titulo {
+    font-size: 18px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 6px 0;
+}
+
+.evento-card .evento-detalhes {
+    color: #475569;
+    font-size: 14px;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.evento-card .evento-detalhes i {
+    color: #64748b;
+    width: 16px;
+}
+
+/* ==================== EMPTY STATE ==================== */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+    grid-column: 1 / -1;
+}
+
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #cbd5e1;
+}
+
+.empty-state p {
+    font-size: 16px;
+}
+
+/* ==================== RESPONSIVIDADE ==================== */
+@media (max-width: 768px) {
+    .public-filters {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px;
+    }
+    
+    .public-filters input,
+    .public-filters select,
+    .public-filters button {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .public-header h1 {
+        font-size: 28px;
+    }
+    
+    .public-container {
+        padding: 12px;
+    }
+    
+    .evento-card {
+        padding: 16px;
+    }
+    
+    .evento-card .evento-data-hora {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .lembrete-link {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+
+    .lembrete-link span {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .public-header {
+        padding: 24px 16px;
+    }
+    
+    .public-header h1 {
+        font-size: 24px;
+    }
+    
+    .public-filters {
+        padding: 12px;
+    }
+
+    .lembrete-link {
+        padding: 6px 12px;
+        font-size: 12px;
+        display: block;
+    }
+
+    .lembrete-link span {
+        font-size: 12px;
+        display: block;
+        margin-top: 4px;
+    }
+
+    .lembrete-link a {
+        display: inline-block;
+        margin-top: 2px;
+    }
+}
+
+/* ==================== FILTRO DE PERÍODO ==================== */
+#filtroPeriodoPublic {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    font-family: inherit;
+    font-size: 14px;
+    background: #fafbfc;
+    transition: all 0.2s;
+    flex: 1;
+    min-width: 150px;
+    cursor: pointer;
+}
+
+#filtroPeriodoPublic:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+
+/* ==================== INDICADOR DE PERÍODO ==================== */
+#periodoInfoPublic {
+    margin-bottom: 16px;
+    padding: 10px 16px;
+    background: #f0f7ff;
+    border-radius: 10px;
+    border-left: 4px solid #2563eb;
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+#periodoInfoPublic i {
+    color: #2563eb;
+    margin-right: 8px;
+}
+
+#periodoInfoPublic #periodoInfoText {
+    color: #1e293b;
+    font-size: 14px;
+}
+
+#periodoInfoPublic #periodoInfoText.destaque {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+/* ==================== BADGE "HOJE" NOS CARDS ==================== */
+.evento-card .badge-hoje {
+    display: inline-block;
+    font-size: 11px;
+    background: #d1fae5;
+    color: #059669;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+/* ==================== RESPONSIVIDADE ==================== */
+@media (max-width: 768px) {
+    .public-filters {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px;
+    }
+    
+    .public-filters input,
+    .public-filters select,
+    .public-filters button {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    #filtroPeriodoPublic {
+        min-width: unset;
+    }
+    
+    #periodoInfoPublic {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    #periodoInfoPublic {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    
+    #periodoInfoPublic #periodoInfoText {
+        font-size: 12px;
+    }
+}
+
+/* ==================== AVISO DE LOCAL OCULTO ==================== */
+#avisoLocalOculto {
+    margin-bottom: 16px;
+    padding: 10px 16px;
+    background: #fef3c7;
+    border-radius: 10px;
+    border-left: 4px solid #f59e0b;
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+#avisoLocalOculto i {
+    color: #d97706;
+    margin-right: 8px;
+}
+
+#avisoLocalOculto span {
+    color: #92400e;
+    font-size: 13px;
+}
+
+#avisoLocalOculto a {
+    color: #2563eb;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+#avisoLocalOculto a:hover {
+    color: #1e40af;
+    text-decoration: underline;
+}
+
+/* ==================== LOCAL OCULTO NOS CARDS ==================== */
+.evento-detalhes .local-oculto {
+    opacity: 0.6;
+}
+
+.evento-detalhes .local-oculto i {
+    color: #94a3b8;
+}
+
+.evento-detalhes .local-oculto span {
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.evento-detalhes .local-oculto span i {
+    font-size: 10px;
+}
+
+/* ==================== ANIMAÇÃO DO AVISO ==================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==================== RESPONSIVIDADE ==================== */
+@media (max-width: 480px) {
+    #avisoLocalOculto {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    #avisoLocalOculto span {
+        font-size: 12px;
+    }
+    
+    .evento-detalhes .local-oculto span {
+        font-size: 12px;
+    }
+}

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Novetech | Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="shortcut icon" href="asstes/9Tech.icon" type="image/x-icon">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="brand">
+                <i class="fas fa-calendar-alt"></i>
+                <h2>Agenda<span>Novetech</span></h2>
+                <p>Gestão de Reuniões &amp; Treinamentos</p>
+            </div>
+
+            <!-- Tabs de Login e Criar Conta -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="login" onclick="trocarAba('login')">
+                    <i class="fas fa-sign-in-alt"></i> Entrar
+                </button>
+                <button class="tab-btn" data-tab="criar" onclick="trocarAba('criar')">
+                    <i class="fas fa-user-plus"></i> Criar Conta
+                </button>
+            </div>
+
+            <!-- Aba de Login -->
+            <div id="loginTab" class="tab-content active">
+                <form id="loginForm" autocomplete="off" onsubmit="return false;">
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="loginEmail" placeholder="E-mail do administrador" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="loginSenha" placeholder="Senha" autocomplete="new-password">
+                    </div>
+                    <button class="btn-primary" onclick="fazerLogin()" type="button">
+                        <i class="fas fa-arrow-right-to-bracket"></i> Entrar
+                    </button>
+                </form>
+                <div class="login-footer">
+                    <a href="agenda-publica.html">
+                        <i class="fas fa-eye"></i> Visualizar agenda pública
+                    </a>
+                </div>
+            </div>
+
+            <!-- Aba de Criar Conta -->
+            <div id="criarTab" class="tab-content">
+                <div style="margin-bottom: 20px; text-align: center; color: #64748b; font-size: 14px; background: #fef3c7; padding: 8px; border-radius: 8px; border: 1px solid #fcd34d;">
+                    <i class="fas fa-shield-alt" style="color: #d97706;"></i> 
+                    Crie uma conta de administrador para gerenciar a agenda
+                </div>
+                <form id="criarForm" autocomplete="off" onsubmit="return false;">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="criarNome" placeholder="Nome completo" autocomplete="off" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="criarEmail" placeholder="E-mail do administrador" autocomplete="off" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="criarSenha" placeholder="Senha (mínimo 6 caracteres)" autocomplete="new-password" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-check-circle"></i>
+                        <input type="password" id="criarSenhaConfirm" placeholder="Confirmar senha" autocomplete="new-password" required>
+                    </div>
+                    <button class="btn-primary" onclick="criarContaAdmin()" type="button" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <i class="fas fa-user-plus"></i> Criar Conta Administrador
+                    </button>
+                </form>
+                <div style="margin-top: 16px; text-align: center; font-size: 13px; color: #94a3b8;">
+                    <i class="fas fa-info-circle"></i> Apenas administradores podem gerenciar a agenda
+                </div>
+            </div>
+
+            <!-- Footer corrigido - DENTRO do login-card -->
+<footer class="app-footer">
+    <div class="footer-divider"></div>
+    <div class="footer-content">
+        <div class="footer-brand">
+            <!-- Substituído o texto pela logomarca -->
+            <img src="asstes/9Tech-perfil.jpg" alt="Novetech Soluções Tecnológicas" class="footer-logo">
+        </div>
+        <p class="footer-text">
+            &copy; 2026 Novetech Soluções Tecnológicas - Todos os direitos reservados.
+        </p>
+        <div class="footer-links">
+            <a href="#"><i class="fas fa-envelope"></i> www.novetech.com.br</a>
+            <a href="#"><i class="fas fa-phone"></i> (83) 3225-1422</a>
+        </div>
+    </div>
+</footer>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Pública | Novetech</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="agenda-publica.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="shortcut icon" href="asstes/9Tech.icon" type="image/x-icon">
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+    <div class="public-container">
+        <div class="public-header">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="asstes/9Tech-perfil.jpg" alt="Novetech" class="logo-img-public"
+                        onerror="this.style.display='none';">
+                    <i class="fas fa-calendar-alt" style="color: #2563eb; font-size: 32px;"></i>
+                    <h1 style="font-size: 36px; color: #0f172a; font-weight: 700; margin: 0;">
+                        Agenda <span style="color: #2563eb;">Novetech</span>
+                    </h1>
+                </div>
+            </div>
+            <p style="color: #64748b; margin-top: 8px; font-size: 16px;">Reuniões, treinamentos e reservas de salas agendados</p>
+
+            <div class="lembrete-link" style="margin-top: 16px;">
+                <i class="fas fa-envelope" style="color: #2563eb;"></i>
+                <span style="color: #1e293b; font-size: 14px;">
+                    Para solicitar a agenda, entre em contato com o suporte:
+                    <a href="mailto:suporte@novetech.com.br"
+                        style="color: #2563eb; font-weight: 600; text-decoration: none;">
+                        suporte@novetech.com.br
+                    </a>
+                </span>
+            </div>
+        </div>
+
+        <div class="public-filters">
+            <input type="date" id="filtroDataPublic" placeholder="Filtrar por data">
+            <select id="filtroTipoPublic">
+                <option value="">Todos os tipos</option>
+            </select>
+            <select id="filtroPeriodoPublic">
+                <option value="todos">📅 Todos os períodos</option>
+                <option value="hoje">🔥 Hoje</option>
+                <option value="semana">📆 Esta semana</option>
+                <option value="mes">📆 Este mês</option>
+            </select>
+            <button onclick="aplicarFiltrosPublicos()"><i class="fas fa-search"></i> Buscar</button>
+            <button onclick="limparFiltrosPublicos()" style="background: #64748b;"><i class="fas fa-undo"></i>
+                Limpar</button>
+        </div>
+
+        <div id="periodoInfoPublic"
+            style="margin-bottom: 16px; padding: 8px 16px; background: #f0f7ff; border-radius: 8px; border-left: 4px solid #2563eb; display: none;">
+            <i class="fas fa-info-circle" style="color: #2563eb;"></i>
+            <span id="periodoInfoText" style="color: #1e293b; font-size: 14px;">Mostrando todos os eventos</span>
+        </div>
+
+        <!-- 🔥 Painel de Horários Disponíveis com Checkbox -->
+        <div id="painelHorarios" style="
+            margin-bottom: 20px;
+            padding: 20px 24px;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #eef2ff;
+            display: none;
+        ">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; color: #0f172a;">
+                        <i class="fas fa-clock" style="color: #10b981;"></i>
+                        Horários Disponíveis
+                    </h3>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">
+                        Selecione uma data para visualizar os horários disponíveis para agendamento.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <input type="date" id="horariosData" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                    <button onclick="carregarHorariosDisponiveis()" class="btn-sm btn-info">
+                        <i class="fas fa-search"></i> Verificar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Resultado dos horários -->
+            <div id="resultadoHorarios" style="margin-top: 16px; display: none;">
+                <div id="horariosSlots" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;"></div>
+                <div id="horariosMensagem" style="font-size: 13px; color: #64748b;"></div>
+            </div>
+        </div>
+
+        <div id="listaEventosPublic" class="cards-grid"
+            style="grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));">
+            <div class="empty-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Carregando agenda...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+
+    <script>
+        // ==================== CONFIGURAÇÕES PADRÃO ====================
+        const HORARIOS_PADRAO = {
+            ativo: true,
+            diasDisponiveis: [1, 2, 3, 4, 5],
+            horarioInicio: '08:00',
+            horarioFim: '18:00',
+            intervaloSlots: 60,
+            duracaoSlot: 60,
+            emailSuporte: 'suporte@novetech.com.br'
+        };
+
+        // ==================== AGENDA PÚBLICA ====================
+        let unsubscribePublic = null;
+        let unsubscribeReservasPublic = null;
+        let eventosCache = [];
+        let reservasCache = [];
+        let isInternalUser = false;
+        let filtroPeriodoPublic = 'todos';
+        let horariosSelecionados = [];
+
+        const TIPO_LABELS = {
+            'reuniao': '📋 Reunião',
+            'reuniao_gestor': '👔 Reunião com Gestor',
+            'treinamento': '🎓 Treinamento',
+            'treinamento_interno': '🏢 Treinamento Interno',
+            'suporte': '🛠️ Suporte Técnico',
+            'demonstracao': '📊 Demonstração',
+            'outro': '📌 Outro'
+        };
+
+        const TIPO_COLORS = {
+            'reuniao': '#dbeafe',
+            'reuniao_gestor': '#ede9fe',
+            'treinamento': '#d1fae5',
+            'treinamento_interno': '#fef3c7',
+            'suporte': '#fef3c7',
+            'demonstracao': '#e0e7ff',
+            'outro': '#f1f5f9'
+        };
+
+        const TIPO_BORDER_COLORS = {
+            'reuniao': '#2563eb',
+            'reuniao_gestor': '#7c3aed',
+            'treinamento': '#059669',
+            'treinamento_interno': '#d97706',
+            'suporte': '#d97706',
+            'demonstracao': '#4338ca',
+            'outro': '#475569'
+        };
+
+        const TIPOS_INTERNOS = ['reuniao', 'treinamento_interno'];
+        const TIPOS_PUBLICOS = ['reuniao_gestor', 'treinamento', 'suporte', 'demonstracao', 'outro'];
+
+        const SALAS_LABELS = {
+            'sala_01': '📋 Sala 01',
+            'sala_02': '📋 Sala 02',
+        };
+
+        const RESERVA_STATUS_LABELS = {
+            'pendente': '🟡 Pendente',
+            'confirmada': '🟢 Confirmada',
+            'em_andamento': '🔄 Em Andamento',
+            'concluida': '✅ Concluída',
+            'cancelada': '❌ Cancelada'
+        };
+
+        const RESERVA_STATUS_COLORS = {
+            'pendente': '#fef3c7',
+            'confirmada': '#d1fae5',
+            'em_andamento': '#dbeafe',
+            'concluida': '#d1fae5',
+            'cancelada': '#fee2e2'
+        };
+
+        const RESERVA_STATUS_TEXT_COLORS = {
+            'pendente': '#d97706',
+            'confirmada': '#059669',
+            'em_andamento': '#1d4ed8',
+            'concluida': '#059669',
+            'cancelada': '#dc2626'
+        };
+
+        const TIPOS_CONFIG = {
+            'publicos': [
+                { value: 'reuniao_gestor', label: '👔 Reunião com Gestor' },
+                { value: 'treinamento', label: '🎓 Treinamento' },
+                { value: 'suporte', label: '🛠️ Suporte Técnico' },
+                { value: 'demonstracao', label: '📊 Demonstração' },
+                { value: 'outro', label: '📌 Outro' }
+            ],
+            'internos': [
+                { value: 'reuniao', label: '📋 Reunião' },
+                { value: 'treinamento_interno', label: '🏢 Treinamento Interno' }
+            ],
+            'reserva': [
+                { value: 'reserva_sala', label: '🚪 Reserva de Sala' }
+            ]
+        };
+
+        // ==================== FUNÇÃO PRINCIPAL DE GERAÇÃO DE SLOTS (STANDALONE) ====================
+        async function gerarSlotsHorarios(data) {
+            try {
+                // Buscar configurações do Firestore
+                let config = { ...HORARIOS_PADRAO };
+                try {
+                    const doc = await db.collection('configuracoes').doc('configuracoesHorarios').get();
+                    if (doc.exists) {
+                        config = { ...HORARIOS_PADRAO, ...doc.data() };
+                    }
+                } catch (e) {
+                    console.warn("⚠️ Usando configurações padrão:", e.message);
+                }
+
+                if (!config.ativo) {
+                    return { disponivel: false, slots: [], motivo: 'Sistema de agendamento desativado' };
+                }
+
+                // Verificar dia da semana
+                const dataObj = new Date(data + 'T00:00:00');
+                if (isNaN(dataObj.getTime())) {
+                    return { disponivel: false, slots: [], motivo: 'Data inválida' };
+                }
+
+                const diaSemana = dataObj.getDay();
+                const diaNumero = diaSemana === 0 ? 7 : diaSemana;
+
+                if (!config.diasDisponiveis.includes(diaNumero)) {
+                    const nomesDias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                    return {
+                        disponivel: false,
+                        slots: [],
+                        motivo: `${nomesDias[diaSemana]} não é um dia disponível para agendamento`
+                    };
+                }
+
+                // Gerar slots
+                const inicio = config.horarioInicio || '08:00';
+                const fim = config.horarioFim || '18:00';
+                const intervalo = config.intervaloSlots || 60;
+                const duracao = config.duracaoSlot || 60;
+
+                const [horaInicio, minInicio] = inicio.split(':').map(Number);
+                const [horaFim, minFim] = fim.split(':').map(Number);
+
+                const slots = [];
+                let horaAtual = horaInicio;
+                let minAtual = minInicio;
+
+                while (horaAtual < horaFim || (horaAtual === horaFim && minAtual < minFim)) {
+                    const horaStr = String(horaAtual).padStart(2, '0');
+                    const minStr = String(minAtual).padStart(2, '0');
+
+                    let minFimSlot = minAtual + duracao;
+                    let horaFimSlot = horaAtual;
+                    if (minFimSlot >= 60) {
+                        horaFimSlot += Math.floor(minFimSlot / 60);
+                        minFimSlot = minFimSlot % 60;
+                    }
+
+                    const horaFimStr = String(horaFimSlot).padStart(2, '0');
+                    const minFimStr = String(minFimSlot).padStart(2, '0');
+
+                    slots.push({
+                        inicio: `${horaStr}:${minStr}`,
+                        fim: `${horaFimStr}:${minFimStr}`,
+                        inicioObj: new Date(0, 0, 0, horaAtual, minAtual),
+                        fimObj: new Date(0, 0, 0, horaFimSlot, minFimSlot)
+                    });
+
+                    minAtual += intervalo;
+                    if (minAtual >= 60) {
+                        horaAtual += Math.floor(minAtual / 60);
+                        minAtual = minAtual % 60;
+                    }
+                }
+
+                // Buscar eventos do dia
+                const dataInicio = data + 'T00:00:00.000Z';
+                const dataFim = data + 'T23:59:59.999Z';
+
+                let eventosAgendados = [];
+                try {
+                    const eventosSnapshot = await db.collection('eventosAgenda')
+                        .where('data', '>=', dataInicio)
+                        .where('data', '<=', dataFim)
+                        .get();
+
+                    eventosSnapshot.forEach(doc => {
+                        eventosAgendados.push({ id: doc.id, ...doc.data() });
+                    });
+                } catch (e) {
+                    console.warn("⚠️ Erro ao buscar eventos:", e.message);
+                }
+
+                // Buscar bloqueios
+                let bloqueios = [];
+                try {
+                    const bloqueiosDoc = await db.collection('configuracoes').doc('bloqueiosHorarios').get();
+                    if (bloqueiosDoc.exists) {
+                        bloqueios = bloqueiosDoc.data().bloqueios || [];
+                    }
+                } catch (e) {
+                    console.warn("⚠️ Erro ao buscar bloqueios:", e.message);
+                }
+
+                const horariosBloqueados = bloqueios.filter(b => b.data === data).map(b => b.horario);
+
+                // Verificar disponibilidade
+                const slotsDisponiveis = slots.map(slot => {
+                    const ocupado = eventosAgendados.some(e => {
+                        const eData = new Date(e.data);
+                        const eHora = eData.getHours();
+                        const eMin = eData.getMinutes();
+                        const eDuracao = e.duracao || 60;
+
+                        const slotInicio = slot.inicioObj;
+                        const slotFim = slot.fimObj;
+                        const eventoInicio = new Date(0, 0, 0, eHora, eMin);
+                        const eventoFim = new Date(0, 0, 0, eHora, eMin + eDuracao);
+
+                        return (slotInicio < eventoFim && slotFim > eventoInicio);
+                    });
+
+                    const bloqueado = horariosBloqueados.includes(slot.inicio);
+
+                    return {
+                        ...slot,
+                        disponivel: !ocupado && !bloqueado,
+                        ocupado: ocupado,
+                        bloqueado: bloqueado
+                    };
+                });
+
+                return {
+                    disponivel: true,
+                    slots: slotsDisponiveis,
+                    config: {
+                        inicio,
+                        fim,
+                        intervalo,
+                        duracao,
+                        emailSuporte: config.emailSuporte || 'suporte@novetech.com.br'
+                    }
+                };
+
+            } catch (error) {
+                console.error("❌ Erro ao gerar slots:", error);
+                return {
+                    disponivel: false,
+                    slots: [],
+                    motivo: 'Erro ao carregar horários: ' + error.message
+                };
+            }
+        }
+
+        // ==================== FUNÇÕES DE UTILIDADE ====================
+        function extrairDataISO(dataISO) {
+            if (!dataISO) return null;
+            return dataISO.split('T')[0];
+        }
+
+        function formatarDataParaExibicao(dataISO) {
+            if (!dataISO) return 'Data não definida';
+            const partes = dataISO.split('T')[0].split('-');
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
+        function formatarDataParaExibicaoSimples(data) {
+            if (!data) return 'Data não definida';
+            const partes = data.split('-');
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
+        function extrairHoraParaExibicao(dataISO) {
+            if (!dataISO) return '--:--';
+            const horaParte = dataISO.split('T')[1];
+            if (!horaParte) return '--:--';
+            return horaParte.substring(0, 5);
+        }
+
+        function filtrarPorPeriodoEventos(eventos, periodo) {
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+
+            if (periodo === 'todos' || !periodo) return eventos;
+
+            if (periodo === 'hoje') {
+                return eventos.filter(e => {
+                    const dataEvento = new Date(e.data);
+                    dataEvento.setHours(0, 0, 0, 0);
+                    return dataEvento.getTime() === hoje.getTime();
+                });
+            }
+
+            if (periodo === 'semana') {
+                const diaSemana = hoje.getDay();
+                const diff = diaSemana === 0 ? 6 : diaSemana - 1;
+                const inicioSemana = new Date(hoje);
+                inicioSemana.setDate(hoje.getDate() - diff);
+                inicioSemana.setHours(0, 0, 0, 0);
+                const fimSemana = new Date(inicioSemana);
+                fimSemana.setDate(inicioSemana.getDate() + 6);
+                fimSemana.setHours(23, 59, 59, 999);
+                return eventos.filter(e => {
+                    const dataEvento = new Date(e.data);
+                    return dataEvento >= inicioSemana && dataEvento <= fimSemana;
+                });
+            }
+
+            if (periodo === 'mes') {
+                const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+                fimMes.setHours(23, 59, 59, 999);
+                return eventos.filter(e => {
+                    const dataEvento = new Date(e.data);
+                    return dataEvento >= inicioMes && dataEvento <= fimMes;
+                });
+            }
+
+            return eventos;
+        }
+
+        function filtrarPorPeriodoReservas(reservas, periodo) {
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+
+            if (periodo === 'todos' || !periodo) return reservas;
+
+            if (periodo === 'hoje') {
+                return reservas.filter(r => {
+                    const dataReserva = new Date(r.data + 'T00:00:00');
+                    dataReserva.setHours(0, 0, 0, 0);
+                    return dataReserva.getTime() === hoje.getTime();
+                });
+            }
+
+            if (periodo === 'semana') {
+                const diaSemana = hoje.getDay();
+                const diff = diaSemana === 0 ? 6 : diaSemana - 1;
+                const inicioSemana = new Date(hoje);
+                inicioSemana.setDate(hoje.getDate() - diff);
+                inicioSemana.setHours(0, 0, 0, 0);
+                const fimSemana = new Date(inicioSemana);
+                fimSemana.setDate(inicioSemana.getDate() + 6);
+                fimSemana.setHours(23, 59, 59, 999);
+                return reservas.filter(r => {
+                    const dataReserva = new Date(r.data + 'T00:00:00');
+                    return dataReserva >= inicioSemana && dataReserva <= fimSemana;
+                });
+            }
+
+            if (periodo === 'mes') {
+                const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+                fimMes.setHours(23, 59, 59, 999);
+                return reservas.filter(r => {
+                    const dataReserva = new Date(r.data + 'T00:00:00');
+                    return dataReserva >= inicioMes && dataReserva <= fimMes;
+                });
+            }
+
+            return reservas;
+        }
+
+        function atualizarPeriodoInfo(periodo) {
+            const infoDiv = document.getElementById('periodoInfoPublic');
+            const infoText = document.getElementById('periodoInfoText');
+
+            if (!infoDiv || !infoText) return;
+
+            const labels = {
+                'todos': 'Mostrando todos os eventos',
+                'hoje': '🔥 Mostrando eventos de hoje',
+                'semana': '📆 Mostrando eventos desta semana',
+                'mes': '📆 Mostrando eventos deste mês'
+            };
+
+            if (periodo && periodo !== 'todos') {
+                infoDiv.style.display = 'block';
+                infoText.textContent = labels[periodo] || labels['todos'];
+                infoText.style.fontWeight = '600';
+                infoText.style.color = '#2563eb';
+            } else {
+                infoDiv.style.display = 'none';
+            }
+        }
+
+        function atualizarFiltroTipos() {
+            const select = document.getElementById('filtroTipoPublic');
+            const valorAtual = select.value;
+
+            select.innerHTML = '<option value="">Todos os tipos</option>';
+
+            TIPOS_CONFIG.publicos.forEach(tipo => {
+                const option = document.createElement('option');
+                option.value = tipo.value;
+                option.textContent = tipo.label;
+                select.appendChild(option);
+            });
+
+            if (isInternalUser) {
+                TIPOS_CONFIG.internos.forEach(tipo => {
+                    const option = document.createElement('option');
+                    option.value = tipo.value;
+                    option.textContent = tipo.label;
+                    option.style.color = '#d97706';
+                    option.style.fontWeight = '500';
+                    select.appendChild(option);
+                });
+
+                TIPOS_CONFIG.reserva.forEach(tipo => {
+                    const option = document.createElement('option');
+                    option.value = tipo.value;
+                    option.textContent = tipo.label;
+                    option.style.color = '#f59e0b';
+                    option.style.fontWeight = '600';
+                    select.appendChild(option);
+                });
+            }
+
+            if (valorAtual && select.querySelector(`option[value="${valorAtual}"]`)) {
+                select.value = valorAtual;
+            }
+        }
+
+        // ==================== HORÁRIOS DISPONÍVEIS ====================
+        async function carregarHorariosDisponiveis() {
+            const data = document.getElementById('horariosData').value;
+            const container = document.getElementById('resultadoHorarios');
+            const slotsContainer = document.getElementById('horariosSlots');
+            const mensagemContainer = document.getElementById('horariosMensagem');
+
+            if (!data) {
+                alert('Selecione uma data para visualizar os horários.');
+                return;
+            }
+
+            try {
+                const result = await gerarSlotsHorarios(data);
+
+                container.style.display = 'block';
+                slotsContainer.innerHTML = '';
+                mensagemContainer.textContent = '';
+                horariosSelecionados = [];
+
+                if (!result.disponivel) {
+                    mensagemContainer.textContent = `📅 ${result.motivo}`;
+                    mensagemContainer.style.color = '#d97706';
+                    return;
+                }
+
+                const disponiveis = result.slots.filter(s => s.disponivel);
+                const ocupados = result.slots.filter(s => s.ocupado);
+                const bloqueados = result.slots.filter(s => s.bloqueado);
+
+                if (disponiveis.length === 0) {
+                    let msg = '❌ Nenhum horário disponível para esta data.';
+                    if (bloqueados.length > 0) {
+                        msg += ` ${bloqueados.length} horário(s) bloqueado(s).`;
+                    }
+                    if (ocupados.length > 0) {
+                        msg += ` ${ocupados.length} horário(s) ocupado(s).`;
+                    }
+                    mensagemContainer.textContent = msg;
+                    mensagemContainer.style.color = '#ef4444';
+                    return;
+                }
+
+                // Exibir slots disponíveis com checkbox
+                disponiveis.forEach(slot => {
+                    const wrapper = document.createElement('div');
+                    wrapper.style.cssText = `
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding: 6px 14px;
+                        background: #d1fae5;
+                        border-radius: 20px;
+                        border: 1px solid #a7f3d0;
+                        transition: all 0.2s;
+                        cursor: pointer;
+                    `;
+                    wrapper.onclick = function() {
+                        const checkbox = this.querySelector('input[type="checkbox"]');
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change'));
+                    };
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = slot.inicio;
+                    checkbox.style.cssText = `
+                        width: 16px;
+                        height: 16px;
+                        accent-color: #10b981;
+                        cursor: pointer;
+                    `;
+                    checkbox.onchange = function() {
+                        if (this.checked) {
+                            if (!horariosSelecionados.includes(slot.inicio)) {
+                                horariosSelecionados.push(slot.inicio);
+                            }
+                            wrapper.style.background = '#a7f3d0';
+                            wrapper.style.borderColor = '#059669';
+                        } else {
+                            horariosSelecionados = horariosSelecionados.filter(h => h !== slot.inicio);
+                            wrapper.style.background = '#d1fae5';
+                            wrapper.style.borderColor = '#a7f3d0';
+                        }
+                        atualizarBotaoSolicitar();
+                    };
+
+                    const label = document.createElement('span');
+                    label.textContent = `${slot.inicio} - ${slot.fim}`;
+                    label.style.cssText = `
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: #059669;
+                    `;
+
+                    wrapper.appendChild(checkbox);
+                    wrapper.appendChild(label);
+                    slotsContainer.appendChild(wrapper);
+                });
+
+                // Mostrar ocupados (apenas informação)
+                if (ocupados.length > 0) {
+                    const ocupadoDiv = document.createElement('div');
+                    ocupadoDiv.style.cssText = `
+                        width: 100%;
+                        margin-top: 4px;
+                        font-size: 12px;
+                        color: #94a3b8;
+                    `;
+                    ocupadoDiv.textContent = `📋 ${ocupados.length} horário(s) ocupado(s) para esta data.`;
+                    slotsContainer.appendChild(ocupadoDiv);
+                }
+
+                // Mostrar bloqueados (apenas informação)
+                if (bloqueados.length > 0) {
+                    const blockerDiv = document.createElement('div');
+                    blockerDiv.style.cssText = `
+                        width: 100%;
+                        margin-top: 2px;
+                        font-size: 12px;
+                        color: #94a3b8;
+                    `;
+                    blockerDiv.textContent = `🔒 ${bloqueados.length} horário(s) bloqueado(s) para esta data.`;
+                    slotsContainer.appendChild(blockerDiv);
+                }
+
+                // Verificar se o botão já existe e remover
+                const btnExistente = document.getElementById('btnSolicitarAgendamento');
+                if (btnExistente) btnExistente.remove();
+
+                // Adicionar botão de solicitação
+                const btnSolicitar = document.createElement('button');
+                btnSolicitar.id = 'btnSolicitarAgendamento';
+                btnSolicitar.className = 'btn-primary';
+                btnSolicitar.style.cssText = `
+                    width: auto;
+                    padding: 10px 24px;
+                    margin-top: 12px;
+                    font-size: 14px;
+                    background: linear-gradient(135deg, #10b981, #059669);
+                    opacity: 0.5;
+                    pointer-events: none;
+                    transition: all 0.3s;
+                    border: none;
+                    border-radius: 10px;
+                    color: white;
+                    font-weight: 600;
+                    cursor: pointer;
+                    font-family: inherit;
+                `;
+                btnSolicitar.innerHTML = `<i class="fas fa-envelope"></i> Solicitar Agendamento (selecione um horário)`;
+                btnSolicitar.onclick = function() {
+                    solicitarAgendamento(data, result.config.emailSuporte);
+                };
+                slotsContainer.parentElement.appendChild(btnSolicitar);
+
+                window.atualizarBotaoSolicitar = function() {
+                    const btn = document.getElementById('btnSolicitarAgendamento');
+                    if (btn) {
+                        if (horariosSelecionados.length > 0) {
+                            btn.style.opacity = '1';
+                            btn.style.pointerEvents = 'auto';
+                            btn.innerHTML = `<i class="fas fa-envelope"></i> Solicitar Agendamento (${horariosSelecionados.length} horário(s))`;
+                        } else {
+                            btn.style.opacity = '0.5';
+                            btn.style.pointerEvents = 'none';
+                            btn.innerHTML = `<i class="fas fa-envelope"></i> Solicitar Agendamento (selecione um horário)`;
+                        }
+                    }
+                };
+                window.atualizarBotaoSolicitar();
+
+                mensagemContainer.textContent = `📧 Envie sua solicitação para: ${result.config.emailSuporte}`;
+                mensagemContainer.style.color = '#2563eb';
+                mensagemContainer.style.marginTop = '8px';
+
+                document.getElementById('painelHorarios').style.display = 'block';
+
+            } catch (error) {
+                console.error("❌ Erro ao carregar horários:", error);
+                mensagemContainer.textContent = '❌ Erro ao carregar horários: ' + error.message;
+                mensagemContainer.style.color = '#ef4444';
+                container.style.display = 'block';
+            }
+        }
+
+        function solicitarAgendamento(data, email) {
+            if (horariosSelecionados.length === 0) {
+                alert('Selecione pelo menos um horário para solicitar o agendamento.');
+                return;
+            }
+
+            const dataFormatada = formatarDataParaExibicaoSimples(data);
+            const horariosStr = horariosSelecionados.join(', ');
+            const subject = encodeURIComponent('Solicitação de Agendamento - Agenda Novetech');
+            const body = encodeURIComponent(
+                `Olá,\n\nGostaria de solicitar um agendamento para o dia ${dataFormatada}.\n\n` +
+                `Horário(s) selecionado(s): ${horariosStr}\n\n` +
+                `Meu nome: \n` +
+                `Telefone para contato: \n` +
+                `E-mail: \n` +
+                `Empresa: \n` +
+                `Tipo de reunião: \n` +
+                `Observações: \n\n` +
+                `Aguardo retorno.\n\n` +
+                `Atenciosamente,`
+            );
+            window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+        }
+
+        async function verificarMostrarPainelHorarios() {
+            try {
+                let config = { ...HORARIOS_PADRAO };
+                try {
+                    const doc = await db.collection('configuracoes').doc('configuracoesHorarios').get();
+                    if (doc.exists) {
+                        config = { ...HORARIOS_PADRAO, ...doc.data() };
+                    }
+                } catch (e) {
+                    console.warn("⚠️ Usando configurações padrão para painel:", e.message);
+                }
+
+                const painel = document.getElementById('painelHorarios');
+                if (config.ativo !== false) {
+                    painel.style.display = 'block';
+                    const hoje = new Date();
+                    const dataStr = hoje.toISOString().split('T')[0];
+                    document.getElementById('horariosData').value = dataStr;
+                    // Carregar automaticamente
+                    carregarHorariosDisponiveis();
+                } else {
+                    painel.style.display = 'none';
+                }
+            } catch (error) {
+                console.error("Erro ao verificar painel de horários:", error);
+                // Fallback: mostrar painel mesmo com erro
+                const painel = document.getElementById('painelHorarios');
+                painel.style.display = 'block';
+                const hoje = new Date();
+                const dataStr = hoje.toISOString().split('T')[0];
+                document.getElementById('horariosData').value = dataStr;
+                carregarHorariosDisponiveis();
+            }
+        }
+
+        // ==================== INICIALIZAÇÃO ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("📄 Página pública carregada");
+
+            if (typeof firebase === 'undefined') {
+                console.error("❌ Firebase não carregado!");
+                mostrarErro("Firebase não carregado", "Verifique sua conexão com a internet e recarregue a página.");
+                return;
+            }
+
+            if (typeof db === 'undefined' || db === null) {
+                console.error("❌ Firestore não inicializado!");
+                mostrarErro("Banco de dados não inicializado", "Verifique o arquivo firebase-config.js");
+                return;
+            }
+
+            console.log("✅ Firebase e Firestore carregados com sucesso!");
+
+            verificarUsuarioInterno();
+            verificarMostrarPainelHorarios();
+        });
+
+        // ==================== VERIFICAÇÃO DE USUÁRIO ====================
+        function verificarUsuarioInterno() {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    db.collection('usuarios').doc(user.uid).get()
+                        .then(doc => {
+                            if (doc.exists) {
+                                const userData = doc.data();
+                                isInternalUser = (userData.tipo === 'admin' || userData.tipo === 'colaborador');
+                                console.log("👤 Usuário interno:", isInternalUser);
+
+                                atualizarFiltroTipos();
+
+                                if (unsubscribePublic) {
+                                    unsubscribePublic();
+                                }
+                                if (unsubscribeReservasPublic) {
+                                    unsubscribeReservasPublic();
+                                }
+                                iniciarListenersPublicos();
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Erro ao verificar usuário:", error);
+                        });
+                } else {
+                    isInternalUser = false;
+                    console.log("👤 Usuário não logado - Acesso público");
+
+                    atualizarFiltroTipos();
+
+                    iniciarListenersPublicos();
+                }
+            });
+        }
+
+        // ==================== FUNÇÕES DE ERRO ====================
+        function mostrarErro(titulo, mensagem) {
+            const container = document.getElementById('listaEventosPublic');
+            container.innerHTML = `
+                <div class="empty-state" style="color: #ef4444; grid-column: 1 / -1;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px;"></i>
+                    <h3 style="margin-top: 12px; color: #ef4444;">${titulo}</h3>
+                    <p style="font-size: 13px; color: #ef4444;">${mensagem}</p>
+                    <button onclick="reiniciarConexao()" style="margin-top: 12px; padding: 8px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        <i class="fas fa-redo"></i> Recarregar página
+                    </button>
+                </div>
+            `;
+        }
+
+        function reiniciarConexao() {
+            if (unsubscribePublic) {
+                unsubscribePublic();
+                unsubscribePublic = null;
+            }
+            if (unsubscribeReservasPublic) {
+                unsubscribeReservasPublic();
+                unsubscribeReservasPublic = null;
+            }
+            iniciarListenersPublicos();
+        }
+
+        // ==================== LISTENERS ====================
+        function iniciarListenersPublicos() {
+            iniciarListenerEventos();
+            if (isInternalUser) {
+                iniciarListenerReservas();
+            } else {
+                reservasCache = [];
+                renderizarEventos(eventosCache, reservasCache, isInternalUser);
+            }
+        }
+
+        function iniciarListenerEventos() {
+            if (unsubscribePublic) {
+                unsubscribePublic();
+            }
+
+            console.log("🔍 Iniciando listener para eventos públicos...");
+
+            try {
+                unsubscribePublic = db.collection('eventosAgenda')
+                    .orderBy('data', 'asc')
+                    .onSnapshot((snapshot) => {
+                        console.log("🔄 Agenda pública atualizada em tempo real!");
+                        console.log("📊 Total de eventos no banco:", snapshot.size);
+
+                        let eventos = [];
+                        snapshot.forEach(doc => {
+                            const evento = { id: doc.id, ...doc.data() };
+                            eventos.push(evento);
+                        });
+
+                        eventosCache = eventos;
+                        renderizarEventos(eventosCache, reservasCache, isInternalUser);
+
+                    }, (error) => {
+                        console.error("❌ Erro no listener da agenda pública:", error);
+                        const container = document.getElementById('listaEventosPublic');
+                        container.innerHTML = `
+                            <div class="empty-state" style="color: #ef4444; grid-column: 1 / -1;">
+                                <i class="fas fa-exclamation-triangle" style="font-size: 48px;"></i>
+                                <h3 style="margin-top: 12px; color: #ef4444;">Erro ao carregar a agenda</h3>
+                                <p style="font-size: 13px; color: #ef4444;">${error.message}</p>
+                                <button onclick="reiniciarConexao()" style="margin-top: 12px; padding: 8px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                                    <i class="fas fa-redo"></i> Tentar reconectar
+                                </button>
+                            </div>
+                        `;
+                    });
+            } catch (error) {
+                console.error("❌ Erro ao iniciar listener:", error);
+            }
+        }
+
+        function iniciarListenerReservas() {
+            if (unsubscribeReservasPublic) {
+                unsubscribeReservasPublic();
+            }
+
+            console.log("🔍 Iniciando listener para reservas de salas (usuário interno)...");
+
+            try {
+                unsubscribeReservasPublic = db.collection('reservasSalas')
+                    .orderBy('data', 'asc')
+                    .onSnapshot((snapshot) => {
+                        console.log("🔄 Reservas de salas atualizadas em tempo real!");
+                        console.log("📊 Total de reservas no banco:", snapshot.size);
+
+                        let reservas = [];
+                        snapshot.forEach(doc => {
+                            const reserva = { id: doc.id, ...doc.data() };
+                            if (reserva.status !== 'cancelada') {
+                                reservas.push(reserva);
+                            }
+                        });
+
+                        reservasCache = reservas;
+                        renderizarEventos(eventosCache, reservasCache, isInternalUser);
+
+                    }, (error) => {
+                        console.error("❌ Erro no listener de reservas:", error);
+                    });
+            } catch (error) {
+                console.error("❌ Erro ao iniciar listener de reservas:", error);
+            }
+        }
+
+        // ==================== RENDERIZAÇÃO ====================
+        function renderizarEventos(eventos, reservas, isInternal) {
+            const container = document.getElementById('listaEventosPublic');
+            container.innerHTML = '';
+
+            const dataFiltro = document.getElementById('filtroDataPublic').value;
+            const tipoFiltro = document.getElementById('filtroTipoPublic').value;
+            const periodoFiltro = document.getElementById('filtroPeriodoPublic').value;
+
+            let eventosFiltrados = [];
+            let reservasFiltradas = [];
+
+            const isFiltroReserva = (tipoFiltro === 'reserva_sala');
+            const isFiltroEvento = (tipoFiltro && tipoFiltro !== '' && !isFiltroReserva);
+            const isTodosTipos = (tipoFiltro === '');
+
+            // Filtrar eventos
+            if (isFiltroReserva) {
+                eventosFiltrados = [];
+            } else if (isFiltroEvento) {
+                eventosFiltrados = eventos.filter(e => e.tipo === tipoFiltro);
+            } else {
+                eventosFiltrados = eventos.filter(e => {
+                    if (!isInternal) {
+                        return TIPOS_PUBLICOS.includes(e.tipo);
+                    }
+                    return true;
+                });
+            }
+
+            // Filtrar reservas
+            if (isFiltroReserva) {
+                if (isInternal) {
+                    reservasFiltradas = [...reservas];
+                } else {
+                    reservasFiltradas = [];
+                }
+            } else if (isTodosTipos && isInternal) {
+                reservasFiltradas = [...reservas];
+            } else {
+                reservasFiltradas = [];
+            }
+
+            // Filtro por período
+            if (periodoFiltro && periodoFiltro !== 'todos') {
+                eventosFiltrados = filtrarPorPeriodoEventos(eventosFiltrados, periodoFiltro);
+                reservasFiltradas = filtrarPorPeriodoReservas(reservasFiltradas, periodoFiltro);
+                filtroPeriodoPublic = periodoFiltro;
+                atualizarPeriodoInfo(periodoFiltro);
+            } else {
+                filtroPeriodoPublic = 'todos';
+                atualizarPeriodoInfo('todos');
+            }
+
+            // Filtro por data
+            if (dataFiltro) {
+                eventosFiltrados = eventosFiltrados.filter(e => {
+                    const dataEvento = extrairDataISO(e.data);
+                    return dataEvento === dataFiltro;
+                });
+                reservasFiltradas = reservasFiltradas.filter(r => r.data === dataFiltro);
+            }
+
+            eventosFiltrados.sort((a, b) => {
+                if (a.data < b.data) return -1;
+                if (a.data > b.data) return 1;
+                return 0;
+            });
+
+            reservasFiltradas.sort((a, b) => {
+                if (a.data < b.data) return -1;
+                if (a.data > b.data) return 1;
+                return (a.horario || '').localeCompare(b.horario || '');
+            });
+
+            const totalItens = eventosFiltrados.length + reservasFiltradas.length;
+
+            if (isInternal && totalItens > 0) {
+                const aviso = document.createElement('div');
+                aviso.id = 'aviso-interno';
+                aviso.className = 'aviso-interno';
+
+                let mensagemAviso = 'Você está visualizando ';
+                if (isFiltroReserva) {
+                    mensagemAviso += 'apenas as reservas de salas da equipe Novetech.';
+                } else if (isFiltroEvento) {
+                    mensagemAviso += `apenas eventos do tipo "${TIPO_LABELS[tipoFiltro] || tipoFiltro}" da equipe Novetech.`;
+                } else {
+                    mensagemAviso += 'todos os eventos (incluindo internos) e reservas de salas da equipe Novetech.';
+                }
+                aviso.innerHTML = `
+                    <i class="fas fa-user-check" style="margin-right: 8px;"></i>
+                    ${mensagemAviso}
+                `;
+                container.appendChild(aviso);
+            }
+
+            if (totalItens === 0) {
+                let mensagem = 'Nenhum ';
+
+                if (isFiltroReserva) {
+                    mensagem += 'reserva de sala ';
+                } else if (isFiltroEvento) {
+                    mensagem += `evento do tipo "${TIPO_LABELS[tipoFiltro] || tipoFiltro}" `;
+                } else {
+                    mensagem += isInternal ? 'evento ou reserva ' : 'evento público ';
+                }
+
+                mensagem += 'agendado para este período.';
+
+                if (filtroPeriodoPublic === 'hoje') {
+                    mensagem = isFiltroReserva ? 'Nenhuma reserva de sala agendada para hoje.' :
+                              'Nenhum evento agendado para hoje.';
+                } else if (filtroPeriodoPublic === 'semana') {
+                    mensagem = isFiltroReserva ? 'Nenhuma reserva de sala agendada para esta semana.' :
+                              'Nenhum evento agendado para esta semana.';
+                } else if (filtroPeriodoPublic === 'mes') {
+                    mensagem = isFiltroReserva ? 'Nenhuma reserva de sala agendada para este mês.' :
+                              'Nenhum evento agendado para este mês.';
+                }
+
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'empty-state';
+                emptyDiv.style.gridColumn = '1 / -1';
+                emptyDiv.innerHTML = `
+                    <i class="fas fa-calendar-day" style="font-size: 48px;"></i>
+                    <p style="margin-top: 12px; font-size: 16px;">${mensagem}</p>
+                    <p style="font-size: 13px; color: #94a3b8;">Tente ajustar os filtros ou verifique novamente mais tarde</p>
+                `;
+                container.appendChild(emptyDiv);
+                return;
+            }
+
+            // Renderizar eventos
+            eventosFiltrados.forEach(e => {
+                const dataStr = formatarDataParaExibicao(e.data);
+                const horaStr = extrairHoraParaExibicao(e.data);
+                const isInterno = TIPOS_INTERNOS.includes(e.tipo);
+
+                const hoje = new Date();
+                hoje.setHours(0, 0, 0, 0);
+                const dataEvento = new Date(e.data);
+                dataEvento.setHours(0, 0, 0, 0);
+                const isHoje = dataEvento.getTime() === hoje.getTime();
+
+                const amanha = new Date(hoje);
+                amanha.setDate(hoje.getDate() + 1);
+                const isAmanha = dataEvento.getTime() === amanha.getTime();
+
+                let labelData = dataStr;
+                if (isHoje) labelData = '🔥 Hoje';
+                else if (isAmanha) labelData = '📅 Amanhã';
+
+                const card = document.createElement('div');
+                card.className = 'evento-card';
+                card.style.borderLeftColor = TIPO_BORDER_COLORS[e.tipo] || '#2563eb';
+
+                let detalhesHTML = '';
+
+                if (isInternal) {
+                    let infoExtra = '';
+                    if (e.ticket) {
+                        infoExtra += `
+                            <span style="display: inline-block; font-size: 12px; background: #f1f5f9; color: #475569; padding: 2px 10px; border-radius: 12px; margin-right: 6px;">
+                                <i class="fas fa-ticket-alt"></i> ${e.ticket}
+                            </span>
+                        `;
+                    }
+                    if (e.municipio) {
+                        infoExtra += `
+                            <span style="display: inline-block; font-size: 12px; background: #e0e7ff; color: #4338ca; padding: 2px 10px; border-radius: 12px;">
+                                <i class="fas fa-city"></i> ${e.municipio}
+                            </span>
+                        `;
+                    }
+                    if (infoExtra) {
+                        detalhesHTML += `<div style="margin: 6px 0; display: flex; flex-wrap: wrap; gap: 4px;">${infoExtra}</div>`;
+                    }
+                }
+
+                if (e.responsavelNome) {
+                    detalhesHTML += `
+                        <div class="evento-detalhes" style="background: #f0f7ff; padding: 8px 12px; border-radius: 8px; margin-top: 8px; border-left: 3px solid #2563eb;">
+                            <i class="fas fa-user-tie" style="color: #2563eb;"></i> 
+                            <strong>Responsável:</strong> ${e.responsavelNome}
+                            ${e.responsavelCargo ? ` - ${e.responsavelCargo}` : ''}
+                        </div>
+                    `;
+                }
+
+                if (e.descricao) {
+                    detalhesHTML += `<div class="evento-detalhes"><i class="fas fa-info-circle"></i> ${e.descricao}</div>`;
+                }
+
+                if (e.local && isInternal) {
+                    detalhesHTML += `<div class="evento-detalhes"><i class="fas fa-map-marker-alt" style="color: #2563eb;"></i> ${e.local}</div>`;
+                }
+
+                if (e.participantes && isInternal) {
+                    detalhesHTML += `<div class="evento-detalhes"><i class="fas fa-users"></i> ${e.participantes} participantes</div>`;
+                }
+
+                if (e.status) {
+                    const statusLabels = {
+                        'designado': '📋 Designado',
+                        'em_andamento': '🔄 Em Andamento',
+                        'realizado': '✅ Realizado',
+                        'cancelado': '❌ Cancelado'
+                    };
+                    const statusColors = {
+                        'designado': '#dbeafe',
+                        'em_andamento': '#fef3c7',
+                        'realizado': '#d1fae5',
+                        'cancelado': '#fee2e2'
+                    };
+                    const statusTextColors = {
+                        'designado': '#1d4ed8',
+                        'em_andamento': '#d97706',
+                        'realizado': '#059669',
+                        'cancelado': '#dc2626'
+                    };
+                    const status = e.status || 'designado';
+                    detalhesHTML += `
+                        <div class="evento-detalhes" style="margin-top: 8px;">
+                            <span class="status-badge" style="background: ${statusColors[status] || '#f1f5f9'}; color: ${statusTextColors[status] || '#1e293b'}; padding: 2px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                ${statusLabels[status] || status}
+                            </span>
+                        </div>
+                    `;
+                }
+
+                const mostrarBadgeInterno = isInterno && isInternal;
+
+                card.innerHTML = `
+                    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <span class="evento-tipo ${e.tipo}" style="background: ${TIPO_COLORS[e.tipo] || '#f1f5f9'}; color: #1e293b;">
+                            ${TIPO_LABELS[e.tipo] || e.tipo}
+                        </span>
+                        ${mostrarBadgeInterno ? `
+                            <span style="display: inline-block; font-size: 11px; background: #fef3c7; color: #d97706; padding: 2px 10px; border-radius: 12px;">
+                                <i class="fas fa-lock"></i> Equipe Novetech
+                            </span>
+                        ` : ''}
+                        ${isHoje ? `
+                            <span style="display: inline-block; font-size: 11px; background: #d1fae5; color: #059669; padding: 2px 10px; border-radius: 12px; font-weight: 600;">
+                                <i class="fas fa-fire"></i> Hoje
+                            </span>
+                        ` : ''}
+                    </div>
+                    <div class="evento-data-hora">
+                        <span><i class="fas fa-calendar-day"></i> ${labelData}</span>
+                        <span><i class="fas fa-clock"></i> ${horaStr}</span>
+                        ${e.duracao ? `<span><i class="fas fa-hourglass-half"></i> ${e.duracao} min</span>` : ''}
+                    </div>
+                    <div class="evento-titulo">${e.titulo}</div>
+                    ${detalhesHTML}
+                `;
+                container.appendChild(card);
+            });
+
+            // Renderizar reservas
+            if (isInternal && (isFiltroReserva || isTodosTipos)) {
+                reservasFiltradas.forEach(r => {
+                    const dataStr = formatarDataParaExibicaoSimples(r.data);
+                    const horaStr = r.horario || '--:--';
+                    const statusLabel = RESERVA_STATUS_LABELS[r.status] || r.status;
+                    const statusColor = RESERVA_STATUS_COLORS[r.status] || '#f1f5f9';
+                    const statusTextColor = RESERVA_STATUS_TEXT_COLORS[r.status] || '#1e293b';
+
+                    const salaLabel = SALAS_LABELS[r.sala] || r.sala;
+
+                    const tipoReserva = r.tipo || 'reuniao';
+                    const tipoLabel = TIPO_LABELS[tipoReserva] || tipoReserva;
+                    const tipoColor = TIPO_COLORS[tipoReserva] || '#f1f5f9';
+                    const tipoBorderColor = TIPO_BORDER_COLORS[tipoReserva] || '#2563eb';
+
+                    const hoje = new Date();
+                    hoje.setHours(0, 0, 0, 0);
+                    const dataReserva = new Date(r.data + 'T00:00:00');
+                    const isHoje = dataReserva.getTime() === hoje.getTime();
+
+                    const amanha = new Date(hoje);
+                    amanha.setDate(hoje.getDate() + 1);
+                    const isAmanha = dataReserva.getTime() === amanha.getTime();
+
+                    let labelData = dataStr;
+                    if (isHoje) labelData = '🔥 Hoje';
+                    else if (isAmanha) labelData = '📅 Amanhã';
+
+                    const card = document.createElement('div');
+                    card.className = 'evento-card';
+                    card.style.borderLeftColor = tipoBorderColor;
+
+                    let detalhesHTML = '';
+
+                    if (r.responsavelNome) {
+                        detalhesHTML += `
+                            <div class="evento-detalhes" style="background: #f0f7ff; padding: 8px 12px; border-radius: 8px; margin-top: 8px; border-left: 3px solid ${tipoBorderColor};">
+                                <i class="fas fa-user-tie" style="color: ${tipoBorderColor};"></i> 
+                                <strong>Responsável:</strong> ${r.responsavelNome}
+                                ${r.responsavelCargo ? ` - ${r.responsavelCargo}` : ''}
+                            </div>
+                        `;
+                    }
+
+                    if (r.descricao) {
+                        detalhesHTML += `<div class="evento-detalhes"><i class="fas fa-info-circle"></i> ${r.descricao}</div>`;
+                    }
+
+                    detalhesHTML += `
+                        <div class="evento-detalhes" style="margin-top: 8px;">
+                            <span class="status-badge" style="background: ${statusColor}; color: ${statusTextColor}; padding: 2px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                ${statusLabel}
+                            </span>
+                        </div>
+                    `;
+
+                    card.innerHTML = `
+                        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <span class="evento-tipo" style="background: ${tipoColor}; color: #1e293b; font-weight: 600;">
+                                <i class="fas fa-door-open"></i> ${tipoLabel}
+                            </span>
+                            <span style="display: inline-block; font-size: 11px; background: #fef3c7; color: #d97706; padding: 2px 10px; border-radius: 12px;">
+                                <i class="fas fa-lock"></i> Equipe Novetech
+                            </span>
+                            ${isHoje ? `
+                                <span style="display: inline-block; font-size: 11px; background: #d1fae5; color: #059669; padding: 2px 10px; border-radius: 12px; font-weight: 600;">
+                                    <i class="fas fa-fire"></i> Hoje
+                                </span>
+                            ` : ''}
+                            <span style="display: inline-block; font-size: 11px; background: #f1f5f9; color: #475569; padding: 2px 10px; border-radius: 12px;">
+                                <i class="fas fa-door-open"></i> ${salaLabel}
+                            </span>
+                        </div>
+                        <div class="evento-data-hora">
+                            <span><i class="fas fa-calendar-day"></i> ${labelData}</span>
+                            <span><i class="fas fa-clock"></i> ${horaStr}</span>
+                            ${r.duracao ? `<span><i class="fas fa-hourglass-half"></i> ${r.duracao} min</span>` : ''}
+                            ${r.capacidade ? `<span><i class="fas fa-users"></i> ${r.capacidade} pessoas</span>` : ''}
+                        </div>
+                        <div class="evento-titulo">${r.titulo}</div>
+                        ${detalhesHTML}
+                    `;
+                    container.appendChild(card);
+                });
+            }
+
+            console.log(`✅ Renderizados ${eventosFiltrados.length} eventos e ${reservasFiltradas.length} reservas na página`);
+        }
+
+        // ==================== FILTROS ====================
+        function aplicarFiltrosPublicos() {
+            const periodoFiltro = document.getElementById('filtroPeriodoPublic').value;
+            filtroPeriodoPublic = periodoFiltro;
+
+            renderizarEventos(eventosCache, reservasCache, isInternalUser);
+        }
+
+        function limparFiltrosPublicos() {
+            document.getElementById('filtroDataPublic').value = '';
+            document.getElementById('filtroTipoPublic').value = '';
+            document.getElementById('filtroPeriodoPublic').value = 'todos';
+            filtroPeriodoPublic = 'todos';
+
+            renderizarEventos(eventosCache, reservasCache, isInternalUser);
+        }
+
+        // ==================== EXPOR FUNÇÕES GLOBAIS ====================
+        window.aplicarFiltrosPublicos = aplicarFiltrosPublicos;
+        window.limparFiltrosPublicos = limparFiltrosPublicos;
+        window.reiniciarConexao = reiniciarConexao;
+        window.carregarHorariosDisponiveis = carregarHorariosDisponiveis;
+        window.gerarSlotsHorarios = gerarSlotsHorarios;
+    </script>
+</body>
+
+</html>

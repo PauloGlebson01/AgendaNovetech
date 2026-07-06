@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Agenda Novetech</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="shortcut icon" href="asstes/9Tech.icon" type="image/x-icon">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <nav class="topbar">
+            <div class="logo">
+                <img src="asstes/9Tech-perfil.jpg" alt="Novetech" class="logo-img" onerror="this.style.display='none';">
+                <i class="fas fa-calendar-alt" style="color: #2563eb; font-size: 24px;"></i>
+                <span style="font-weight: 700; font-size: 20px; color: #0f172a;">Agenda<span
+                        style="color: #2563eb;">Novetech</span></span>
+            </div>
+            <div class="user-info">
+                <i class="fas fa-user-shield"></i>
+                <span id="adminName">Carregando...</span>
+                <button onclick="logout()" class="icon-btn" title="Sair">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </nav>
+        <div class="dashboard">
+            <aside class="sidebar">
+                <ul>
+                    <li class="active" data-section="dashboard">
+                        <i class="fas fa-chart-pie"></i> Dashboard
+                    </li>
+                    <li data-section="reservas">
+                        <i class="fas fa-door-open"></i> Reservas de Salas
+                    </li>
+                    <li data-section="agenda">
+                        <i class="fas fa-calendar-plus"></i> Gerenciar Agenda
+                    </li>
+                    <li data-section="colaboradores">
+                        <i class="fas fa-users"></i> Colaboradores
+                    </li>
+                    <li data-section="listar">
+                        <i class="fas fa-list"></i> Ver Agenda
+                    </li>
+                    <li data-section="config">
+                        <i class="fas fa-sliders-h"></i> Configurações
+                    </li>
+                </ul>
+            </aside>
+            <main class="main-content">
+                <!-- Seção: Dashboard -->
+                <section id="dashboardSection" class="section active">
+                    <h2><i class="fas fa-chart-pie"></i> Dashboard</h2>
+
+                    <!-- Filtros de Período -->
+                    <div style="margin-bottom: 20px; background: white; padding: 16px 24px; border-radius: 12px; border: 1px solid #eef2ff;">
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                                <span style="font-weight: 600; color: #1e293b; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-calendar-alt" style="color: #2563eb;"></i> Período:
+                                </span>
+                                <span id="periodoInfo" style="font-size: 13px; color: #94a3b8; font-weight: 400; padding: 2px 14px; background: #f8fafc; border-radius: 14px;">
+                                    Mostrando todos os eventos
+                                </span>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                <button class="periodo-btn active" data-periodo="todos" onclick="filtrarPorPeriodo('todos')">
+                                    📅 Todos
+                                </button>
+                                <button class="periodo-btn" data-periodo="hoje" onclick="filtrarPorPeriodo('hoje')">
+                                    🔥 Hoje
+                                </button>
+                                <button class="periodo-btn" data-periodo="semana" onclick="filtrarPorPeriodo('semana')">
+                                    📆 Semana
+                                </button>
+                                <button class="periodo-btn" data-periodo="mes" onclick="filtrarPorPeriodo('mes')">
+                                    📆 Mês
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cards de Estatísticas -->
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon blue"><i class="fas fa-calendar-alt"></i></div>
+                            <div class="stat-number" id="statTotal">0</div>
+                            <div class="stat-label">Total de Eventos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green"><i class="fas fa-calendar-day"></i></div>
+                            <div class="stat-number" id="statHoje">0</div>
+                            <div class="stat-label">Eventos Hoje</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple"><i class="fas fa-calendar-plus"></i></div>
+                            <div class="stat-number" id="statFuturos">0</div>
+                            <div class="stat-label">Eventos Futuros</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon yellow"><i class="fas fa-calendar-check"></i></div>
+                            <div class="stat-number" id="statPassados">0</div>
+                            <div class="stat-label">Eventos Passados</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon orange"><i class="fas fa-tags"></i></div>
+                            <div class="stat-number" id="statTipos">0</div>
+                            <div class="stat-label">Tipos de Eventos</div>
+                        </div>
+                    </div>
+
+                    <!-- Seção de Férias e Próximos Eventos -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <!-- Colaboradores em Férias -->
+                        <div class="proximos-eventos">
+                            <h3 style="display: flex; justify-content: space-between; align-items: center;">
+                                <span><i class="fas fa-umbrella-beach" style="color: #f59e0b;"></i> Profissionais em
+                                    Férias</span>
+                                <button class="btn-sm btn-info" onclick="abrirModalFerias()"
+                                    style="font-size: 12px; padding: 4px 12px;">
+                                    <i class="fas fa-plus"></i> Adicionar
+                                </button>
+                            </h3>
+                            <div id="listaFerias">
+                                <div class="empty-events">
+                                    <i class="fas fa-umbrella-beach" style="font-size: 28px;"></i>
+                                    <span>Nenhum profissional em férias</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Próximos Eventos -->
+                        <div class="proximos-eventos">
+                            <h3><i class="fas fa-clock"></i> Próximos Eventos</h3>
+                            <div id="proximosEventosLista">
+                                <div class="empty-events">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <span>Carregando...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico de Tipos -->
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                        <div class="proximos-eventos">
+                            <h3><i class="fas fa-chart-pie"></i> Distribuição por Tipo</h3>
+                            <div id="tipoChartContainer" class="tipo-chart">
+                                <div class="empty-events" style="grid-column: 1 / -1; padding: 10px 0;">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <span>Carregando...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Seção: Reservas de Salas -->
+                <section id="reservasSection" class="section">
+                    <h2><i class="fas fa-door-open"></i> Reservas de Salas</h2>
+                    
+                    <!-- Filtros e Status -->
+                    <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: white; padding: 16px 20px; border-radius: 12px; border: 1px solid #eef2ff;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; flex: 1;">
+                            <input type="date" id="filtroReservaData" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                            <select id="filtroReservaSala" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                                <option value="">Todas as salas</option>
+                                <option value="sala_01">Sala 01</option>
+                                <option value="sala_02">Sala 02</option>
+                            </select>
+                            <select id="filtroReservaStatus" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                                <option value="">Todos os status</option>
+                                <option value="pendente">🟡 Pendente</option>
+                                <option value="confirmada">🟢 Confirmada</option>
+                                <option value="em_andamento">🔄 Em Andamento</option>
+                                <option value="concluida">✅ Concluída</option>
+                                <option value="cancelada">❌ Cancelada</option>
+                            </select>
+                            <button class="btn-sm btn-info" onclick="filtrarReservas()">
+                                <i class="fas fa-filter"></i> Filtrar
+                            </button>
+                            <button class="btn-sm btn-cancelar" onclick="limparFiltrosReservas()">
+                                <i class="fas fa-undo"></i> Limpar
+                            </button>
+                        </div>
+                        <button class="btn-primary" onclick="abrirModalReserva()" style="width: auto; padding: 10px 24px; white-space: nowrap;">
+                            <i class="fas fa-plus"></i> Nova Reserva
+                        </button>
+                    </div>
+
+                    <!-- Cards de Estatísticas de Reservas -->
+                    <div class="dashboard-stats" style="margin-bottom: 20px;">
+                        <div class="stat-card">
+                            <div class="stat-icon blue"><i class="fas fa-calendar-day"></i></div>
+                            <div class="stat-number" id="reservaTotalHoje">0</div>
+                            <div class="stat-label">Reservas Hoje</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                            <div class="stat-number" id="reservaConfirmadas">0</div>
+                            <div class="stat-label">Confirmadas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon yellow"><i class="fas fa-clock"></i></div>
+                            <div class="stat-number" id="reservaPendentes">0</div>
+                            <div class="stat-label">Pendentes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple"><i class="fas fa-door-open"></i></div>
+                            <div class="stat-number" id="reservaTotalSalas">0</div>
+                            <div class="stat-label">Salas Disponíveis</div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Reservas -->
+                    <div id="listaReservas" class="cards-grid">
+                        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #2563eb;"></i>
+                            <p style="margin-top: 12px; color: #94a3b8;">Carregando reservas...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Seção: Gerenciar Agenda -->
+                <section id="agendaSection" class="section">
+                    <h2><i class="fas fa-calendar-plus"></i> Adicionar Evento na Agenda</h2>
+                    <div class="form-card">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
+                                <input type="date" id="eventoData" required>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-clock"></i> Horário <span class="required">*</span></label>
+                                <input type="time" id="eventoHorario" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-tag"></i> Tipo <span class="required">*</span></label>
+                            <select id="eventoTipo" required>
+                                <option value="reuniao">📋 Reunião</option>
+                                <option value="reuniao_gestor">👔 Reunião com Gestor</option>
+                                <option value="treinamento">🎓 Treinamento</option>
+                                <option value="treinamento_interno">🏢 Treinamento Interno</option>
+                                <option value="suporte">🛠️ Suporte Técnico</option>
+                                <option value="demonstracao">📊 Demonstração</option>
+                                <option value="outro">📌 Outro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-comment"></i> Título / Assunto <span
+                                    class="required">*</span></label>
+                            <input type="text" id="eventoTitulo" placeholder="Ex: Treinamento de Equipe" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-ticket-alt"></i> Número do Ticket</label>
+                                <input type="text" id="eventoTicket" placeholder="Ex: #12345">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-city"></i> Município</label>
+                                <input type="text" id="eventoMunicipio" placeholder="Ex: João Pessoa">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-user-tie"></i> Responsável (Colaborador) <span
+                                    class="required">*</span></label>
+                            <select id="eventoResponsavel" required>
+                                <option value="">Selecione um colaborador...</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-users"></i> Participantes</label>
+                                <input type="number" id="eventoParticipantes" value="1" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-clock"></i> Duração (minutos)</label>
+                                <input type="number" id="eventoDuracao" value="60" min="15" step="5">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-info-circle"></i> Descrição</label>
+                            <textarea id="eventoDescricao" rows="3" placeholder="Detalhes sobre o evento..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Local</label>
+                            <input type="text" id="eventoLocal" placeholder="Sala, endereço ou link (ex: Zoom, Meet)">
+                        </div>
+                        <button class="btn-primary" onclick="adicionarEvento()">
+                            <i class="fas fa-save"></i> Adicionar à Agenda
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Seção: Colaboradores -->
+                <section id="colaboradoresSection" class="section">
+                    <h2><i class="fas fa-users"></i> Gerenciar Colaboradores</h2>
+
+                    <!-- Formulário de Cadastro -->
+                    <div class="form-card" style="max-width: 100%; margin-bottom: 30px;">
+                        <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-user-plus" style="color: #2563eb;"></i> Cadastrar Novo Colaborador
+                        </h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-user"></i> Nome Completo <span class="required">*</span></label>
+                                <input type="text" id="colabNome" placeholder="Nome do colaborador" required>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-envelope"></i> E-mail <span class="required">*</span></label>
+                                <input type="email" id="colabEmail" placeholder="email@empresa.com" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-phone"></i> Telefone</label>
+                                <input type="tel" id="colabTelefone" placeholder="(00) 00000-0000">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-briefcase"></i> Cargo / Especialidade</label>
+                                <input type="text" id="colabCargo" placeholder="Ex: Instrutor, Consultor, etc">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-info-circle"></i> Observações</label>
+                            <textarea id="colabObservacoes" rows="2"
+                                placeholder="Informações adicionais sobre o colaborador..."></textarea>
+                        </div>
+                        <button class="btn-primary" onclick="cadastrarColaborador()">
+                            <i class="fas fa-save"></i> Cadastrar Colaborador
+                        </button>
+                    </div>
+
+                    <!-- Lista de Colaboradores -->
+                    <h3 style="margin: 24px 0 16px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-list" style="color: #2563eb;"></i> Colaboradores Cadastrados
+                    </h3>
+                    <div id="listaColaboradores" class="cards-grid"></div>
+                </section>
+
+                <!-- Seção: Ver Agenda -->
+                <section id="listarSection" class="section">
+                    <h2><i class="fas fa-list"></i> Agenda de Eventos</h2>
+                    <div style="margin: 20px 0;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                            <input type="date" id="filtroData"
+                                style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                            <select id="filtroStatus"
+                                style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; min-width: 160px;">
+                                <option value="">Todos os status</option>
+                                <option value="designado">📋 Designado</option>
+                                <option value="em_andamento">🔄 Em Andamento</option>
+                                <option value="realizado">✅ Realizado</option>
+                                <option value="cancelado">❌ Cancelado</option>
+                            </select>
+                            <button class="btn-sm btn-info" onclick="filtrarAgenda()">
+                                <i class="fas fa-filter"></i> Filtrar
+                            </button>
+                            <button class="btn-sm btn-cancelar" onclick="limparFiltros()">
+                                <i class="fas fa-undo"></i> Limpar
+                            </button>
+                            <button class="btn-sm" style="background: #2563eb; color: white;"
+                                onclick="verAgendaPublica()">
+                                <i class="fas fa-external-link-alt"></i> Ver Página Pública
+                            </button>
+                        </div>
+                        <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="btn-sm btn-designado" onclick="filtrarPorStatus('designado')">
+                                📋 Designados
+                            </button>
+                            <button class="btn-sm btn-em_andamento" onclick="filtrarPorStatus('em_andamento')">
+                                🔄 Em Andamento
+                            </button>
+                            <button class="btn-sm btn-realizado" onclick="filtrarPorStatus('realizado')">
+                                ✅ Realizados
+                            </button>
+                            <button class="btn-sm btn-cancelado" onclick="filtrarPorStatus('cancelado')">
+                                ❌ Cancelados
+                            </button>
+                            <button class="btn-sm" style="background: #f1f5f9; color: #475569;"
+                                onclick="limparFiltros()">
+                                <i class="fas fa-undo"></i> Todos
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contador de Status -->
+                    <div id="statusCounter" class="status-counter">
+                        <div class="counter-item">
+                            <span>📋 Designados:</span>
+                            <span class="count designado" id="countDesignado">0</span>
+                        </div>
+                        <div class="counter-item">
+                            <span>🔄 Em Andamento:</span>
+                            <span class="count em_andamento" id="countEmAndamento">0</span>
+                        </div>
+                        <div class="counter-item">
+                            <span>✅ Realizados:</span>
+                            <span class="count realizado" id="countRealizado">0</span>
+                        </div>
+                        <div class="counter-item">
+                            <span>❌ Cancelados:</span>
+                            <span class="count cancelado" id="countCancelado">0</span>
+                        </div>
+                        <div class="counter-item" style="margin-left: auto; font-weight: 600;">
+                            <span>Total:</span>
+                            <span style="color: #0f172a;" id="countTotal">0</span>
+                        </div>
+                    </div>
+
+                    <div id="listaEventosAdmin" class="cards-grid"></div>
+                </section>
+
+                <!-- Seção: Configurações -->
+                <section id="configSection" class="section">
+                    <h2><i class="fas fa-sliders-h"></i> Configurações da Agenda</h2>
+                    
+                    <!-- Configurações Gerais -->
+                    <div class="form-card" style="margin-bottom: 30px;">
+                        <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-calendar-week" style="color: #2563eb;"></i> Configurações Gerais
+                        </h3>
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-week"></i> Dias úteis</label>
+                            <div class="dias-check">
+                                <label><input type="checkbox" value="1"> Seg</label>
+                                <label><input type="checkbox" value="2"> Ter</label>
+                                <label><input type="checkbox" value="3"> Qua</label>
+                                <label><input type="checkbox" value="4"> Qui</label>
+                                <label><input type="checkbox" value="5"> Sex</label>
+                                <label><input type="checkbox" value="6"> Sáb</label>
+                                <label><input type="checkbox" value="7"> Dom</label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-clock"></i> Horário início</label>
+                                <input type="time" id="horaInicio">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-clock"></i> Horário fim</label>
+                                <input type="time" id="horaFim">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-hourglass-half"></i> Duração padrão (minutos)</label>
+                            <input type="number" id="duracao" value="60" min="15" step="5">
+                        </div>
+                        <button class="btn-primary" onclick="salvarConfiguracoes()">
+                            <i class="fas fa-save"></i> Salvar Configurações Gerais
+                        </button>
+                    </div>
+
+                    <!-- 🔥 Configurações de Limite de Demanda -->
+                    <div class="form-card" style="margin-bottom: 30px;">
+                        <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-chart-line" style="color: #8b5cf6;"></i> Controle de Demanda
+                        </h3>
+                        <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                            Configure os limites de eventos por colaborador para receber alertas de alta demanda.
+                        </p>
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px;">
+                                <input type="checkbox" id="configDemandaAtivo" style="width: 20px; height: 20px; accent-color: #8b5cf6;">
+                                <span>Ativar alertas de demanda</span>
+                            </label>
+                            <p style="font-size: 12px; color: #94a3b8; margin-top: 4px; margin-left: 30px;">
+                                Quando ativado, o sistema exibirá alertas ao adicionar eventos que ultrapassem os limites definidos.
+                            </p>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-calendar-day"></i> Limite Diário</label>
+                                <input type="number" id="configLimiteDiario" value="5" min="1" max="20">
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Máximo de eventos por dia</p>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-calendar-week"></i> Limite Semanal</label>
+                                <input type="number" id="configLimiteSemanal" value="15" min="1" max="50">
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Máximo de eventos nos últimos 7 dias</p>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-calendar-alt"></i> Limite Mensal</label>
+                                <input type="number" id="configLimiteMensal" value="30" min="1" max="100">
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Máximo de eventos nos últimos 30 dias</p>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-clock"></i> Carga Horária Máxima</label>
+                                <input type="number" id="configCargaHoraria" value="8" min="1" max="24">
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Horas máximas ocupadas por dia</p>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
+                            <button class="btn-primary" onclick="salvarConfiguracoesDemanda()" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                                <i class="fas fa-save"></i> Salvar Configurações de Demanda
+                            </button>
+                            <button class="btn-secondary" onclick="restaurarConfiguracoesDemandaPadrao()" style="width: auto; padding: 16px 24px;">
+                                <i class="fas fa-undo"></i> Restaurar Padrões
+                            </button>
+                        </div>
+
+                        <div style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                            <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #0f172a;">
+                                <i class="fas fa-info-circle" style="color: #8b5cf6;"></i> Limites Atuais
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; font-size: 13px; color: #475569;">
+                                <div><strong>Diário:</strong> <span id="displayLimiteDiario">5</span> eventos</div>
+                                <div><strong>Semanal:</strong> <span id="displayLimiteSemanal">15</span> eventos</div>
+                                <div><strong>Mensal:</strong> <span id="displayLimiteMensal">30</span> eventos</div>
+                                <div><strong>Carga Horária:</strong> <span id="displayCargaHoraria">8</span>h</div>
+                                <div><strong>Status:</strong> <span id="displayStatusDemanda" style="color: #10b981;">✅ Ativo</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🔥 Gestão de Horários Disponíveis -->
+                    <div class="form-card">
+                        <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-clock" style="color: #10b981;"></i> Gestão de Horários Disponíveis
+                        </h3>
+                        <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                            Configure os horários disponíveis para agendamento de reuniões e treinamentos. Os clientes poderão visualizar os slots disponíveis na agenda pública.
+                        </p>
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px;">
+                                <input type="checkbox" id="configHorariosAtivo" style="width: 20px; height: 20px; accent-color: #10b981;">
+                                <span>Ativar exibição de horários disponíveis</span>
+                            </label>
+                            <p style="font-size: 12px; color: #94a3b8; margin-top: 4px; margin-left: 30px;">
+                                Quando ativado, os horários disponíveis serão exibidos na agenda pública para solicitação.
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-week"></i> Dias disponíveis para agendamento</label>
+                            <div class="dias-check" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px;">
+                                <label><input type="checkbox" class="dias-disponiveis" value="1"> Seg</label>
+                                <label><input type="checkbox" class="dias-disponiveis" value="2"> Ter</label>
+                                <label><input type="checkbox" class="dias-disponiveis" value="3"> Qua</label>
+                                <label><input type="checkbox" class="dias-disponiveis" value="4"> Qui</label>
+                                <label><input type="checkbox" class="dias-disponiveis" value="5"> Sex</label>
+                                <label><input type="checkbox" class="dias-disponiveis" value="6"> Sáb</label>
+                                <label><input type="checkbox" class="dias-disponiveis" value="7"> Dom</label>
+                            </div>
+                            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Selecione os dias em que os agendamentos são permitidos.</p>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-hourglass-start"></i> Horário de Início</label>
+                                <input type="time" id="configHorarioInicio" value="08:00">
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Horário de início do expediente</p>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-hourglass-end"></i> Horário de Fim</label>
+                                <input type="time" id="configHorarioFim" value="18:00">
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Horário de fim do expediente</p>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-clock"></i> Intervalo entre slots (minutos)</label>
+                                <input type="number" id="configIntervaloSlots" value="60" min="15" max="120" step="15">
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Tempo entre cada horário disponível (ex: 60min)</p>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-hourglass-half"></i> Duração padrão do evento (minutos)</label>
+                                <input type="number" id="configDuracaoSlot" value="60" min="15" max="240" step="15">
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Duração padrão de cada agendamento</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-envelope"></i> E-mail para solicitações</label>
+                            <input type="email" id="configEmailSuporte" value="suporte@novetech.com.br" placeholder="email@empresa.com">
+                            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                E-mail que receberá as solicitações de agendamento. <strong>Este e-mail será usado no botão de solicitação.</strong>
+                            </p>
+                        </div>
+
+                        <!-- 🔥 Gerenciar Horários Bloqueados - CORRIGIDO -->
+                        <div style="margin-top: 20px; padding: 16px; background: #fef3c7; border-radius: 12px; border: 1px solid #fcd34d;">
+                            <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #92400e; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-lock" style="color: #d97706;"></i>
+                                Gerenciar Horários Indisponíveis
+                            </h4>
+                            <p style="font-size: 13px; color: #78350f; margin-bottom: 12px;">
+                                Bloqueie horários específicos para que não apareçam como disponíveis na agenda pública.
+                            </p>
+                            
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                                <input type="date" id="bloqueioData" 
+                                       onchange="atualizarSelectBloqueioHorarios()"
+                                       style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                                <select id="bloqueioHorario" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; min-width: 180px;">
+                                    <option value="">Selecione uma data primeiro...</option>
+                                </select>
+                                <button class="btn-sm" onclick="bloquearHorario()" style="background: #ef4444; color: white; padding: 8px 16px;">
+                                    <i class="fas fa-lock"></i> Bloquear
+                                </button>
+                                <button class="btn-sm" onclick="limparBloqueiosData()" style="background: #f59e0b; color: white; padding: 8px 16px;">
+                                    <i class="fas fa-undo"></i> Limpar Bloqueios do Dia
+                                </button>
+                            </div>
+                            
+                            <div id="listaBloqueios" style="margin-top: 12px; max-height: 200px; overflow-y: auto;">
+                                <div style="text-align: center; color: #94a3b8; font-size: 13px; padding: 8px;">
+                                    Nenhum horário bloqueado.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin: 16px 0; padding: 12px 16px; background: #f0f7ff; border-radius: 10px; border-left: 4px solid #2563eb;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <i class="fas fa-link" style="color: #2563eb;"></i>
+                                <span style="font-weight: 500; color: #1e293b;">Link da agenda pública:</span>
+                                <a href="#" id="linkAgendaPublica" target="_blank" style="color: #2563eb; text-decoration: none; word-break: break-all;">
+                                    Carregando...
+                                </a>
+                                <button onclick="copiarLinkAgendaPublica()" class="btn-sm btn-info" style="padding: 4px 12px; font-size: 12px;">
+                                    <i class="fas fa-copy"></i> Copiar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
+                            <button class="btn-primary" onclick="salvarConfiguracoesHorarios()" style="background: linear-gradient(135deg, #10b981, #059669);">
+                                <i class="fas fa-save"></i> Salvar Configurações de Horários
+                            </button>
+                            <button class="btn-secondary" onclick="restaurarConfiguracoesHorariosPadrao()" style="width: auto; padding: 16px 24px;">
+                                <i class="fas fa-undo"></i> Restaurar Padrões
+                            </button>
+                            <button class="btn-secondary" onclick="visualizarHorariosDisponiveis()" style="width: auto; padding: 16px 24px; background: #8b5cf6; color: white;">
+                                <i class="fas fa-eye"></i> Visualizar Horários
+                            </button>
+                        </div>
+
+                        <div style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                            <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #0f172a;">
+                                <i class="fas fa-info-circle" style="color: #10b981;"></i> Configurações Atuais
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; font-size: 13px; color: #475569;">
+                                <div><strong>Status:</strong> <span id="displayHorariosStatus" style="color: #10b981;">✅ Ativo</span></div>
+                                <div><strong>Dias:</strong> <span id="displayDiasDisponiveis">Seg, Ter, Qua, Qui, Sex</span></div>
+                                <div><strong>Horário:</strong> <span id="displayHorarioExpediente">08:00 - 18:00</span></div>
+                                <div><strong>Intervalo:</strong> <span id="displayIntervaloSlots">60 min</span></div>
+                                <div><strong>Duração:</strong> <span id="displayDuracaoSlot">60 min</span></div>
+                                <div><strong>E-mail:</strong> <span id="displayEmailSuporte">suporte@novetech.com.br</span></div>
+                                <div><strong>Bloqueios:</strong> <span id="displayTotalBloqueios">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div id="modalConfirmacao" class="modal">
+        <div class="modal-content">
+            <h3>
+                <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i>
+                Confirmar Exclusão
+            </h3>
+            <p id="modalMensagem">Tem certeza que deseja excluir este colaborador? Esta ação não pode ser desfeita.</p>
+            <div class="modal-actions">
+                <button onclick="fecharModal()" class="modal-btn-cancelar">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button id="btnConfirmarExclusao" class="modal-btn-confirmar">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edição de Colaborador -->
+    <div id="modalEditarColaborador" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <h3 style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-user-edit" style="color: #f59e0b;"></i>
+                Editar Colaborador
+            </h3>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                Atualize as informações do colaborador.
+            </p>
+
+            <form id="editColaboradorForm" onsubmit="return false;">
+                <input type="hidden" id="editColabId">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Nome Completo <span class="required">*</span></label>
+                        <input type="text" id="editColabNome" placeholder="Nome do colaborador" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> E-mail <span class="required">*</span></label>
+                        <input type="email" id="editColabEmail" placeholder="email@empresa.com" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> Telefone</label>
+                        <input type="tel" id="editColabTelefone" placeholder="(00) 00000-0000">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-briefcase"></i> Cargo / Especialidade</label>
+                        <input type="text" id="editColabCargo" placeholder="Ex: Instrutor, Consultor, etc">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-info-circle"></i> Observações</label>
+                    <textarea id="editColabObservacoes" rows="2"
+                        placeholder="Informações adicionais sobre o colaborador..."></textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="editColabAtivo"
+                            style="width: 18px; height: 18px; accent-color: #2563eb;">
+                        <span>Colaborador ativo</span>
+                    </label>
+                    <p style="font-size: 12px; color: #94a3b8; margin-top: 4px; margin-left: 28px;">
+                        Desmarque para desativar o colaborador sem excluí-lo.
+                    </p>
+                </div>
+
+                <div class="modal-actions">
+                    <button onclick="fecharModalEditarColaborador()" class="modal-btn-cancelar" type="button">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button onclick="salvarEdicaoColaborador()" class="modal-btn-confirmar-success" type="button">
+                        <i class="fas fa-save"></i> Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Férias -->
+    <div id="modalFerias" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <h3 style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-umbrella-beach" style="color: #f59e0b;"></i>
+                Registrar Férias
+            </h3>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                Selecione o profissional e o período de férias.
+            </p>
+
+            <form id="formFerias" onsubmit="return false;">
+                <input type="hidden" id="feriasId">
+
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Profissional <span class="required">*</span></label>
+                    <select id="feriasColaborador" required>
+                        <option value="">Selecione um colaborador...</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-day"></i> Data Início <span class="required">*</span></label>
+                        <input type="date" id="feriasDataInicio" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-day"></i> Data Fim <span class="required">*</span></label>
+                        <input type="date" id="feriasDataFim" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-info-circle"></i> Observações</label>
+                    <textarea id="feriasObservacoes" rows="2" placeholder="Observações sobre as férias..."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button onclick="fecharModalFerias()" class="modal-btn-cancelar" type="button">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button onclick="salvarFerias()" class="modal-btn-confirmar-success" type="button">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Reserva de Sala -->
+    <div id="modalReserva" class="modal">
+        <div class="modal-content" style="max-width: 650px;">
+            <h3 style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-door-open" style="color: #2563eb;"></i>
+                <span id="modalReservaTitulo">Nova Reserva de Sala</span>
+            </h3>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                Preencha os dados para reservar uma sala.
+            </p>
+
+            <form id="formReserva" onsubmit="return false;">
+                <input type="hidden" id="reservaId">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-door-open"></i> Sala <span class="required">*</span></label>
+                        <select id="reservaSala" required>
+                            <option value="">Selecione uma sala...</option>
+                            <option value="sala_01">Sala 01</option>
+                            <option value="sala_02">Sala 02</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-users"></i> Capacidade</label>
+                        <input type="number" id="reservaCapacidade" placeholder="Nº de pessoas" min="1" value="4">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
+                        <input type="date" id="reservaData" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-clock"></i> Horário <span class="required">*</span></label>
+                        <input type="time" id="reservaHorario" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-hourglass-half"></i> Duração (min) <span class="required">*</span></label>
+                        <input type="number" id="reservaDuracao" value="60" min="15" step="15" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user-tie"></i> Responsável <span class="required">*</span></label>
+                        <select id="reservaResponsavel" required>
+                            <option value="">Selecione um colaborador...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Tipo de Reserva <span class="required">*</span></label>
+                    <select id="reservaTipo" required>
+                        <option value="reuniao">📋 Reunião</option>
+                        <option value="reuniao_gestor">👔 Reunião com Gestor</option>
+                        <option value="treinamento">🎓 Treinamento</option>
+                        <option value="treinamento_interno">🏢 Treinamento Interno</option>
+                        <option value="suporte">🛠️ Suporte Técnico</option>
+                        <option value="demonstracao">📊 Demonstração</option>
+                        <option value="outro">📌 Outro</option>
+                    </select>
+                    <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                        <i class="fas fa-info-circle"></i> Defina o tipo de evento que ocorrerá na sala reservada.
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-comment"></i> Título / Motivo <span class="required">*</span></label>
+                    <input type="text" id="reservaTitulo" placeholder="Ex: Reunião de equipe, Treinamento..." required>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-info-circle"></i> Descrição / Observações</label>
+                    <textarea id="reservaDescricao" rows="2" placeholder="Detalhes adicionais sobre a reserva..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Status</label>
+                    <select id="reservaStatus">
+                        <option value="pendente">🟡 Pendente</option>
+                        <option value="confirmada">🟢 Confirmada</option>
+                        <option value="em_andamento">🔄 Em Andamento</option>
+                        <option value="concluida">✅ Concluída</option>
+                        <option value="cancelada">❌ Cancelada</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions">
+                    <button onclick="fecharModalReserva()" class="modal-btn-cancelar" type="button">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button onclick="salvarReserva()" class="modal-btn-confirmar-success" type="button">
+                        <i class="fas fa-save"></i> Salvar Reserva
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
