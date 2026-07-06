@@ -27,7 +27,7 @@
                     <i class="fas fa-sign-in-alt"></i> Entrar
                 </button>
                 <button class="tab-btn" data-tab="criar" onclick="trocarAba('criar')">
-                    <i class="fas fa-user-plus"></i> Criar Conta
+                    <i class="fas fa-user-plus"></i> Solicitar Acesso
                 </button>
             </div>
 
@@ -36,7 +36,7 @@
                 <form id="loginForm" autocomplete="off" onsubmit="return false;">
                     <div class="input-group">
                         <i class="fas fa-envelope"></i>
-                        <input type="email" id="loginEmail" placeholder="E-mail do administrador" autocomplete="off">
+                        <input type="email" id="loginEmail" placeholder="E-mail" autocomplete="off">
                     </div>
                     <div class="input-group">
                         <i class="fas fa-lock"></i>
@@ -49,63 +49,88 @@
                 <div class="login-footer">
                     <a href="agenda-publica.html">
                         <i class="fas fa-eye"></i> Visualizar agenda pública
+                    </a> 
+                </div>
+            </div>
+
+            <!-- Aba de Criar Conta com Solicitação -->
+            <div id="criarTab" class="tab-content">
+                <div style="margin-bottom: 20px; text-align: center; color: #64748b; font-size: 14px; background: #fef3c7; padding: 12px; border-radius: 8px; border: 1px solid #fcd34d;">
+                    <i class="fas fa-shield-alt" style="color: #d97706;"></i> 
+                    Solicite acesso ao sistema. Um administrador analisará seu pedido.
+                </div>
+                
+                <form id="criarForm" autocomplete="off" onsubmit="return false;">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="criarNome" placeholder="Nome completo *" autocomplete="off" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="criarEmail" placeholder="E-mail *" autocomplete="off" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-phone"></i>
+                        <input type="tel" id="criarTelefone" placeholder="Telefone (opcional)" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-building"></i>
+                        <input type="text" id="criarEmpresa" placeholder="Empresa (opcional)" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-briefcase"></i>
+                        <input type="text" id="criarCargo" placeholder="Cargo (opcional)" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-info-circle"></i>
+                        <input type="text" id="criarMotivo" placeholder="Motivo da solicitação (opcional)" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="criarSenha" placeholder="Senha (mínimo 6 caracteres) *" autocomplete="new-password" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-check-circle"></i>
+                        <input type="password" id="criarSenhaConfirm" placeholder="Confirmar senha *" autocomplete="new-password" required>
+                    </div>
+                    
+                    <button class="btn-primary" onclick="solicitarCadastroAdmin()" type="button" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                        <i class="fas fa-paper-plane"></i> Solicitar Acesso
+                    </button>
+                </form>
+                
+                <div style="margin-top: 16px; text-align: center; font-size: 12px; color: #94a3b8;">
+                    <i class="fas fa-info-circle"></i> 
+                    Após enviar a solicitação, aguarde a aprovação do administrador.
+                </div>
+                <div style="margin-top: 8px; text-align: center;">
+                    <a href="#" onclick="trocarAba('login')" style="color: #2563eb; text-decoration: none; font-size: 13px;">
+                        <i class="fas fa-arrow-left"></i> Voltar para o login
                     </a>
                 </div>
             </div>
 
-            <!-- Aba de Criar Conta -->
-            <div id="criarTab" class="tab-content">
-                <div style="margin-bottom: 20px; text-align: center; color: #64748b; font-size: 14px; background: #fef3c7; padding: 8px; border-radius: 8px; border: 1px solid #fcd34d;">
-                    <i class="fas fa-shield-alt" style="color: #d97706;"></i> 
-                    Crie uma conta de administrador para gerenciar a agenda
-                </div>
-                <form id="criarForm" autocomplete="off" onsubmit="return false;">
-                    <div class="input-group">
-                        <i class="fas fa-user"></i>
-                        <input type="text" id="criarNome" placeholder="Nome completo" autocomplete="off" required>
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-envelope"></i>
-                        <input type="email" id="criarEmail" placeholder="E-mail do administrador" autocomplete="off" required>
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-lock"></i>
-                        <input type="password" id="criarSenha" placeholder="Senha (mínimo 6 caracteres)" autocomplete="new-password" required>
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-check-circle"></i>
-                        <input type="password" id="criarSenhaConfirm" placeholder="Confirmar senha" autocomplete="new-password" required>
-                    </div>
-                    <button class="btn-primary" onclick="criarContaAdmin()" type="button" style="background: linear-gradient(135deg, #10b981, #059669);">
-                        <i class="fas fa-user-plus"></i> Criar Conta Administrador
-                    </button>
-                </form>
-                <div style="margin-top: 16px; text-align: center; font-size: 13px; color: #94a3b8;">
-                    <i class="fas fa-info-circle"></i> Apenas administradores podem gerenciar a agenda
-                </div>
-            </div>
-
             <!-- Footer corrigido - DENTRO do login-card -->
-<footer class="app-footer">
-    <div class="footer-divider"></div>
-    <div class="footer-content">
-        <div class="footer-brand">
-            <!-- Substituído o texto pela logomarca -->
-            <img src="asstes/9Tech-perfil.jpg" alt="Novetech Soluções Tecnológicas" class="footer-logo">
-        </div>
-        <p class="footer-text">
-            &copy; 2026 Novetech Soluções Tecnológicas - Todos os direitos reservados.
-        </p>
-        <div class="footer-links">
-            <a href="#"><i class="fas fa-envelope"></i> www.novetech.com.br</a>
-            <a href="#"><i class="fas fa-phone"></i> (83) 3225-1422</a>
-        </div>
-    </div>
-</footer>
+            <footer class="app-footer">
+                <div class="footer-divider"></div>
+                <div class="footer-content">
+                    <div class="footer-brand">
+                        <img src="asstes/9Tech-perfil.jpg" alt="Novetech Soluções Tecnológicas" class="footer-logo">
+                    </div>
+                    <p class="footer-text">
+                        &copy; 2026 Novetech Soluções Tecnológicas - Todos os direitos reservados.
+                    </p>
+                    <div class="footer-links">
+                        <a href="#"><i class="fas fa-envelope"></i> www.novetech.com.br</a>
+                        <a href="#"><i class="fas fa-phone"></i> (83) 3225-1422</a>
+                    </div>
+                </div>
+            </footer>
         </div>
     </div>
 
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
+    <script src="admin-approval.js"></script>
 </body>
 </html>

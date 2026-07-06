@@ -167,6 +167,22 @@ auth.onAuthStateChanged(async (user) => {
     console.log("Auth state changed:", user ? user.email : "null");
     
     if (user) {
+        // 🔥 Verificar status do usuário (sistema de aprovação)
+        if (typeof verificarStatusUsuario === 'function') {
+            const statusResult = await verificarStatusUsuario(user);
+            
+            if (!statusResult || statusResult.status === 'nao_encontrado') {
+                // Usuário não encontrado ou removido
+                return;
+            }
+            
+            if (statusResult.status === 'solicitante' || statusResult.status === 'rejeitado') {
+                // Usuário não aprovado - já foi deslogado pela função
+                return;
+            }
+        }
+        
+        // Usuário aprovado - continuar fluxo normal
         try {
             const userDoc = await db.collection('usuarios').doc(user.uid).get();
             
@@ -193,6 +209,13 @@ auth.onAuthStateChanged(async (user) => {
                 window.location.href = 'admin.html';
             } else if (path.includes('admin.html')) {
                 await carregarAdmin();
+                // 🔥 Carregar solicitações pendentes
+                if (typeof carregarSolicitacoesPendentes === 'function') {
+                    await carregarSolicitacoesPendentes();
+                }
+                if (typeof iniciarListenerSolicitacoes === 'function') {
+                    iniciarListenerSolicitacoes();
+                }
             }
         } catch (error) {
             console.error("Erro ao buscar usuário:", error);
@@ -228,6 +251,17 @@ async function fazerLogin() {
         }
         
         const userData = userDoc.data();
+        
+        // Verificar se o usuário está aprovado
+        if (userData.aprovado !== true || userData.tipo === 'solicitante' || userData.tipo === 'rejeitado') {
+            await auth.signOut();
+            if (userData.tipo === 'rejeitado') {
+                alert(`❌ Seu cadastro foi rejeitado.\nMotivo: ${userData.motivoRejeicao || 'Não informado'}\n\nEntre em contato com o administrador.`);
+            } else {
+                alert('⏳ Seu cadastro está aguardando aprovação.\n\nVocê receberá um e-mail quando for aprovado.');
+            }
+            return;
+        }
         
         if (userData.tipo !== 'admin') {
             await auth.signOut();
@@ -281,6 +315,10 @@ async function logout() {
             unsubscribeReservas();
             unsubscribeReservas = null;
         }
+        if (typeof unsubscribeSolicitacoes !== 'undefined' && unsubscribeSolicitacoes) {
+            unsubscribeSolicitacoes();
+            unsubscribeSolicitacoes = null;
+        }
         await auth.signOut();
         window.location.href = 'index.html';
     } catch (error) {
@@ -303,129 +341,12 @@ function trocarAba(aba) {
     if (content) content.classList.add('active');
 }
 
-// ==================== CRIAR CONTA ADMINISTRADOR ====================
+// ==================== CRIAR CONTA ADMINISTRADOR (LEGADO) ====================
 async function criarContaAdmin() {
-    const nome = document.getElementById('criarNome').value.trim();
-    const email = document.getElementById('criarEmail').value.trim();
-    const senha = document.getElementById('criarSenha').value;
-    const senhaConfirm = document.getElementById('criarSenhaConfirm').value;
-
-    if (!nome) {
-        alert('❌ Por favor, preencha o nome completo.');
-        document.getElementById('criarNome').focus();
-        return;
-    }
-
-    if (!email) {
-        alert('❌ Por favor, preencha o e-mail.');
-        document.getElementById('criarEmail').focus();
-        return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        alert('❌ Por favor, insira um e-mail válido.');
-        document.getElementById('criarEmail').focus();
-        return;
-    }
-
-    if (!senha || senha.length < 6) {
-        alert('❌ A senha deve ter pelo menos 6 caracteres.');
-        document.getElementById('criarSenha').focus();
-        return;
-    }
-
-    if (senha !== senhaConfirm) {
-        alert('❌ As senhas não coincidem. Por favor, verifique.');
-        document.getElementById('criarSenhaConfirm').focus();
-        return;
-    }
-
-    if (!confirm(`⚠️ Deseja criar uma conta de administrador para "${email}"?\n\nEsta ação criará um novo administrador no sistema.`)) {
-        return;
-    }
-
-    const btn = document.querySelector('#criarTab .btn-primary');
-    if (!btn) return;
-    
-    const textoOriginal = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
-
-    try {
-        console.log("📝 Criando conta de administrador para:", email);
-        const userCred = await auth.createUserWithEmailAndPassword(email, senha);
-        console.log("✅ Usuário criado no Authentication:", userCred.user.uid);
-
-        await db.collection('usuarios').doc(userCred.user.uid).set({
-            uid: userCred.user.uid,
-            nome: nome,
-            email: email,
-            tipo: 'admin',
-            aprovado: true,
-            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-            criadoPor: 'sistema'
-        }, { merge: true });
-
-        console.log("✅ Dados salvos no Firestore");
-
-        alert(`✅ CONTA CRIADA COM SUCESSO!\n\n📧 Email: ${email}\n👤 Nome: ${nome}\n🔑 Senha: ${senha}\n\nAgora faça login com suas credenciais.`);
-        
-        document.getElementById('criarNome').value = '';
-        document.getElementById('criarEmail').value = '';
-        document.getElementById('criarSenha').value = '';
-        document.getElementById('criarSenhaConfirm').value = '';
-        
-        trocarAba('login');
-        document.getElementById('loginEmail').value = email;
-        document.getElementById('loginSenha').value = '';
-
-    } catch (error) {
-        console.error("❌ Erro detalhado ao criar conta:", error);
-        
-        if (error.code === 'auth/email-already-in-use') {
-            alert('❌ Este e-mail já está em uso. Tente outro e-mail ou faça login.');
-        } else if (error.code === 'auth/weak-password') {
-            alert('❌ A senha é muito fraca. Use pelo menos 6 caracteres com letras e números.');
-        } else if (error.code === 'auth/network-request-failed') {
-            alert('❌ Erro de rede. Verifique sua conexão com a internet.');
-        } else if (error.code === 'permission-denied' || (error.message && error.message.includes('Missing or insufficient permissions'))) {
-            alert('❌ Erro de permissão no banco de dados.\n\n' +
-                  'Para criar o primeiro administrador, siga um destes métodos:\n\n' +
-                  '1️⃣ Abra o console (F12) e digite: criarAdminInicial()\n' +
-                  '2️⃣ Ou ajuste as regras de segurança do Firestore no Firebase Console.');
-        } else {
-            alert('❌ Erro ao criar conta: ' + error.message);
-        }
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = textoOriginal;
-    }
-}
-
-async function verificarAdminExistente() {
-    try {
-        const snap = await db.collection('usuarios')
-            .where('tipo', '==', 'admin')
-            .limit(1)
-            .get();
-        
-        if (!snap.empty) {
-            console.log("✅ Já existe administrador no sistema");
-            const criarTabBtn = document.querySelector('.tab-btn[data-tab="criar"]');
-            if (criarTabBtn) {
-                criarTabBtn.style.display = 'none';
-            }
-        } else {
-            console.log("ℹ️ Nenhum administrador encontrado. Crie uma conta.");
-            const aviso = document.querySelector('.brand p');
-            if (aviso) {
-                aviso.innerHTML = '⚠️ Nenhum administrador cadastrado. <a href="#" onclick="trocarAba(\'criar\')" style="color: #2563eb; text-decoration: underline; cursor: pointer;">Crie uma conta</a> para começar.';
-            }
-        }
-    } catch (error) {
-        console.error("Erro ao verificar admin:", error);
-    }
+    alert('⚠️ O sistema agora usa solicitação de acesso.\n\n' +
+          '1. Clique em "Solicitar Acesso" para criar uma solicitação\n' +
+          '2. Aguarde a aprovação do administrador\n\n' +
+          'Ou use o console (F12) e digite: criarAdminInicial()');
 }
 
 // ==================== ADMIN ====================
@@ -2008,7 +1929,6 @@ async function carregarBloqueiosHorarios() {
         
         console.log("✅ Bloqueios de horários carregados:", bloqueiosCache.length);
         
-        // Definir data padrão para hoje e carregar horários
         const dataInput = document.getElementById('bloqueioData');
         if (dataInput) {
             if (!dataInput.value) {
@@ -2016,7 +1936,6 @@ async function carregarBloqueiosHorarios() {
                 const dataStr = hoje.toISOString().split('T')[0];
                 dataInput.value = dataStr;
             }
-            // Carregar horários para a data atual
             await atualizarSelectBloqueioHorarios();
         }
         
@@ -3305,6 +3224,11 @@ function sidebarClickHandler() {
         if (sectionId === 'reservasSection') {
             atualizarListaReservas();
             atualizarStatsReservas();
+        }
+        if (sectionId === 'solicitacoesSection') {
+            if (typeof carregarSolicitacoesPendentes === 'function') {
+                carregarSolicitacoesPendentes();
+            }
         }
     }
 }
