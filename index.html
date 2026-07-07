@@ -33,6 +33,9 @@
 
             <!-- Aba de Login -->
             <div id="loginTab" class="tab-content active">
+                <!-- Container para mensagens de retorno -->
+                <div id="mensagemRetorno"></div>
+                
                 <form id="loginForm" autocomplete="off" onsubmit="return false;">
                     <div class="input-group">
                         <i class="fas fa-envelope"></i>
@@ -132,5 +135,114 @@
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
     <script src="admin-approval.js"></script>
+    
+    <!-- ==================== CÓDIGO PARA EXIBIR MENSAGEM DE RETORNO ==================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("📄 Página de login carregada");
+            
+            // ==================== VERIFICAR MENSAGEM NA URL ====================
+            const urlParams = new URLSearchParams(window.location.search);
+            const msg = urlParams.get('msg');
+            const nome = urlParams.get('nome');
+            
+            if (msg === 'aguardando_aprovacao' || msg === 'solicitacao_enviada') {
+                exibirMensagemAguardandoAprovacao(nome);
+                
+                // Limpar a URL para não mostrar a mensagem novamente ao recarregar
+                const newUrl = window.location.pathname + window.location.hash;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+            
+            // ==================== FUNÇÃO PARA EXIBIR MENSAGEM ====================
+            function exibirMensagemAguardandoAprovacao(nome) {
+                const container = document.getElementById('mensagemRetorno');
+                if (!container) return;
+                
+                // Limpar mensagens anteriores
+                container.innerHTML = '';
+                
+                const msgDiv = document.createElement('div');
+                msgDiv.style.cssText = `
+                    background: #fef3c7;
+                    border-left: 4px solid #f59e0b;
+                    padding: 16px 20px;
+                    border-radius: 12px;
+                    margin-bottom: 16px;
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 12px;
+                    animation: slideInNotification 0.5s ease;
+                `;
+                
+                msgDiv.innerHTML = `
+                    <i class="fas fa-clock" style="color: #d97706; font-size: 22px; margin-top: 2px;"></i>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700; color: #78350f; font-size: 15px; margin-bottom: 4px;">
+                            ⏳ Seu cadastro está aguardando aprovação
+                        </div>
+                        <div style="color: #92400e; font-size: 13px; line-height: 1.5;">
+                            ${nome ? `Olá <strong>${nome}</strong>, ` : ''}
+                            O administrador irá analisar sua solicitação. 
+                            Você receberá acesso assim que for aprovado.
+                            <br><br>
+                            <span style="font-size: 12px; color: #78350f;">
+                                <i class="fas fa-info-circle"></i> 
+                                Enquanto isso, você pode acompanhar o status da sua solicitação 
+                                ou visualizar a <a href="agenda-publica.html" style="color: #2563eb; font-weight: 600; text-decoration: none;">agenda pública</a>.
+                            </span>
+                        </div>
+                    </div>
+                    <button onclick="this.parentElement.remove()" style="
+                        background: none;
+                        border: none;
+                        font-size: 18px;
+                        cursor: pointer;
+                        color: #92400e;
+                        opacity: 0.6;
+                        transition: opacity 0.2s;
+                        padding: 0 4px;
+                        flex-shrink: 0;
+                    " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                container.appendChild(msgDiv);
+                
+                // Adicionar estilos de animação se não existirem
+                if (!document.getElementById('login-msg-styles')) {
+                    const style = document.createElement('style');
+                    style.id = 'login-msg-styles';
+                    style.textContent = `
+                        @keyframes slideInNotification {
+                            from {
+                                opacity: 0;
+                                transform: translateY(-20px);
+                            }
+                            to {
+                                opacity: 1;
+                                transform: translateY(0);
+                            }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+                
+                // Auto-remover após 10 segundos
+                setTimeout(() => {
+                    if (msgDiv.parentElement) {
+                        msgDiv.style.opacity = '0';
+                        msgDiv.style.transition = 'opacity 0.5s ease';
+                        setTimeout(() => {
+                            if (msgDiv.parentElement) {
+                                msgDiv.remove();
+                            }
+                        }, 500);
+                    }
+                }, 10000);
+            }
+        });
+    </script>
 </body>
 </html>
