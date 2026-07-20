@@ -49,7 +49,8 @@ async function solicitarCadastroAdmin() {
         const existing = await db.collection(SOLICITACOES_COLLECTION)
             .where('email', '==', email)
             .where('status', '==', 'pendente')
-            .get();
+            .get()
+            .catch(() => ({ empty: true }));
 
         if (!existing.empty) {
             mostrarNotificacao('⚠️ Você já possui uma solicitação pendente. Aguarde a aprovação do administrador.', 'warning');
@@ -61,7 +62,8 @@ async function solicitarCadastroAdmin() {
         // Verificar se já é um usuário aprovado
         const userSnapshot = await db.collection('usuarios')
             .where('email', '==', email)
-            .get();
+            .get()
+            .catch(() => ({ empty: true }));
 
         if (!userSnapshot.empty) {
             mostrarNotificacao('⚠️ Este e-mail já está cadastrado no sistema. Faça login ou solicite recuperação de senha.', 'warning');
@@ -83,7 +85,6 @@ async function solicitarCadastroAdmin() {
             if (authError.code === 'auth/email-already-in-use') {
                 // Se o e-mail já existe no Auth, tentamos encontrar o UID
                 try {
-                    // Tentar fazer login para obter o UID
                     const userCred = await auth.signInWithEmailAndPassword(email, senha);
                     uid = userCred.user.uid;
                     await auth.signOut();
@@ -106,7 +107,7 @@ async function solicitarCadastroAdmin() {
             return;
         }
 
-        // 🔥 PASSO 2: SALVAR SOLICITAÇÃO COM O UID REAL (NÃO TEMPORÁRIO)
+        // 🔥 PASSO 2: SALVAR SOLICITAÇÃO COM O UID REAL
         await db.collection(SOLICITACOES_COLLECTION).doc(uid).set({
             uid: uid,
             nome: nome,
@@ -173,6 +174,10 @@ async function solicitarCadastroAdmin() {
             mensagem = '❌ Erro de rede. Verifique sua conexão.';
         } else if (error.code === 'auth/too-many-requests') {
             mensagem = '❌ Muitas tentativas. Aguarde um momento e tente novamente.';
+        } else if (error.code === 'permission-denied' || (error.message && error.message.includes('Missing or insufficient permissions'))) {
+            mensagem = '❌ Erro de permissão no banco de dados.\n\n' +
+                      'O administrador precisa configurar as regras de segurança do Firestore.\n\n' +
+                      'Solução: Acesse Firebase Console → Firestore → Regras e adicione as regras corretas.';
         } else {
             mensagem += error.message;
         }
@@ -625,55 +630,6 @@ async function aprovarSolicitacao(solicitacaoId) {
         // 🔥 O UID É O ID DO DOCUMENTO (já é o UID real do Auth)
         const userUid = solicitacaoId;
         
-        // 🔥 VERIFICAR SE O USUÁRIO EXISTE NO AUTH
-        let userExistsInAuth = false;
-        try {
-            // Tentar fazer login para verificar
-            if (data.senha) {
-                const userCred = await auth.signInWithEmailAndPassword(data.email, data.senha);
-                userExistsInAuth = true;
-                await auth.signOut();
-                console.log(`✅ Usuário existe no Auth: ${userCred.user.uid}`);
-            }
-        } catch (loginError) {
-            console.warn('⚠️ Usuário não existe no Auth ou senha incorreta:', loginError.message);
-            
-            // 🔥 RECRIAR O USUÁRIO NO AUTH
-            if (confirm('⚠️ O usuário não foi encontrado no sistema de autenticação. Deseja recriá-lo?')) {
-                try {
-                    // Tentar criar o usuário novamente
-                    const userCred = await auth.createUserWithEmailAndPassword(data.email, data.senha);
-                    const newUid = userCred.user.uid;
-                    
-                    if (newUid !== userUid) {
-                        // Se o UID mudou, atualizar a solicitação
-                        await db.collection(SOLICITACOES_COLLECTION).doc(newUid).set({
-                            ...data,
-                            uid: newUid,
-                            criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        await db.collection(SOLICITACOES_COLLECTION).doc(userUid).delete();
-                        
-                        // Atualizar o ID para o novo
-                        mostrarNotificacao(`✅ Usuário recriado com sucesso! Agora use o botão Aprovar novamente.`, 'success');
-                        await carregarSolicitacoesPendentes();
-                        return;
-                    }
-                    
-                    userExistsInAuth = true;
-                    await auth.signOut();
-                    console.log(`✅ Usuário recriado com sucesso: ${newUid}`);
-                } catch (createError) {
-                    console.error('❌ Erro ao recriar usuário:', createError);
-                    mostrarNotificacao('❌ Erro ao recriar usuário: ' + createError.message, 'error');
-                    return;
-                }
-            } else {
-                mostrarNotificacao('❌ Não é possível aprovar sem um usuário válido no Authentication.', 'error');
-                return;
-            }
-        }
-
         // 🔥 1. ATUALIZAR SOLICITAÇÃO
         await db.collection(SOLICITACOES_COLLECTION).doc(solicitacaoId).update({
             status: 'aprovado',
@@ -832,135 +788,6 @@ function iniciarListenerSolicitacoes() {
     }
 }
 
-// ==================== FUNÇÃO PARA CORRIGIR SOLICITAÇÕES EXISTENTES ====================
-
-async function corrigirSolicitacoesPendentes() {
-    console.log('🔧 Corrigindo solicitações pendentes...');
-    
-    if (!confirm('⚠️ Esta ação irá corrigir automaticamente as solicitações pendentes que possuem UID temporário. Deseja continuar?')) {
-        return;
-    }
-    
-    try {
-        const snapshot = await db.collection(SOLICITACOES_COLLECTION)
-            .where('status', '==', 'pendente')
-            .get();
-        
-        let corrigidas = 0;
-        let erros = 0;
-        
-        for (const doc of snapshot.docs) {
-            const data = doc.data();
-            const uidAtual = data.uid || doc.id;
-            
-            // Se o UID for temporário, tentar buscar pelo email
-            if (uidAtual && uidAtual.startsWith('temp_')) {
-                console.log(`🔍 Corrigindo solicitação: ${doc.id} - ${data.email}`);
-                
-                // Buscar usuário pelo email na coleção de usuários
-                const userSnapshot = await db.collection('usuarios')
-                    .where('email', '==', data.email)
-                    .get();
-                
-                if (!userSnapshot.empty) {
-                    const userDoc = userSnapshot.docs[0];
-                    const novoUid = userDoc.id;
-                    
-                    // Criar nova solicitação com o UID correto
-                    await db.collection(SOLICITACOES_COLLECTION).doc(novoUid).set({
-                        ...data,
-                        uid: novoUid,
-                        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    
-                    // Excluir a antiga
-                    await db.collection(SOLICITACOES_COLLECTION).doc(doc.id).delete();
-                    
-                    corrigidas++;
-                    console.log(`✅ Solicitação corrigida: ${doc.id} -> ${novoUid}`);
-                } else {
-                    erros++;
-                    console.warn(`⚠️ Usuário não encontrado para: ${data.email}`);
-                }
-            }
-        }
-        
-        console.log(`✅ ${corrigidas} solicitações corrigidas! ${erros} erros.`);
-        mostrarNotificacao(`✅ ${corrigidas} solicitações corrigidas! ${erros} erros.`, 'success');
-        await carregarSolicitacoesPendentes();
-        
-    } catch (error) {
-        console.error('❌ Erro ao corrigir solicitações:', error);
-        mostrarNotificacao('❌ Erro ao corrigir: ' + error.message, 'error');
-    }
-}
-
-// ==================== FUNÇÃO DE TESTE ====================
-
-async function criarSolicitacaoTeste() {
-    const nome = prompt('Digite o nome do usuário de teste:');
-    const email = prompt('Digite o e-mail do usuário de teste:');
-    const senha = prompt('Digite a senha (mínimo 6 caracteres):');
-
-    if (!nome || !email || !senha) {
-        alert('Todos os campos são obrigatórios!');
-        return;
-    }
-
-    if (senha.length < 6) {
-        alert('A senha deve ter pelo menos 6 caracteres.');
-        return;
-    }
-
-    try {
-        // Criar usuário no Auth primeiro
-        const userCred = await auth.createUserWithEmailAndPassword(email, senha);
-        const uid = userCred.user.uid;
-        await auth.signOut();
-
-        // Criar solicitação com o UID real
-        await db.collection(SOLICITACOES_COLLECTION).doc(uid).set({
-            uid: uid,
-            nome: nome,
-            email: email,
-            telefone: '(83) 99999-9999',
-            empresa: 'Empresa Teste',
-            cargo: 'Analista',
-            motivo: 'Teste de solicitação',
-            status: 'pendente',
-            senha: senha,
-            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-            criadoPor: 'anonimo',
-            criadoPorNome: nome,
-            tipoSolicitado: 'admin'
-        });
-
-        // Criar usuário como solicitante
-        await db.collection('usuarios').doc(uid).set({
-            uid: uid,
-            nome: nome,
-            email: email,
-            tipo: 'solicitante',
-            aprovado: false,
-            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-            solicitaAprovacao: true,
-            solicitacaoId: uid
-        });
-
-        mostrarNotificacaoSucessoComRedirecionamento({
-            nome: nome,
-            email: email
-        });
-
-        await auth.signOut();
-        await carregarSolicitacoesPendentes();
-
-    } catch (error) {
-        console.error('❌ Erro:', error);
-        mostrarNotificacao('Erro: ' + error.message, 'error');
-    }
-}
-
 // ==================== EXPOR FUNÇÕES ====================
 
 window.solicitarCadastroAdmin = solicitarCadastroAdmin;
@@ -969,8 +796,6 @@ window.aprovarSolicitacao = aprovarSolicitacao;
 window.rejeitarSolicitacao = rejeitarSolicitacao;
 window.verificarStatusUsuario = verificarStatusUsuario;
 window.iniciarListenerSolicitacoes = iniciarListenerSolicitacoes;
-window.criarSolicitacaoTeste = criarSolicitacaoTeste;
-window.corrigirSolicitacoesPendentes = corrigirSolicitacoesPendentes;
 window.mostrarNotificacao = mostrarNotificacao;
 window.mostrarNotificacaoSucessoComRedirecionamento = mostrarNotificacaoSucessoComRedirecionamento;
 window.fecharNotificacaoEIrParaLogin = fecharNotificacaoEIrParaLogin;

@@ -4155,5 +4155,8 @@ window.limparBloqueiosData = limparBloqueiosData;
 
 // ==================== EXECUTAR VERIFICAÇÃO AO CARREGAR ====================
 document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(verificarAdminExistente, 1000);
+    console.log("📄 Página carregada, aguardando autenticação...");
+    // Iniciar observador de menu
+    setTimeout(iniciarObservadorMenu, 500);
+    // A verificação de admin é feita pelo onAuthStateChanged
 });
