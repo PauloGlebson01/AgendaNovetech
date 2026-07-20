@@ -4,6 +4,87 @@
 // Coleção para armazenar solicitações de cadastro
 const SOLICITACOES_COLLECTION = 'solicitacoesCadastro';
 
+// ==================== CONFIGURAÇÕES DE LIMITE DE ADMINISTRADORES ====================
+const CONFIG_LIMITE_ADMIN = 'configuracoesLimiteAdmin';
+
+// ==================== OBTER LIMITE DE ADMINISTRADORES ====================
+async function getLimiteAdmin() {
+    try {
+        const doc = await db.collection('configuracoes').doc(CONFIG_LIMITE_ADMIN).get();
+        
+        if (doc.exists) {
+            const data = doc.data();
+            return data.limite || 2;
+        } else {
+            // Criar configuração padrão se não existir
+            await db.collection('configuracoes').doc(CONFIG_LIMITE_ADMIN).set({
+                limite: 2,
+                atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return 2;
+        }
+    } catch (error) {
+        console.error("❌ Erro ao obter limite de administradores:", error);
+        return 2; // Valor padrão em caso de erro
+    }
+}
+
+// ==================== ATUALIZAR LIMITE DE ADMINISTRADORES ====================
+async function atualizarLimiteAdmin(novoLimite) {
+    try {
+        if (novoLimite < 1 || novoLimite > 20) {
+            mostrarNotificacao('❌ O limite deve ser entre 1 e 20.', 'error');
+            return false;
+        }
+        
+        await db.collection('configuracoes').doc(CONFIG_LIMITE_ADMIN).set({
+            limite: novoLimite,
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            atualizadoPor: currentUser?.uid || 'sistema',
+            atualizadoPorNome: currentUser?.nome || 'sistema'
+        });
+        
+        mostrarNotificacao('✅ Limite de administradores atualizado para ' + novoLimite, 'success');
+        return true;
+    } catch (error) {
+        console.error("❌ Erro ao atualizar limite de administradores:", error);
+        mostrarNotificacao('❌ Erro ao atualizar limite: ' + error.message, 'error');
+        return false;
+    }
+}
+
+// ==================== VERIFICAR LIMITE DE ADMINISTRADORES ====================
+async function verificarLimiteAdmin() {
+    try {
+        const limite = await getLimiteAdmin();
+        const snapshot = await db.collection('usuarios')
+            .where('tipo', '==', 'admin')
+            .get();
+        
+        const totalAdmins = snapshot.size;
+        const podeCriar = totalAdmins < limite;
+        
+        return {
+            limite: limite,
+            total: totalAdmins,
+            podeCriar: podeCriar,
+            vagas: limite - totalAdmins,
+            mensagem: podeCriar ? 
+                `✅ ${totalAdmins} de ${limite} administradores cadastrados. ${limite - totalAdmins} vaga(s) disponível(eis).` :
+                `❌ Limite de ${limite} administradores atingido. ${totalAdmins} administradores cadastrados.`
+        };
+    } catch (error) {
+        console.error("❌ Erro ao verificar limite:", error);
+        return {
+            limite: 2,
+            total: 0,
+            podeCriar: false,
+            vagas: 0,
+            mensagem: '❌ Erro ao verificar limite de administradores.'
+        };
+    }
+}
+
 // ==================== FUNÇÃO PARA SOLICITAR CADASTRO (CORRIGIDA) ====================
 async function solicitarCadastroAdmin() {
     const nome = document.getElementById('criarNome').value.trim();
@@ -604,7 +685,7 @@ async function carregarSolicitacoesPendentes() {
     }
 }
 
-// ==================== APROVAR SOLICITAÇÃO (VERSÃO CORRIGIDA) ====================
+// ==================== APROVAR SOLICITAÇÃO (VERSÃO CORRIGIDA COM LIMITE CONFIGURÁVEL) ====================
 
 async function aprovarSolicitacao(solicitacaoId) {
     if (!confirm('Deseja aprovar esta solicitação? O usuário terá acesso completo ao sistema.')) {
@@ -612,6 +693,14 @@ async function aprovarSolicitacao(solicitacaoId) {
     }
 
     try {
+        // 🔥 VERIFICAR LIMITE DE ADMINISTRADORES
+        const limiteInfo = await verificarLimiteAdmin();
+        
+        if (!limiteInfo.podeCriar) {
+            mostrarNotificacao(`❌ ${limiteInfo.mensagem}`, 'error');
+            return;
+        }
+
         // Buscar a solicitação completa
         const doc = await db.collection(SOLICITACOES_COLLECTION).doc(solicitacaoId).get();
         if (!doc.exists) {
@@ -671,7 +760,8 @@ async function aprovarSolicitacao(solicitacaoId) {
             console.log(`✅ Usuário atualizado com sucesso: ${userUid}`);
         }
 
-        mostrarNotificacao(`✅ Usuário "${data.nome}" aprovado com sucesso!`, 'success');
+        const novaInfo = await verificarLimiteAdmin();
+        mostrarNotificacao(`✅ Usuário "${data.nome}" aprovado com sucesso!\n\n${novaInfo.mensagem}`, 'success');
         await carregarSolicitacoesPendentes();
 
     } catch (error) {
@@ -796,6 +886,9 @@ window.aprovarSolicitacao = aprovarSolicitacao;
 window.rejeitarSolicitacao = rejeitarSolicitacao;
 window.verificarStatusUsuario = verificarStatusUsuario;
 window.iniciarListenerSolicitacoes = iniciarListenerSolicitacoes;
+window.getLimiteAdmin = getLimiteAdmin;
+window.atualizarLimiteAdmin = atualizarLimiteAdmin;
+window.verificarLimiteAdmin = verificarLimiteAdmin;
 window.mostrarNotificacao = mostrarNotificacao;
 window.mostrarNotificacaoSucessoComRedirecionamento = mostrarNotificacaoSucessoComRedirecionamento;
 window.fecharNotificacaoEIrParaLogin = fecharNotificacaoEIrParaLogin;

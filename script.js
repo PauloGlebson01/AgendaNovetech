@@ -22,6 +22,34 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("✅ Sistema de abas inicializado");
 });
 
+// ==================== OBSERVADOR DE MUTAÇÃO PARA MENUS ====================
+function iniciarObservadorMenu() {
+    // Observar mudanças no DOM para garantir que os menus sejam ocultados
+    const observer = new MutationObserver(function(mutations) {
+        // Verificar se o menu foi renderizado
+        const menuReservas = document.getElementById('menuReservas');
+        if (menuReservas && currentUser) {
+            // Se o menu existe e o usuário está logado, aplicar as regras
+            forcarAtualizacaoMenu(currentUser);
+            // Parar o observer após aplicar
+            observer.disconnect();
+            console.log("✅ Observador de menu finalizado");
+        }
+    });
+    
+    // Observar mudanças no corpo da página
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    
+    // Timeout para evitar loop infinito
+    setTimeout(() => {
+        observer.disconnect();
+        console.log("⏰ Observador de menu finalizado por timeout");
+    }, 5000);
+}
+
 // ==================== VARIÁVEIS GLOBAIS ====================
 let currentUser = null;
 let colaboradoresCache = [];
@@ -162,27 +190,181 @@ const RESERVA_STATUS_TEXT_COLORS = {
     'cancelada': '#dc2626'
 };
 
+// ==================== FUNÇÃO PARA FORÇAR ATUALIZAÇÃO DO MENU (VERSÃO CORRIGIDA) ====================
+function forcarAtualizacaoMenu(userData) {
+    if (!userData) {
+        console.warn("⚠️ userData não fornecido para forcarAtualizacaoMenu");
+        return;
+    }
+    
+    const tipo = userData.tipo || 'colaborador';
+    const isAdmin = tipo === 'admin';
+    
+    console.log(`🔧 Forçando atualização do menu para: ${tipo} (Admin: ${isAdmin})`);
+    
+    // LISTA DE TODOS OS MENUS - Usando IDs exatos do HTML
+    const menuDashboard = document.getElementById('menuDashboard');
+    const menuSolicitacoes = document.getElementById('menuSolicitacoes');
+    const menuReservas = document.getElementById('menuReservas');
+    const menuAgenda = document.getElementById('menuAgenda');
+    const menuColaboradores = document.getElementById('menuColaboradores');
+    const menuVerAgenda = document.getElementById('menuVerAgenda');
+    const menuConfig = document.getElementById('menuConfig');
+    
+    // MENUS APENAS PARA ADMIN (ocultar para colaboradores)
+    if (menuDashboard) {
+        if (isAdmin) {
+            menuDashboard.style.display = 'block';
+            menuDashboard.style.visibility = 'visible';
+            menuDashboard.style.opacity = '1';
+        } else {
+            menuDashboard.style.display = 'none !important';
+            menuDashboard.style.visibility = 'hidden';
+            menuDashboard.style.opacity = '0';
+            menuDashboard.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
+        }
+        console.log(`📌 Dashboard: ${isAdmin ? 'VISÍVEL' : 'OCULTO'}`);
+    }
+    
+    if (menuSolicitacoes) {
+        if (isAdmin) {
+            menuSolicitacoes.style.display = 'block';
+            menuSolicitacoes.style.visibility = 'visible';
+            menuSolicitacoes.style.opacity = '1';
+        } else {
+            menuSolicitacoes.style.display = 'none !important';
+            menuSolicitacoes.style.visibility = 'hidden';
+            menuSolicitacoes.style.opacity = '0';
+            menuSolicitacoes.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
+            const badge = document.getElementById('solicitacoesBadge');
+            if (badge) {
+                badge.style.display = 'none';
+            }
+        }
+        console.log(`📌 Solicitações: ${isAdmin ? 'VISÍVEL' : 'OCULTO'}`);
+    }
+    
+    if (menuColaboradores) {
+        if (isAdmin) {
+            menuColaboradores.style.display = 'block';
+            menuColaboradores.style.visibility = 'visible';
+            menuColaboradores.style.opacity = '1';
+        } else {
+            menuColaboradores.style.display = 'none !important';
+            menuColaboradores.style.visibility = 'hidden';
+            menuColaboradores.style.opacity = '0';
+            menuColaboradores.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
+        }
+        console.log(`📌 Colaboradores: ${isAdmin ? 'VISÍVEL' : 'OCULTO'}`);
+    }
+    
+    if (menuConfig) {
+        if (isAdmin) {
+            menuConfig.style.display = 'block';
+            menuConfig.style.visibility = 'visible';
+            menuConfig.style.opacity = '1';
+        } else {
+            menuConfig.style.display = 'none !important';
+            menuConfig.style.visibility = 'hidden';
+            menuConfig.style.opacity = '0';
+            menuConfig.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
+        }
+        console.log(`📌 Configurações: ${isAdmin ? 'VISÍVEL' : 'OCULTO'}`);
+    }
+    
+    // MENUS PARA TODOS (forçar visibilidade)
+    if (menuReservas) {
+        menuReservas.style.display = 'block';
+        menuReservas.style.visibility = 'visible';
+        menuReservas.style.opacity = '1';
+        menuReservas.setAttribute('style', 'display: block !important; visibility: visible !important; opacity: 1 !important;');
+        console.log(`📌 Reservas: VISÍVEL (todos)`);
+    }
+    
+    if (menuAgenda) {
+        menuAgenda.style.display = 'block';
+        menuAgenda.style.visibility = 'visible';
+        menuAgenda.style.opacity = '1';
+        menuAgenda.setAttribute('style', 'display: block !important; visibility: visible !important; opacity: 1 !important;');
+        console.log(`📌 Gerenciar Agenda: VISÍVEL (todos)`);
+    }
+    
+    if (menuVerAgenda) {
+        menuVerAgenda.style.display = 'block';
+        menuVerAgenda.style.visibility = 'visible';
+        menuVerAgenda.style.opacity = '1';
+        menuVerAgenda.setAttribute('style', 'display: block !important; visibility: visible !important; opacity: 1 !important;');
+        console.log(`📌 Ver Agenda: VISÍVEL (todos)`);
+    }
+    
+    // SE FOR COLABORADOR, ATIVAR A ABA RESERVAS E OCULTAR AS SEÇÕES RESTRITAS
+    if (!isAdmin) {
+        // Ocultar seções restritas
+        const secoesRestritas = ['dashboardSection', 'solicitacoesSection', 'colaboradoresSection', 'configSection'];
+        secoesRestritas.forEach(id => {
+            const secao = document.getElementById(id);
+            if (secao) {
+                secao.style.display = 'none';
+                secao.classList.remove('active');
+            }
+        });
+        
+        // Mostrar apenas seções permitidas
+        const secoesPermitidas = ['reservasSection', 'agendaSection', 'listarSection'];
+        secoesPermitidas.forEach(id => {
+            const secao = document.getElementById(id);
+            if (secao) {
+                secao.style.display = 'block';
+            }
+        });
+        
+        // Ativar a aba Reservas
+        setTimeout(() => {
+            const reservasMenu = document.getElementById('menuReservas');
+            if (reservasMenu) {
+                document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
+                reservasMenu.classList.add('active');
+                const sectionId = reservasMenu.dataset.section + 'Section';
+                document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+                const targetSection = document.getElementById(sectionId);
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                    targetSection.style.display = 'block';
+                }
+                console.log("🔄 Ativando menu Reservas para colaborador");
+            }
+        }, 100);
+    } else {
+        // Para admin, garantir que todas as seções estejam visíveis
+        const todasSecoes = ['dashboardSection', 'solicitacoesSection', 'reservasSection', 'agendaSection', 'colaboradoresSection', 'listarSection', 'configSection'];
+        todasSecoes.forEach(id => {
+            const secao = document.getElementById(id);
+            if (secao) {
+                secao.style.display = '';
+            }
+        });
+    }
+    
+    console.log("✅ Atualização do menu concluída!");
+}
+
 // ==================== VERIFICAÇÃO DE AUTENTICAÇÃO ====================
 auth.onAuthStateChanged(async (user) => {
     console.log("Auth state changed:", user ? user.email : "null");
     
     if (user) {
-        // 🔥 Verificar status do usuário (sistema de aprovação)
         if (typeof verificarStatusUsuario === 'function') {
             const statusResult = await verificarStatusUsuario(user);
             
             if (!statusResult || statusResult.status === 'nao_encontrado') {
-                // Usuário não encontrado ou removido
                 return;
             }
             
             if (statusResult.status === 'solicitante' || statusResult.status === 'rejeitado') {
-                // Usuário não aprovado - já foi deslogado pela função
                 return;
             }
         }
         
-        // Usuário aprovado - continuar fluxo normal
         try {
             const userDoc = await db.collection('usuarios').doc(user.uid).get();
             
@@ -193,28 +375,41 @@ auth.onAuthStateChanged(async (user) => {
                 return;
             }
             
-            currentUser = { uid: user.uid, ...userDoc.data() };
+            const userData = userDoc.data();
+            currentUser = { uid: user.uid, ...userData };
             
-            if (currentUser.tipo !== 'admin') {
+            const isAdmin = userData.tipo === 'admin';
+            const isColaborador = userData.tipo === 'colaborador';
+            
+            if (!isAdmin && !isColaborador) {
                 await auth.signOut();
-                alert("Acesso permitido apenas para administradores.");
+                alert("Acesso permitido apenas para administradores e colaboradores.");
                 return;
             }
             
-            sessionStorage.setItem('userTipo', currentUser.tipo);
-            sessionStorage.setItem('userNome', currentUser.nome);
+            sessionStorage.setItem('userTipo', userData.tipo);
+            sessionStorage.setItem('userNome', userData.nome);
             
             const path = window.location.pathname;
             if (path.includes('index.html') || path === '/' || path.endsWith('/')) {
                 window.location.href = 'admin.html';
             } else if (path.includes('admin.html')) {
                 await carregarAdmin();
-                // 🔥 Carregar solicitações pendentes
-                if (typeof carregarSolicitacoesPendentes === 'function') {
-                    await carregarSolicitacoesPendentes();
-                }
-                if (typeof iniciarListenerSolicitacoes === 'function') {
-                    iniciarListenerSolicitacoes();
+                
+                forcarAtualizacaoMenu(currentUser);
+                
+                setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 100);
+                setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 300);
+                setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 500);
+                setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 1000);
+                
+                if (isAdmin) {
+                    if (typeof carregarSolicitacoesPendentes === 'function') {
+                        await carregarSolicitacoesPendentes();
+                    }
+                    if (typeof iniciarListenerSolicitacoes === 'function') {
+                        iniciarListenerSolicitacoes();
+                    }
                 }
             }
         } catch (error) {
@@ -252,7 +447,6 @@ async function fazerLogin() {
         
         const userData = userDoc.data();
         
-        // Verificar se o usuário está aprovado
         if (userData.aprovado !== true || userData.tipo === 'solicitante' || userData.tipo === 'rejeitado') {
             await auth.signOut();
             if (userData.tipo === 'rejeitado') {
@@ -263,9 +457,9 @@ async function fazerLogin() {
             return;
         }
         
-        if (userData.tipo !== 'admin') {
+        if (userData.tipo !== 'admin' && userData.tipo !== 'colaborador') {
             await auth.signOut();
-            alert('Acesso permitido apenas para administradores.');
+            alert('Acesso permitido apenas para administradores e colaboradores.');
             return;
         }
         
@@ -349,18 +543,17 @@ async function criarContaAdmin() {
           'Ou use o console (F12) e digite: criarAdminInicial()');
 }
 
-// ==================== CRIAÇÃO DE ADMIN (COM LIMITE DE 2 - SILENCIOSO) ====================
+// ==================== CRIAÇÃO DE ADMIN (COM LIMITE CONFIGURÁVEL) ====================
 async function criarAdminInicial() {
-    // 🔥 VERIFICAR LIMITE DE ADMINISTRADORES (SILENCIOSO)
     try {
-        const snapshot = await db.collection('usuarios')
-            .where('tipo', '==', 'admin')
-            .get();
+        const limiteInfo = await verificarLimiteAdmin();
         
-        if (snapshot.size >= 2) {
-            alert(`❌ Limite de administradores atingido!\n\nJá existem ${snapshot.size} administradores cadastrados.\nO sistema permite no máximo 2 administradores.`);
+        if (!limiteInfo.podeCriar) {
+            alert(`❌ Limite de administradores atingido!\n\n${limiteInfo.mensagem}`);
             return;
         }
+        
+        alert(`ℹ️ Limite atual: ${limiteInfo.limite} administradores\n\n${limiteInfo.mensagem}`);
     } catch (error) {
         console.error("Erro ao verificar limite:", error);
         alert("❌ Erro ao verificar limite de administradores: " + error.message);
@@ -382,13 +575,9 @@ async function criarAdminInicial() {
     if (!nome) return;
 
     try {
-        // Verificar novamente antes de criar (segurança extra)
-        const checkSnapshot = await db.collection('usuarios')
-            .where('tipo', '==', 'admin')
-            .get();
-        
-        if (checkSnapshot.size >= 2) {
-            alert(`❌ Limite de administradores atingido!\n\nJá existem ${checkSnapshot.size} administradores cadastrados.\nO sistema permite no máximo 2 administradores.`);
+        const limiteInfo = await verificarLimiteAdmin();
+        if (!limiteInfo.podeCriar) {
+            alert(`❌ Limite de administradores atingido!\n\n${limiteInfo.mensagem}`);
             return;
         }
 
@@ -405,7 +594,6 @@ async function criarAdminInicial() {
             criadoPor: 'sistema'
         });
 
-        // Salvar também na coleção de solicitações
         await db.collection('solicitacoesCadastro').doc(uid).set({
             uid: uid,
             nome: nome,
@@ -416,7 +604,8 @@ async function criarAdminInicial() {
             aprovadoPor: 'sistema'
         });
 
-        alert(`✅ Administrador criado com sucesso!\n\n📧 Email: ${email}\n🔑 Senha: ${senha}\n👤 Nome: ${nome}\n\nAgora faça login na página principal.`);
+        const novaInfo = await verificarLimiteAdmin();
+        alert(`✅ Administrador criado com sucesso!\n\n📧 Email: ${email}\n🔑 Senha: ${senha}\n👤 Nome: ${nome}\n\n${novaInfo.mensagem}`);
     } catch (error) {
         console.error("Erro ao criar admin:", error);
         if (error.code === 'auth/email-already-in-use') {
@@ -437,12 +626,21 @@ async function criarAdminInicial() {
 
 // ==================== ADMIN ====================
 async function carregarAdmin() {
-    if (!currentUser || currentUser.tipo !== 'admin') {
-        console.log("Usuário não é admin");
+    if (!currentUser) {
+        console.log("⚠️ Usuário não logado");
         return;
     }
     
+    console.log("📋 Carregando admin para:", currentUser.nome, "Tipo:", currentUser.tipo);
+    
     document.getElementById('adminName').textContent = currentUser.nome;
+    
+    // Forçar atualização do menu (múltiplas vezes)
+    forcarAtualizacaoMenu(currentUser);
+    
+    setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 100);
+    setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 300);
+    setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 800);
     
     try {
         const configDoc = await db.collection('configuracoes').doc('geral').get();
@@ -459,12 +657,15 @@ async function carregarAdmin() {
         await carregarConfiguracoesDemanda();
         await carregarConfiguracoesHorarios();
         await carregarBloqueiosHorarios();
+        await carregarConfigLimiteAdmin();
         iniciarListenersRealtime();
-        iniciarDashboard();
+        
+        if (currentUser.tipo === 'admin') {
+            iniciarDashboard();
+        }
         
     } catch (error) {
         console.error("Erro ao carregar admin:", error);
-        alert("Erro ao carregar dados: " + error.message);
     }
     
     iniciarSidebar();
@@ -4083,11 +4284,71 @@ function limparFiltrosReservas() {
     atualizarListaReservas();
 }
 
+// ==================== FUNÇÕES PARA LIMITE DE ADMINISTRADORES ====================
+
+async function carregarConfigLimiteAdmin() {
+    try {
+        const limiteInfo = await verificarLimiteAdmin();
+        
+        const elConfigurado = document.getElementById('limiteAdminConfigurado');
+        const elAtual = document.getElementById('limiteAdminAtual');
+        const elVagas = document.getElementById('limiteAdminVagas');
+        const elStatus = document.getElementById('limiteAdminStatus');
+        const elInput = document.getElementById('configLimiteAdmin');
+        
+        if (elConfigurado) elConfigurado.textContent = limiteInfo.limite;
+        if (elAtual) elAtual.textContent = limiteInfo.total;
+        if (elVagas) elVagas.textContent = limiteInfo.vagas;
+        
+        if (elStatus) {
+            if (limiteInfo.podeCriar) {
+                elStatus.textContent = '✅ Disponível';
+                elStatus.style.color = '#10b981';
+            } else {
+                elStatus.textContent = '❌ Atingido';
+                elStatus.style.color = '#ef4444';
+            }
+        }
+        
+        if (elInput) {
+            elInput.value = limiteInfo.limite;
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar limite:', error);
+    }
+}
+
+async function salvarLimiteAdmin() {
+    const input = document.getElementById('configLimiteAdmin');
+    if (!input) return;
+    
+    const novoLimite = parseInt(input.value);
+    
+    if (isNaN(novoLimite) || novoLimite < 1 || novoLimite > 20) {
+        mostrarNotificacao('❌ O limite deve ser entre 1 e 20.', 'error');
+        return;
+    }
+    
+    const atual = await verificarLimiteAdmin();
+    
+    if (novoLimite < atual.total) {
+        if (!confirm(`⚠️ O novo limite (${novoLimite}) é menor que o número atual de administradores (${atual.total}).\n\nIsso pode impedir novos cadastros. Deseja continuar?`)) {
+            return;
+        }
+    }
+    
+    const sucesso = await atualizarLimiteAdmin(novoLimite);
+    
+    if (sucesso) {
+        await carregarConfigLimiteAdmin();
+    }
+}
+
 // ==================== EXPOR FUNÇÕES GLOBAIS ====================
 window.criarAdminInicial = criarAdminInicial;
 window.trocarAba = trocarAba;
 window.criarContaAdmin = criarContaAdmin;
-window.verificarAdminExistente = verificarAdminExistente;
 window.corrigirDatasEventos = corrigirDatasEventos;
 window.adicionarEvento = adicionarEvento;
 window.editarEvento = editarEvento;
@@ -4153,10 +4414,50 @@ window.bloquearHorario = bloquearHorario;
 window.desbloquearHorario = desbloquearHorario;
 window.limparBloqueiosData = limparBloqueiosData;
 
+window.carregarConfigLimiteAdmin = carregarConfigLimiteAdmin;
+window.salvarLimiteAdmin = salvarLimiteAdmin;
+
+// ==================== VERIFICAR ADMIN EXISTENTE ====================
+async function verificarAdminExistente() {
+    try {
+        const snapshot = await db.collection('usuarios')
+            .where('tipo', '==', 'admin')
+            .get();
+        
+        const adminCount = snapshot.size;
+        const mensagemDiv = document.getElementById('mensagemAdminExistente');
+        
+        if (mensagemDiv) {
+            if (adminCount === 0) {
+                mensagemDiv.innerHTML = `
+                    <div style="margin-top: 16px; padding: 12px; background: #fef3c7; border-radius: 8px; border: 1px solid #fcd34d; text-align: center;">
+                        <i class="fas fa-info-circle" style="color: #d97706;"></i>
+                        <span style="color: #92400e; font-size: 13px;">
+                            Nenhum administrador cadastrado. 
+                            <a href="criar-admin.html" style="color: #2563eb; font-weight: 600; text-decoration: none;">Criar primeiro administrador →</a>
+                        </span>
+                    </div>
+                `;
+            } else if (adminCount >= 2) {
+                mensagemDiv.innerHTML = `
+                    <div style="margin-top: 16px; padding: 12px; background: #fef3c7; border-radius: 8px; border: 1px solid #fcd34d; text-align: center;">
+                        <i class="fas fa-info-circle" style="color: #d97706;"></i>
+                        <span style="color: #92400e; font-size: 13px;">
+                            Limite de administradores atingido (${adminCount}/2).
+                        </span>
+                    </div>
+                `;
+            } else {
+                mensagemDiv.innerHTML = '';
+            }
+        }
+    } catch (error) {
+        console.error("Erro ao verificar administradores:", error);
+    }
+}
+
 // ==================== EXECUTAR VERIFICAÇÃO AO CARREGAR ====================
 document.addEventListener('DOMContentLoaded', function() {
     console.log("📄 Página carregada, aguardando autenticação...");
-    // Iniciar observador de menu
     setTimeout(iniciarObservadorMenu, 500);
-    // A verificação de admin é feita pelo onAuthStateChanged
 });

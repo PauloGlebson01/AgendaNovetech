@@ -565,6 +565,42 @@
                         </div>
                     </div>
 
+                    <!-- ==================== CONFIGURAÇÃO DE LIMITE DE ADMINISTRADORES ==================== -->
+                    <div class="form-card" style="margin-bottom: 30px;">
+                        <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-user-shield" style="color: #8b5cf6;"></i> Limite de Administradores
+                        </h3>
+                        <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                            Defina o número máximo de administradores que podem ser cadastrados no sistema.
+                        </p>
+
+                        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 14px; color: #1e293b;">
+                                    <i class="fas fa-users"></i> Limite Máximo de Administradores
+                                </label>
+                                <input type="number" id="configLimiteAdmin" value="2" min="1" max="20" 
+                                       style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; font-size: 14px; background: #fafbfc;">
+                            </div>
+                            <button class="btn-primary" onclick="salvarLimiteAdmin()" 
+                                    style="width: auto; padding: 12px 32px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); margin-top: 20px;">
+                                <i class="fas fa-save"></i> Salvar Limite
+                            </button>
+                        </div>
+
+                        <div style="margin-top: 16px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                            <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #0f172a;">
+                                <i class="fas fa-info-circle" style="color: #8b5cf6;"></i> Status Atual
+                            </h4>
+                            <div id="displayLimiteAdmin" style="font-size: 14px; color: #475569; line-height: 1.8;">
+                                <div><strong>Limite configurado:</strong> <span id="limiteAdminConfigurado">2</span> administradores</div>
+                                <div><strong>Administradores atuais:</strong> <span id="limiteAdminAtual">0</span></div>
+                                <div><strong>Vagas disponíveis:</strong> <span id="limiteAdminVagas">0</span></div>
+                                <div><strong>Status:</strong> <span id="limiteAdminStatus" style="color: #10b981;">✅ Disponível</span></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Gestão de Horários Disponíveis -->
                     <div class="form-card">
                         <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
