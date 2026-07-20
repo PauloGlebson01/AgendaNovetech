@@ -88,6 +88,40 @@
             const btnCriar = document.getElementById('btnCriar');
             const statusDiv = document.getElementById('status');
             
+            // ==================== VERIFICAR LIMITE DE ADMINISTRADORES ====================
+            async function verificarLimiteAdmin() {
+                try {
+                    const snapshot = await db.collection('usuarios')
+                        .where('tipo', '==', 'admin')
+                        .get();
+                    return snapshot.size;
+                } catch (error) {
+                    console.error("❌ Erro ao verificar limite:", error);
+                    return -1;
+                }
+            }
+
+            // ==================== ATUALIZAR ESTADO DO BOTÃO ====================
+            async function atualizarEstadoBotao() {
+                const total = await verificarLimiteAdmin();
+                if (total >= 2) {
+                    btnCriar.disabled = true;
+                    btnCriar.style.opacity = '0.5';
+                    btnCriar.style.cursor = 'not-allowed';
+                    btnCriar.title = 'Limite de administradores atingido';
+                } else {
+                    btnCriar.disabled = false;
+                    btnCriar.style.opacity = '1';
+                    btnCriar.style.cursor = 'pointer';
+                    btnCriar.title = '';
+                }
+                return total;
+            }
+
+            // ==================== EXECUTAR VERIFICAÇÃO INICIAL ====================
+            setTimeout(atualizarEstadoBotao, 500);
+
+            // ==================== CLICK DO BOTÃO ====================
             btnCriar.addEventListener('click', async function() {
                 const nome = document.getElementById('nome').value.trim();
                 const email = document.getElementById('email').value.trim();
@@ -131,29 +165,33 @@
                 const btn = this;
                 const textoOriginal = btn.innerHTML;
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando administrador...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
                 
                 try {
-                    // Verificar se já existe admin
-                    const adminCheck = await db.collection('usuarios')
-                        .where('tipo', '==', 'admin')
-                        .limit(1)
-                        .get();
+                    // 🔥 VERIFICAR LIMITE DE ADMINISTRADORES
+                    const totalAdmins = await verificarLimiteAdmin();
                     
-                    if (!adminCheck.empty) {
+                    if (totalAdmins >= 2) {
                         statusDiv.style.display = 'block';
                         statusDiv.className = 'status-warning';
                         statusDiv.innerHTML = `
                             <i class="fas fa-exclamation-triangle"></i> 
-                            Já existe um administrador no sistema!<br>
-                            <span style="font-size: 13px;">Use a página de login para acessar o sistema.</span>
+                            <strong>Limite de administradores atingido!</strong><br>
+                            <span style="font-size: 13px;">
+                                O sistema permite no máximo <strong>2</strong> administradores. 
+                                Já existem ${totalAdmins} administradores cadastrados.
+                            </span>
                             <br><br>
                             <a href="index.html" style="color: #2563eb; font-weight: 600;">Ir para o Login →</a>
                         `;
                         btn.disabled = false;
                         btn.innerHTML = textoOriginal;
+                        atualizarEstadoBotao();
                         return;
                     }
+
+                    // ==================== CONTINUAR COM A CRIAÇÃO ====================
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando administrador...';
                     
                     // Criar usuário no Authentication
                     const userCred = await auth.createUserWithEmailAndPassword(email, senha);
@@ -205,6 +243,9 @@
                     document.getElementById('email').value = '';
                     document.getElementById('senha').value = '';
                     document.getElementById('senhaConfirm').value = '';
+                    
+                    // Atualizar estado do botão
+                    atualizarEstadoBotao();
                     
                 } catch (error) {
                     console.error('❌ Erro:', error);

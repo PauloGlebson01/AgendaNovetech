@@ -209,11 +209,11 @@ auth.onAuthStateChanged(async (user) => {
                 window.location.href = 'admin.html';
             } else if (path.includes('admin.html')) {
                 await carregarAdmin();
-                // 🔥 Carregar solicitações pendentes
-                if (typeof carregarSolicitacoesPendentes === 'function') {
+                // 🔥 Carregar solicitações pendentes (apenas admin)
+                if (currentUser.tipo === 'admin' && typeof carregarSolicitacoesPendentes === 'function') {
                     await carregarSolicitacoesPendentes();
                 }
-                if (typeof iniciarListenerSolicitacoes === 'function') {
+                if (currentUser.tipo === 'admin' && typeof iniciarListenerSolicitacoes === 'function') {
                     iniciarListenerSolicitacoes();
                 }
             }
@@ -349,6 +349,92 @@ async function criarContaAdmin() {
           'Ou use o console (F12) e digite: criarAdminInicial()');
 }
 
+// ==================== CRIAÇÃO DE ADMIN (COM LIMITE DE 2 - SILENCIOSO) ====================
+async function criarAdminInicial() {
+    // 🔥 VERIFICAR LIMITE DE ADMINISTRADORES (SILENCIOSO)
+    try {
+        const snapshot = await db.collection('usuarios')
+            .where('tipo', '==', 'admin')
+            .get();
+        
+        if (snapshot.size >= 2) {
+            alert(`❌ Limite de administradores atingido!\n\nJá existem ${snapshot.size} administradores cadastrados.\nO sistema permite no máximo 2 administradores.`);
+            return;
+        }
+    } catch (error) {
+        console.error("Erro ao verificar limite:", error);
+        alert("❌ Erro ao verificar limite de administradores: " + error.message);
+        return;
+    }
+
+    const email = prompt('Digite o e-mail do administrador:');
+    if (!email) return;
+    
+    const senha = prompt('Digite a senha (mínimo 6 caracteres):');
+    if (!senha) return;
+    
+    if (senha.length < 6) {
+        alert('A senha deve ter pelo menos 6 caracteres.');
+        return;
+    }
+    
+    const nome = prompt('Digite o nome completo:');
+    if (!nome) return;
+
+    try {
+        // Verificar novamente antes de criar (segurança extra)
+        const checkSnapshot = await db.collection('usuarios')
+            .where('tipo', '==', 'admin')
+            .get();
+        
+        if (checkSnapshot.size >= 2) {
+            alert(`❌ Limite de administradores atingido!\n\nJá existem ${checkSnapshot.size} administradores cadastrados.\nO sistema permite no máximo 2 administradores.`);
+            return;
+        }
+
+        const userCred = await auth.createUserWithEmailAndPassword(email, senha);
+        const uid = userCred.user.uid;
+        
+        await db.collection('usuarios').doc(uid).set({
+            uid: uid,
+            nome: nome,
+            email: email,
+            tipo: 'admin',
+            aprovado: true,
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            criadoPor: 'sistema'
+        });
+
+        // Salvar também na coleção de solicitações
+        await db.collection('solicitacoesCadastro').doc(uid).set({
+            uid: uid,
+            nome: nome,
+            email: email,
+            status: 'aprovado',
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            aprovadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            aprovadoPor: 'sistema'
+        });
+
+        alert(`✅ Administrador criado com sucesso!\n\n📧 Email: ${email}\n🔑 Senha: ${senha}\n👤 Nome: ${nome}\n\nAgora faça login na página principal.`);
+    } catch (error) {
+        console.error("Erro ao criar admin:", error);
+        if (error.code === 'auth/email-already-in-use') {
+            alert('Este e-mail já está em uso. Tente outro e-mail.');
+        } else if (error.code === 'auth/weak-password') {
+            alert('A senha é muito fraca. Use pelo menos 6 caracteres.');
+        } else if (error.code === 'permission-denied' || (error.message && error.message.includes('Missing or insufficient permissions'))) {
+            alert('❌ Erro de permissão no banco de dados.\n\n' +
+                  'Para criar o primeiro administrador, ajuste as regras de segurança do Firestore no Firebase Console:\n\n' +
+                  '1. Acesse Firebase Console → Firestore → Regras\n' +
+                  '2. Adicione uma regra que permita criação de usuários\n' +
+                  '3. Ou crie o usuário manualmente no Firebase Console');
+        } else {
+            alert('Erro: ' + error.message);
+        }
+    }
+}
+
 // ==================== ADMIN ====================
 async function carregarAdmin() {
     if (!currentUser || currentUser.tipo !== 'admin') {
@@ -357,6 +443,19 @@ async function carregarAdmin() {
     }
     
     document.getElementById('adminName').textContent = currentUser.nome;
+    
+    // ==================== CONTROLE DE MENU SOLICITAÇÕES ====================
+    // Apenas administradores (tipo 'admin') veem o menu de solicitações
+    const menuSolicitacoes = document.getElementById('menuSolicitacoes');
+    if (menuSolicitacoes) {
+        if (currentUser.tipo === 'admin') {
+            menuSolicitacoes.style.display = 'block';
+            console.log("✅ Menu Solicitações visível para administrador");
+        } else {
+            menuSolicitacoes.style.display = 'none';
+            console.log("🔒 Menu Solicitações oculto para colaborador");
+        }
+    }
     
     try {
         const configDoc = await db.collection('configuracoes').doc('geral').get();
@@ -3600,52 +3699,6 @@ async function corrigirDatasEventos() {
     } catch (error) {
         console.error("❌ Erro ao corrigir datas:", error);
         alert("❌ Erro ao corrigir datas: " + error.message);
-    }
-}
-
-// ==================== CRIAÇÃO DE ADMIN ====================
-async function criarAdminInicial() {
-    const email = prompt('Digite o e-mail do administrador:');
-    const senha = prompt('Digite a senha (mínimo 6 caracteres):');
-    const nome = prompt('Digite o nome completo:');
-
-    if (!email || !senha || !nome) {
-        alert('Todos os campos são obrigatórios!');
-        return;
-    }
-
-    if (senha.length < 6) {
-        alert('A senha deve ter pelo menos 6 caracteres.');
-        return;
-    }
-
-    try {
-        const userCred = await auth.createUserWithEmailAndPassword(email, senha);
-        
-        await db.collection('usuarios').doc(userCred.user.uid).set({
-            uid: userCred.user.uid,
-            nome: nome,
-            email: email,
-            tipo: 'admin',
-            aprovado: true,
-            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-            criadoPor: 'sistema'
-        });
-
-        alert(`✅ Administrador criado com sucesso!\n\n📧 Email: ${email}\n🔑 Senha: ${senha}\n👤 Nome: ${nome}\n\nAgora faça login na página principal.`);
-    } catch (error) {
-        console.error("Erro ao criar admin:", error);
-        if (error.code === 'auth/email-already-in-use') {
-            alert('Este e-mail já está em uso. Tente outro e-mail.');
-        } else if (error.code === 'permission-denied' || (error.message && error.message.includes('Missing or insufficient permissions'))) {
-            alert('❌ Erro de permissão no banco de dados.\n\n' +
-                  'Para criar o primeiro administrador, ajuste as regras de segurança do Firestore no Firebase Console:\n\n' +
-                  '1. Acesse Firebase Console → Firestore → Regras\n' +
-                  '2. Adicione uma regra que permita criação de usuários\n' +
-                  '3. Ou crie o usuário manualmente no Firebase Console');
-        } else {
-            alert('Erro: ' + error.message);
-        }
     }
 }
 

@@ -37,7 +37,8 @@
                     <li class="active" data-section="dashboard">
                         <i class="fas fa-chart-pie"></i> Dashboard
                     </li>
-                    <li data-section="solicitacoes">
+                    <!-- ==================== MENU SOLICITAÇÕES (APENAS ADMIN) ==================== -->
+                    <li id="menuSolicitacoes" data-section="solicitacoes" style="display: none;">
                         <i class="fas fa-user-plus"></i> 
                         Solicitações
                         <span id="solicitacoesBadge" style="
@@ -178,7 +179,7 @@
                     </div>
                 </section>
 
-                <!-- Seção: Solicitações de Cadastro -->
+                <!-- Seção: Solicitações de Cadastro (APENAS ADMIN) -->
                 <section id="solicitacoesSection" class="section">
                     <h2><i class="fas fa-user-plus"></i> Solicitações de Cadastro</h2>
                     
@@ -946,6 +947,5 @@
     <script src="script.js"></script>
     <script src="admin-approval.js"></script>
 </body>
-
 
 </html>
