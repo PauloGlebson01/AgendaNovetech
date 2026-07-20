@@ -20,8 +20,7 @@
             <div class="logo">
                 <img src="asstes/9Tech-perfil.jpg" alt="Novetech" class="logo-img" onerror="this.style.display='none';">
                 <i class="fas fa-calendar-alt" style="color: #2563eb; font-size: 24px;"></i>
-                <span style="font-weight: 700; font-size: 20px; color: #0f172a;">Agenda<span
-                        style="color: #2563eb;">Novetech</span></span>
+                <span style="font-weight: 700; font-size: 20px; color: #0f172a;">Agenda<span style="color: #2563eb;">Novetech</span></span>
             </div>
             <div class="user-info">
                 <i class="fas fa-user-shield"></i>
@@ -34,11 +33,13 @@
         <div class="dashboard">
             <aside class="sidebar">
                 <ul>
-                    <li class="active" data-section="dashboard">
+                    <!-- ==================== MENU DASHBOARD (APENAS ADMIN) ==================== -->
+                    <li id="menuDashboard" data-section="dashboard" style="display: none !important;">
                         <i class="fas fa-chart-pie"></i> Dashboard
                     </li>
+                    
                     <!-- ==================== MENU SOLICITAÇÕES (APENAS ADMIN) ==================== -->
-                    <li id="menuSolicitacoes" data-section="solicitacoes" style="display: none;">
+                    <li id="menuSolicitacoes" data-section="solicitacoes" style="display: none !important;">
                         <i class="fas fa-user-plus"></i> 
                         Solicitações
                         <span id="solicitacoesBadge" style="
@@ -54,26 +55,36 @@
                             text-align: center;
                         ">0</span>
                     </li>
-                    <li data-section="reservas">
+
+                    <!-- ==================== MENU RESERVAS (TODOS) ==================== -->
+                    <li id="menuReservas" data-section="reservas">
                         <i class="fas fa-door-open"></i> Reservas de Salas
                     </li>
-                    <li data-section="agenda">
+
+                    <!-- ==================== MENU GERENCIAR AGENDA (TODOS) ==================== -->
+                    <li id="menuAgenda" data-section="agenda">
                         <i class="fas fa-calendar-plus"></i> Gerenciar Agenda
                     </li>
-                    <li data-section="colaboradores">
+
+                    <!-- ==================== MENU COLABORADORES (APENAS ADMIN) ==================== -->
+                    <li id="menuColaboradores" data-section="colaboradores" style="display: none !important;">
                         <i class="fas fa-users"></i> Colaboradores
                     </li>
-                    <li data-section="listar">
+
+                    <!-- ==================== MENU VER AGENDA (TODOS) ==================== -->
+                    <li id="menuVerAgenda" data-section="listar">
                         <i class="fas fa-list"></i> Ver Agenda
                     </li>
-                    <li data-section="config">
+
+                    <!-- ==================== MENU CONFIGURAÇÕES (APENAS ADMIN) ==================== -->
+                    <li id="menuConfig" data-section="config" style="display: none !important;">
                         <i class="fas fa-sliders-h"></i> Configurações
                     </li>
                 </ul>
             </aside>
             <main class="main-content">
-                <!-- Seção: Dashboard -->
-                <section id="dashboardSection" class="section active">
+                <!-- Seção: Dashboard (APENAS ADMIN) -->
+                <section id="dashboardSection" class="section">
                     <h2><i class="fas fa-chart-pie"></i> Dashboard</h2>
 
                     <!-- Filtros de Período -->
@@ -138,10 +149,8 @@
                         <!-- Colaboradores em Férias -->
                         <div class="proximos-eventos">
                             <h3 style="display: flex; justify-content: space-between; align-items: center;">
-                                <span><i class="fas fa-umbrella-beach" style="color: #f59e0b;"></i> Profissionais em
-                                    Férias</span>
-                                <button class="btn-sm btn-info" onclick="abrirModalFerias()"
-                                    style="font-size: 12px; padding: 4px 12px;">
+                                <span><i class="fas fa-umbrella-beach" style="color: #f59e0b;"></i> Profissionais em Férias</span>
+                                <button class="btn-sm btn-info" onclick="abrirModalFerias()" style="font-size: 12px; padding: 4px 12px;">
                                     <i class="fas fa-plus"></i> Adicionar
                                 </button>
                             </h3>
@@ -199,7 +208,7 @@
                 </section>
 
                 <!-- Seção: Reservas de Salas -->
-                <section id="reservasSection" class="section">
+                <section id="reservasSection" class="section active">
                     <h2><i class="fas fa-door-open"></i> Reservas de Salas</h2>
                     
                     <!-- Filtros e Status -->
@@ -291,8 +300,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label><i class="fas fa-comment"></i> Título / Assunto <span
-                                    class="required">*</span></label>
+                            <label><i class="fas fa-comment"></i> Título / Assunto <span class="required">*</span></label>
                             <input type="text" id="eventoTitulo" placeholder="Ex: Treinamento de Equipe" required>
                         </div>
                         <div class="form-row">
@@ -306,8 +314,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label><i class="fas fa-user-tie"></i> Responsável (Colaborador) <span
-                                    class="required">*</span></label>
+                            <label><i class="fas fa-user-tie"></i> Responsável (Colaborador) <span class="required">*</span></label>
                             <select id="eventoResponsavel" required>
                                 <option value="">Selecione um colaborador...</option>
                             </select>
@@ -336,7 +343,7 @@
                     </div>
                 </section>
 
-                <!-- Seção: Colaboradores -->
+                <!-- Seção: Colaboradores (APENAS ADMIN) -->
                 <section id="colaboradoresSection" class="section">
                     <h2><i class="fas fa-users"></i> Gerenciar Colaboradores</h2>
 
@@ -367,8 +374,7 @@
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-info-circle"></i> Observações</label>
-                            <textarea id="colabObservacoes" rows="2"
-                                placeholder="Informações adicionais sobre o colaborador..."></textarea>
+                            <textarea id="colabObservacoes" rows="2" placeholder="Informações adicionais sobre o colaborador..."></textarea>
                         </div>
                         <button class="btn-primary" onclick="cadastrarColaborador()">
                             <i class="fas fa-save"></i> Cadastrar Colaborador
@@ -387,10 +393,8 @@
                     <h2><i class="fas fa-list"></i> Agenda de Eventos</h2>
                     <div style="margin: 20px 0;">
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                            <input type="date" id="filtroData"
-                                style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
-                            <select id="filtroStatus"
-                                style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; min-width: 160px;">
+                            <input type="date" id="filtroData" style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                            <select id="filtroStatus" style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; min-width: 160px;">
                                 <option value="">Todos os status</option>
                                 <option value="designado">📋 Designado</option>
                                 <option value="em_andamento">🔄 Em Andamento</option>
@@ -403,8 +407,7 @@
                             <button class="btn-sm btn-cancelar" onclick="limparFiltros()">
                                 <i class="fas fa-undo"></i> Limpar
                             </button>
-                            <button class="btn-sm" style="background: #2563eb; color: white;"
-                                onclick="verAgendaPublica()">
+                            <button class="btn-sm" style="background: #2563eb; color: white;" onclick="verAgendaPublica()">
                                 <i class="fas fa-external-link-alt"></i> Ver Página Pública
                             </button>
                         </div>
@@ -421,8 +424,7 @@
                             <button class="btn-sm btn-cancelado" onclick="filtrarPorStatus('cancelado')">
                                 ❌ Cancelados
                             </button>
-                            <button class="btn-sm" style="background: #f1f5f9; color: #475569;"
-                                onclick="limparFiltros()">
+                            <button class="btn-sm" style="background: #f1f5f9; color: #475569;" onclick="limparFiltros()">
                                 <i class="fas fa-undo"></i> Todos
                             </button>
                         </div>
@@ -455,7 +457,7 @@
                     <div id="listaEventosAdmin" class="cards-grid"></div>
                 </section>
 
-                <!-- Seção: Configurações -->
+                <!-- Seção: Configurações (APENAS ADMIN) -->
                 <section id="configSection" class="section">
                     <h2><i class="fas fa-sliders-h"></i> Configurações da Agenda</h2>
                     
@@ -641,9 +643,7 @@
                             </p>
                             
                             <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                                <input type="date" id="bloqueioData" 
-                                       onchange="atualizarSelectBloqueioHorarios()"
-                                       style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                                <input type="date" id="bloqueioData" onchange="atualizarSelectBloqueioHorarios()" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
                                 <select id="bloqueioHorario" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; min-width: 180px;">
                                     <option value="">Selecione uma data primeiro...</option>
                                 </select>
@@ -764,14 +764,12 @@
 
                 <div class="form-group">
                     <label><i class="fas fa-info-circle"></i> Observações</label>
-                    <textarea id="editColabObservacoes" rows="2"
-                        placeholder="Informações adicionais sobre o colaborador..."></textarea>
+                    <textarea id="editColabObservacoes" rows="2" placeholder="Informações adicionais sobre o colaborador..."></textarea>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" id="editColabAtivo"
-                            style="width: 18px; height: 18px; accent-color: #2563eb;">
+                        <input type="checkbox" id="editColabAtivo" style="width: 18px; height: 18px; accent-color: #2563eb;">
                         <span>Colaborador ativo</span>
                     </label>
                     <p style="font-size: 12px; color: #94a3b8; margin-top: 4px; margin-left: 28px;">
@@ -942,7 +940,6 @@
         </div>
     </div>
 
-    
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
     <script src="admin-approval.js"></script>

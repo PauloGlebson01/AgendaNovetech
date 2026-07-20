@@ -209,11 +209,11 @@ auth.onAuthStateChanged(async (user) => {
                 window.location.href = 'admin.html';
             } else if (path.includes('admin.html')) {
                 await carregarAdmin();
-                // 🔥 Carregar solicitações pendentes (apenas admin)
-                if (currentUser.tipo === 'admin' && typeof carregarSolicitacoesPendentes === 'function') {
+                // 🔥 Carregar solicitações pendentes
+                if (typeof carregarSolicitacoesPendentes === 'function') {
                     await carregarSolicitacoesPendentes();
                 }
-                if (currentUser.tipo === 'admin' && typeof iniciarListenerSolicitacoes === 'function') {
+                if (typeof iniciarListenerSolicitacoes === 'function') {
                     iniciarListenerSolicitacoes();
                 }
             }
@@ -443,19 +443,6 @@ async function carregarAdmin() {
     }
     
     document.getElementById('adminName').textContent = currentUser.nome;
-    
-    // ==================== CONTROLE DE MENU SOLICITAÇÕES ====================
-    // Apenas administradores (tipo 'admin') veem o menu de solicitações
-    const menuSolicitacoes = document.getElementById('menuSolicitacoes');
-    if (menuSolicitacoes) {
-        if (currentUser.tipo === 'admin') {
-            menuSolicitacoes.style.display = 'block';
-            console.log("✅ Menu Solicitações visível para administrador");
-        } else {
-            menuSolicitacoes.style.display = 'none';
-            console.log("🔒 Menu Solicitações oculto para colaborador");
-        }
-    }
     
     try {
         const configDoc = await db.collection('configuracoes').doc('geral').get();

@@ -70,12 +70,45 @@ async function solicitarCadastroAdmin() {
             return;
         }
 
-        // Gerar um UID temporário
-        const tempUid = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        // 🔥 PASSO 1: CRIAR USUÁRIO NO AUTH PRIMEIRO (obter UID real)
+        let uid = null;
+        try {
+            const userCred = await auth.createUserWithEmailAndPassword(email, senha);
+            uid = userCred.user.uid;
+            console.log(`✅ Usuário criado no Auth com UID: ${uid}`);
+            
+            // 🔥 DESLOGAR IMEDIATAMENTE
+            await auth.signOut();
+        } catch (authError) {
+            if (authError.code === 'auth/email-already-in-use') {
+                // Se o e-mail já existe no Auth, tentamos encontrar o UID
+                try {
+                    // Tentar fazer login para obter o UID
+                    const userCred = await auth.signInWithEmailAndPassword(email, senha);
+                    uid = userCred.user.uid;
+                    await auth.signOut();
+                    console.log(`✅ Usuário já existia no Auth, UID: ${uid}`);
+                } catch (loginError) {
+                    mostrarNotificacao('❌ Este e-mail já está em uso. Tente outro e-mail ou faça login.', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = textoOriginal;
+                    return;
+                }
+            } else {
+                throw authError;
+            }
+        }
 
-        // 1. SALVAR SOLICITAÇÃO
-        await db.collection(SOLICITACOES_COLLECTION).doc(tempUid).set({
-            uid: tempUid,
+        if (!uid) {
+            mostrarNotificacao('❌ Erro ao criar usuário: UID não obtido.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+            return;
+        }
+
+        // 🔥 PASSO 2: SALVAR SOLICITAÇÃO COM O UID REAL (NÃO TEMPORÁRIO)
+        await db.collection(SOLICITACOES_COLLECTION).doc(uid).set({
+            uid: uid,
             nome: nome,
             email: email,
             telefone: telefone || '',
@@ -90,18 +123,7 @@ async function solicitarCadastroAdmin() {
             tipoSolicitado: 'admin'
         });
 
-        // 2. CRIAR USUÁRIO NO AUTH
-        const userCred = await auth.createUserWithEmailAndPassword(email, senha);
-        const uid = userCred.user.uid;
-
-        // 3. ATUALIZAR SOLICITAÇÃO COM O UID REAL
-        await db.collection(SOLICITACOES_COLLECTION).doc(tempUid).update({
-            uid: uid,
-            authUid: uid,
-            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        // 4. SALVAR USUÁRIO COMO SOLICITANTE
+        // 🔥 PASSO 3: SALVAR USUÁRIO COMO SOLICITANTE
         await db.collection('usuarios').doc(uid).set({
             uid: uid,
             nome: nome,
@@ -113,10 +135,10 @@ async function solicitarCadastroAdmin() {
             cargo: cargo || '',
             criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
             solicitaAprovacao: true,
-            solicitacaoId: tempUid
+            solicitacaoId: uid
         });
 
-        // 🔥 RESTAURAR BOTÃO IMEDIATAMENTE
+        // Restaurar botão
         btn.disabled = false;
         btn.innerHTML = textoOriginal;
 
@@ -130,25 +152,15 @@ async function solicitarCadastroAdmin() {
         if (document.getElementById('criarCargo')) document.getElementById('criarCargo').value = '';
         if (document.getElementById('criarMotivo')) document.getElementById('criarMotivo').value = '';
 
-        // 🔥 MOSTRA NOTIFICAÇÃO DE SUCESSO
+        // Mostrar notificação de sucesso
         mostrarNotificacaoSucessoComRedirecionamento({
             nome: nome,
             email: email
         });
 
-        // 🔥 DESLOGAR O USUÁRIO (SEM TRAVAR O BOTÃO)
-        try {
-            await auth.signOut();
-        } catch (signOutError) {
-            console.warn('⚠️ Erro ao deslogar (ignorado):', signOutError);
-        }
-
-        // O redirecionamento será feito pela função de notificação ou pelo botão
-
     } catch (error) {
         console.error('❌ Erro ao solicitar cadastro:', error);
         
-        // RESTAURAR BOTÃO EM CASO DE ERRO
         btn.disabled = false;
         btn.innerHTML = textoOriginal;
         
@@ -540,10 +552,13 @@ async function carregarSolicitacoesPendentes() {
                         <p style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
                             <i class="fas fa-clock"></i> Solicitado em: ${dataStr} às ${horaStr}
                         </p>
+                        <p style="font-size: 10px; color: #94a3b8; word-break: break-all;">
+                            <i class="fas fa-id-badge"></i> UID: ${s.uid || 'N/A'}
+                        </p>
                     </div>
                 </div>
                 <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button class="btn-sm btn-aprovar" onclick="aprovarSolicitacao('${s.id}', '${s.authUid || s.uid}')">
+                    <button class="btn-sm btn-aprovar" onclick="aprovarSolicitacao('${s.id}')">
                         <i class="fas fa-check"></i> Aprovar
                     </button>
                     <button class="btn-sm btn-rejeitar" onclick="rejeitarSolicitacao('${s.id}', '${s.nome || 'Usuário'}')">
@@ -584,26 +599,82 @@ async function carregarSolicitacoesPendentes() {
     }
 }
 
-async function aprovarSolicitacao(solicitacaoId, uid) {
+// ==================== APROVAR SOLICITAÇÃO (VERSÃO CORRIGIDA) ====================
+
+async function aprovarSolicitacao(solicitacaoId) {
     if (!confirm('Deseja aprovar esta solicitação? O usuário terá acesso completo ao sistema.')) {
         return;
     }
 
     try {
+        // Buscar a solicitação completa
         const doc = await db.collection(SOLICITACOES_COLLECTION).doc(solicitacaoId).get();
         if (!doc.exists) {
-            alert('❌ Solicitação não encontrada.');
+            mostrarNotificacao('❌ Solicitação não encontrada.', 'error');
             return;
         }
 
         const data = doc.data();
-        const userUid = data.authUid || data.uid;
-
-        if (!userUid || userUid.startsWith('temp_')) {
-            alert('❌ Usuário não possui UID válido. Solicitação inválida.');
-            return;
+        console.log('📋 Aprovando solicitação:', {
+            id: solicitacaoId,
+            nome: data.nome,
+            email: data.email,
+            uid: data.uid
+        });
+        
+        // 🔥 O UID É O ID DO DOCUMENTO (já é o UID real do Auth)
+        const userUid = solicitacaoId;
+        
+        // 🔥 VERIFICAR SE O USUÁRIO EXISTE NO AUTH
+        let userExistsInAuth = false;
+        try {
+            // Tentar fazer login para verificar
+            if (data.senha) {
+                const userCred = await auth.signInWithEmailAndPassword(data.email, data.senha);
+                userExistsInAuth = true;
+                await auth.signOut();
+                console.log(`✅ Usuário existe no Auth: ${userCred.user.uid}`);
+            }
+        } catch (loginError) {
+            console.warn('⚠️ Usuário não existe no Auth ou senha incorreta:', loginError.message);
+            
+            // 🔥 RECRIAR O USUÁRIO NO AUTH
+            if (confirm('⚠️ O usuário não foi encontrado no sistema de autenticação. Deseja recriá-lo?')) {
+                try {
+                    // Tentar criar o usuário novamente
+                    const userCred = await auth.createUserWithEmailAndPassword(data.email, data.senha);
+                    const newUid = userCred.user.uid;
+                    
+                    if (newUid !== userUid) {
+                        // Se o UID mudou, atualizar a solicitação
+                        await db.collection(SOLICITACOES_COLLECTION).doc(newUid).set({
+                            ...data,
+                            uid: newUid,
+                            criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        await db.collection(SOLICITACOES_COLLECTION).doc(userUid).delete();
+                        
+                        // Atualizar o ID para o novo
+                        mostrarNotificacao(`✅ Usuário recriado com sucesso! Agora use o botão Aprovar novamente.`, 'success');
+                        await carregarSolicitacoesPendentes();
+                        return;
+                    }
+                    
+                    userExistsInAuth = true;
+                    await auth.signOut();
+                    console.log(`✅ Usuário recriado com sucesso: ${newUid}`);
+                } catch (createError) {
+                    console.error('❌ Erro ao recriar usuário:', createError);
+                    mostrarNotificacao('❌ Erro ao recriar usuário: ' + createError.message, 'error');
+                    return;
+                }
+            } else {
+                mostrarNotificacao('❌ Não é possível aprovar sem um usuário válido no Authentication.', 'error');
+                return;
+            }
         }
 
+        // 🔥 1. ATUALIZAR SOLICITAÇÃO
         await db.collection(SOLICITACOES_COLLECTION).doc(solicitacaoId).update({
             status: 'aprovado',
             aprovadoEm: firebase.firestore.FieldValue.serverTimestamp(),
@@ -611,13 +682,38 @@ async function aprovarSolicitacao(solicitacaoId, uid) {
             aprovadoPorNome: currentUser.nome
         });
 
-        await db.collection('usuarios').doc(userUid).update({
-            tipo: 'admin',
-            aprovado: true,
-            aprovadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-            aprovadoPor: currentUser.uid,
-            aprovadoPorNome: currentUser.nome
-        });
+        // 🔥 2. ATUALIZAR OU CRIAR USUÁRIO
+        const userRef = db.collection('usuarios').doc(userUid);
+        const userDoc = await userRef.get();
+        
+        if (!userDoc.exists) {
+            // Criar usuário se não existir
+            await userRef.set({
+                uid: userUid,
+                nome: data.nome,
+                email: data.email,
+                telefone: data.telefone || '',
+                empresa: data.empresa || '',
+                cargo: data.cargo || '',
+                tipo: 'admin',
+                aprovado: true,
+                aprovadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                aprovadoPor: currentUser.uid,
+                aprovadoPorNome: currentUser.nome,
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log(`✅ Usuário criado com sucesso: ${userUid}`);
+        } else {
+            // Atualizar usuário existente
+            await userRef.update({
+                tipo: 'admin',
+                aprovado: true,
+                aprovadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                aprovadoPor: currentUser.uid,
+                aprovadoPorNome: currentUser.nome
+            });
+            console.log(`✅ Usuário atualizado com sucesso: ${userUid}`);
+        }
 
         mostrarNotificacao(`✅ Usuário "${data.nome}" aprovado com sucesso!`, 'success');
         await carregarSolicitacoesPendentes();
@@ -627,6 +723,8 @@ async function aprovarSolicitacao(solicitacaoId, uid) {
         mostrarNotificacao('❌ Erro ao aprovar: ' + error.message, 'error');
     }
 }
+
+// ==================== REJEITAR SOLICITAÇÃO ====================
 
 async function rejeitarSolicitacao(solicitacaoId, nome) {
     const motivo = prompt(`Digite o motivo da rejeição para "${nome}":`, 'Motivo não informado');
@@ -639,12 +737,11 @@ async function rejeitarSolicitacao(solicitacaoId, nome) {
     try {
         const doc = await db.collection(SOLICITACOES_COLLECTION).doc(solicitacaoId).get();
         if (!doc.exists) {
-            alert('❌ Solicitação não encontrada.');
+            mostrarNotificacao('❌ Solicitação não encontrada.', 'error');
             return;
         }
 
         const data = doc.data();
-        const uid = data.authUid || data.uid;
 
         await db.collection(SOLICITACOES_COLLECTION).doc(solicitacaoId).update({
             status: 'rejeitado',
@@ -654,17 +751,16 @@ async function rejeitarSolicitacao(solicitacaoId, nome) {
             rejeitadoPorNome: currentUser.nome
         });
 
-        if (uid && !uid.startsWith('temp_')) {
-            try {
-                await db.collection('usuarios').doc(uid).update({
-                    tipo: 'rejeitado',
-                    aprovado: false,
-                    motivoRejeicao: motivo,
-                    rejeitadoEm: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } catch (err) {
-                console.warn('⚠️ Usuário não encontrado para atualizar:', err);
-            }
+        try {
+            await db.collection('usuarios').doc(solicitacaoId).update({
+                tipo: 'rejeitado',
+                aprovado: false,
+                motivoRejeicao: motivo,
+                rejeitadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log(`✅ Usuário ${solicitacaoId} marcado como rejeitado`);
+        } catch (err) {
+            console.warn('⚠️ Usuário não encontrado para atualizar:', err);
         }
 
         mostrarNotificacao(`✅ Solicitação de "${nome}" rejeitada.`, 'success');
@@ -736,6 +832,69 @@ function iniciarListenerSolicitacoes() {
     }
 }
 
+// ==================== FUNÇÃO PARA CORRIGIR SOLICITAÇÕES EXISTENTES ====================
+
+async function corrigirSolicitacoesPendentes() {
+    console.log('🔧 Corrigindo solicitações pendentes...');
+    
+    if (!confirm('⚠️ Esta ação irá corrigir automaticamente as solicitações pendentes que possuem UID temporário. Deseja continuar?')) {
+        return;
+    }
+    
+    try {
+        const snapshot = await db.collection(SOLICITACOES_COLLECTION)
+            .where('status', '==', 'pendente')
+            .get();
+        
+        let corrigidas = 0;
+        let erros = 0;
+        
+        for (const doc of snapshot.docs) {
+            const data = doc.data();
+            const uidAtual = data.uid || doc.id;
+            
+            // Se o UID for temporário, tentar buscar pelo email
+            if (uidAtual && uidAtual.startsWith('temp_')) {
+                console.log(`🔍 Corrigindo solicitação: ${doc.id} - ${data.email}`);
+                
+                // Buscar usuário pelo email na coleção de usuários
+                const userSnapshot = await db.collection('usuarios')
+                    .where('email', '==', data.email)
+                    .get();
+                
+                if (!userSnapshot.empty) {
+                    const userDoc = userSnapshot.docs[0];
+                    const novoUid = userDoc.id;
+                    
+                    // Criar nova solicitação com o UID correto
+                    await db.collection(SOLICITACOES_COLLECTION).doc(novoUid).set({
+                        ...data,
+                        uid: novoUid,
+                        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    // Excluir a antiga
+                    await db.collection(SOLICITACOES_COLLECTION).doc(doc.id).delete();
+                    
+                    corrigidas++;
+                    console.log(`✅ Solicitação corrigida: ${doc.id} -> ${novoUid}`);
+                } else {
+                    erros++;
+                    console.warn(`⚠️ Usuário não encontrado para: ${data.email}`);
+                }
+            }
+        }
+        
+        console.log(`✅ ${corrigidas} solicitações corrigidas! ${erros} erros.`);
+        mostrarNotificacao(`✅ ${corrigidas} solicitações corrigidas! ${erros} erros.`, 'success');
+        await carregarSolicitacoesPendentes();
+        
+    } catch (error) {
+        console.error('❌ Erro ao corrigir solicitações:', error);
+        mostrarNotificacao('❌ Erro ao corrigir: ' + error.message, 'error');
+    }
+}
+
 // ==================== FUNÇÃO DE TESTE ====================
 
 async function criarSolicitacaoTeste() {
@@ -754,10 +913,14 @@ async function criarSolicitacaoTeste() {
     }
 
     try {
-        const tempUid = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        // Criar usuário no Auth primeiro
+        const userCred = await auth.createUserWithEmailAndPassword(email, senha);
+        const uid = userCred.user.uid;
+        await auth.signOut();
 
-        await db.collection(SOLICITACOES_COLLECTION).doc(tempUid).set({
-            uid: tempUid,
+        // Criar solicitação com o UID real
+        await db.collection(SOLICITACOES_COLLECTION).doc(uid).set({
+            uid: uid,
             nome: nome,
             email: email,
             telefone: '(83) 99999-9999',
@@ -772,15 +935,7 @@ async function criarSolicitacaoTeste() {
             tipoSolicitado: 'admin'
         });
 
-        const userCred = await auth.createUserWithEmailAndPassword(email, senha);
-        const uid = userCred.user.uid;
-
-        await db.collection(SOLICITACOES_COLLECTION).doc(tempUid).update({
-            uid: uid,
-            authUid: uid,
-            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
+        // Criar usuário como solicitante
         await db.collection('usuarios').doc(uid).set({
             uid: uid,
             nome: nome,
@@ -789,7 +944,7 @@ async function criarSolicitacaoTeste() {
             aprovado: false,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
             solicitaAprovacao: true,
-            solicitacaoId: tempUid
+            solicitacaoId: uid
         });
 
         mostrarNotificacaoSucessoComRedirecionamento({
@@ -815,6 +970,7 @@ window.rejeitarSolicitacao = rejeitarSolicitacao;
 window.verificarStatusUsuario = verificarStatusUsuario;
 window.iniciarListenerSolicitacoes = iniciarListenerSolicitacoes;
 window.criarSolicitacaoTeste = criarSolicitacaoTeste;
+window.corrigirSolicitacoesPendentes = corrigirSolicitacoesPendentes;
 window.mostrarNotificacao = mostrarNotificacao;
 window.mostrarNotificacaoSucessoComRedirecionamento = mostrarNotificacaoSucessoComRedirecionamento;
 window.fecharNotificacaoEIrParaLogin = fecharNotificacaoEIrParaLogin;
