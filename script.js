@@ -24,26 +24,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ==================== OBSERVADOR DE MUTAÇÃO PARA MENUS ====================
 function iniciarObservadorMenu() {
-    // Observar mudanças no DOM para garantir que os menus sejam ocultados
     const observer = new MutationObserver(function(mutations) {
-        // Verificar se o menu foi renderizado
         const menuReservas = document.getElementById('menuReservas');
         if (menuReservas && currentUser) {
-            // Se o menu existe e o usuário está logado, aplicar as regras
             forcarAtualizacaoMenu(currentUser);
-            // Parar o observer após aplicar
             observer.disconnect();
             console.log("✅ Observador de menu finalizado");
         }
     });
     
-    // Observar mudanças no corpo da página
     observer.observe(document.body, {
         childList: true,
         subtree: true
     });
     
-    // Timeout para evitar loop infinito
     setTimeout(() => {
         observer.disconnect();
         console.log("⏰ Observador de menu finalizado por timeout");
@@ -190,7 +184,63 @@ const RESERVA_STATUS_TEXT_COLORS = {
     'cancelada': '#dc2626'
 };
 
-// ==================== FUNÇÃO PARA FORÇAR ATUALIZAÇÃO DO MENU (VERSÃO CORRIGIDA) ====================
+// ==================== FUNÇÃO PARA DEFINIR SEÇÃO INICIAL ====================
+function definirSecaoInicial(userData) {
+    if (!userData) return;
+    
+    const isAdmin = userData.tipo === 'admin';
+    
+    // Se for admin, ativar Dashboard
+    if (isAdmin) {
+        // Remover active de todas as seções
+        document.querySelectorAll('.section').forEach(sec => {
+            sec.classList.remove('active');
+            sec.style.display = 'none';
+        });
+        
+        // Ativar Dashboard
+        const dashboard = document.getElementById('dashboardSection');
+        if (dashboard) {
+            dashboard.classList.add('active');
+            dashboard.style.display = 'block';
+        }
+        
+        // Ativar menu Dashboard na sidebar
+        document.querySelectorAll('.sidebar li').forEach(li => {
+            li.classList.remove('active');
+        });
+        const menuDashboard = document.getElementById('menuDashboard');
+        if (menuDashboard) {
+            menuDashboard.classList.add('active');
+        }
+        
+        console.log("✅ Dashboard definido como seção inicial para ADMIN");
+    } else {
+        // Se for colaborador, ativar Reservas
+        document.querySelectorAll('.section').forEach(sec => {
+            sec.classList.remove('active');
+            sec.style.display = 'none';
+        });
+        
+        const reservas = document.getElementById('reservasSection');
+        if (reservas) {
+            reservas.classList.add('active');
+            reservas.style.display = 'block';
+        }
+        
+        document.querySelectorAll('.sidebar li').forEach(li => {
+            li.classList.remove('active');
+        });
+        const menuReservas = document.getElementById('menuReservas');
+        if (menuReservas) {
+            menuReservas.classList.add('active');
+        }
+        
+        console.log("✅ Reservas definido como seção inicial para COLABORADOR");
+    }
+}
+
+// ==================== FUNÇÃO PARA FORÇAR ATUALIZAÇÃO DO MENU ====================
 function forcarAtualizacaoMenu(userData) {
     if (!userData) {
         console.warn("⚠️ userData não fornecido para forcarAtualizacaoMenu");
@@ -202,7 +252,7 @@ function forcarAtualizacaoMenu(userData) {
     
     console.log(`🔧 Forçando atualização do menu para: ${tipo} (Admin: ${isAdmin})`);
     
-    // LISTA DE TODOS OS MENUS - Usando IDs exatos do HTML
+    // LISTA DE TODOS OS MENUS
     const menuDashboard = document.getElementById('menuDashboard');
     const menuSolicitacoes = document.getElementById('menuSolicitacoes');
     const menuReservas = document.getElementById('menuReservas');
@@ -211,138 +261,94 @@ function forcarAtualizacaoMenu(userData) {
     const menuVerAgenda = document.getElementById('menuVerAgenda');
     const menuConfig = document.getElementById('menuConfig');
     
-    // MENUS APENAS PARA ADMIN (ocultar para colaboradores)
-    if (menuDashboard) {
-        if (isAdmin) {
+    // ============ MENUS APENAS PARA ADMIN ============
+    if (isAdmin) {
+        // ADMIN - Mostrar todos os menus administrativos
+        if (menuDashboard) {
             menuDashboard.style.display = 'block';
             menuDashboard.style.visibility = 'visible';
             menuDashboard.style.opacity = '1';
-        } else {
-            menuDashboard.style.display = 'none !important';
-            menuDashboard.style.visibility = 'hidden';
-            menuDashboard.style.opacity = '0';
-            menuDashboard.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
+            menuDashboard.removeAttribute('style');
         }
-        console.log(`📌 Dashboard: ${isAdmin ? 'VISÍVEL' : 'OCULTO'}`);
-    }
-    
-    if (menuSolicitacoes) {
-        if (isAdmin) {
+        
+        if (menuSolicitacoes) {
             menuSolicitacoes.style.display = 'block';
             menuSolicitacoes.style.visibility = 'visible';
             menuSolicitacoes.style.opacity = '1';
-        } else {
-            menuSolicitacoes.style.display = 'none !important';
+            menuSolicitacoes.removeAttribute('style');
+            // Mostrar badge se houver solicitações
+            const badge = document.getElementById('solicitacoesBadge');
+            if (badge) {
+                badge.style.display = 'inline-block';
+            }
+        }
+        
+        if (menuColaboradores) {
+            menuColaboradores.style.display = 'block';
+            menuColaboradores.style.visibility = 'visible';
+            menuColaboradores.style.opacity = '1';
+            menuColaboradores.removeAttribute('style');
+        }
+        
+        if (menuConfig) {
+            menuConfig.style.display = 'block';
+            menuConfig.style.visibility = 'visible';
+            menuConfig.style.opacity = '1';
+            menuConfig.removeAttribute('style');
+        }
+        
+        console.log("✅ Menu ADMIN carregado com sucesso!");
+        
+    } else {
+        // COLABORADOR - Ocultar menus administrativos
+        if (menuDashboard) {
+            menuDashboard.style.display = 'none';
+            menuDashboard.style.visibility = 'hidden';
+            menuDashboard.style.opacity = '0';
+        }
+        
+        if (menuSolicitacoes) {
+            menuSolicitacoes.style.display = 'none';
             menuSolicitacoes.style.visibility = 'hidden';
             menuSolicitacoes.style.opacity = '0';
-            menuSolicitacoes.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
             const badge = document.getElementById('solicitacoesBadge');
             if (badge) {
                 badge.style.display = 'none';
             }
         }
-        console.log(`📌 Solicitações: ${isAdmin ? 'VISÍVEL' : 'OCULTO'}`);
-    }
-    
-    if (menuColaboradores) {
-        if (isAdmin) {
-            menuColaboradores.style.display = 'block';
-            menuColaboradores.style.visibility = 'visible';
-            menuColaboradores.style.opacity = '1';
-        } else {
-            menuColaboradores.style.display = 'none !important';
+        
+        if (menuColaboradores) {
+            menuColaboradores.style.display = 'none';
             menuColaboradores.style.visibility = 'hidden';
             menuColaboradores.style.opacity = '0';
-            menuColaboradores.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
         }
-        console.log(`📌 Colaboradores: ${isAdmin ? 'VISÍVEL' : 'OCULTO'}`);
-    }
-    
-    if (menuConfig) {
-        if (isAdmin) {
-            menuConfig.style.display = 'block';
-            menuConfig.style.visibility = 'visible';
-            menuConfig.style.opacity = '1';
-        } else {
-            menuConfig.style.display = 'none !important';
+        
+        if (menuConfig) {
+            menuConfig.style.display = 'none';
             menuConfig.style.visibility = 'hidden';
             menuConfig.style.opacity = '0';
-            menuConfig.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
         }
-        console.log(`📌 Configurações: ${isAdmin ? 'VISÍVEL' : 'OCULTO'}`);
+        
+        console.log("✅ Menu COLABORADOR carregado com sucesso!");
     }
     
-    // MENUS PARA TODOS (forçar visibilidade)
+    // ============ MENUS PARA TODOS OS USUÁRIOS ============
     if (menuReservas) {
         menuReservas.style.display = 'block';
         menuReservas.style.visibility = 'visible';
         menuReservas.style.opacity = '1';
-        menuReservas.setAttribute('style', 'display: block !important; visibility: visible !important; opacity: 1 !important;');
-        console.log(`📌 Reservas: VISÍVEL (todos)`);
     }
     
     if (menuAgenda) {
         menuAgenda.style.display = 'block';
         menuAgenda.style.visibility = 'visible';
         menuAgenda.style.opacity = '1';
-        menuAgenda.setAttribute('style', 'display: block !important; visibility: visible !important; opacity: 1 !important;');
-        console.log(`📌 Gerenciar Agenda: VISÍVEL (todos)`);
     }
     
     if (menuVerAgenda) {
         menuVerAgenda.style.display = 'block';
         menuVerAgenda.style.visibility = 'visible';
         menuVerAgenda.style.opacity = '1';
-        menuVerAgenda.setAttribute('style', 'display: block !important; visibility: visible !important; opacity: 1 !important;');
-        console.log(`📌 Ver Agenda: VISÍVEL (todos)`);
-    }
-    
-    // SE FOR COLABORADOR, ATIVAR A ABA RESERVAS E OCULTAR AS SEÇÕES RESTRITAS
-    if (!isAdmin) {
-        // Ocultar seções restritas
-        const secoesRestritas = ['dashboardSection', 'solicitacoesSection', 'colaboradoresSection', 'configSection'];
-        secoesRestritas.forEach(id => {
-            const secao = document.getElementById(id);
-            if (secao) {
-                secao.style.display = 'none';
-                secao.classList.remove('active');
-            }
-        });
-        
-        // Mostrar apenas seções permitidas
-        const secoesPermitidas = ['reservasSection', 'agendaSection', 'listarSection'];
-        secoesPermitidas.forEach(id => {
-            const secao = document.getElementById(id);
-            if (secao) {
-                secao.style.display = 'block';
-            }
-        });
-        
-        // Ativar a aba Reservas
-        setTimeout(() => {
-            const reservasMenu = document.getElementById('menuReservas');
-            if (reservasMenu) {
-                document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
-                reservasMenu.classList.add('active');
-                const sectionId = reservasMenu.dataset.section + 'Section';
-                document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-                const targetSection = document.getElementById(sectionId);
-                if (targetSection) {
-                    targetSection.classList.add('active');
-                    targetSection.style.display = 'block';
-                }
-                console.log("🔄 Ativando menu Reservas para colaborador");
-            }
-        }, 100);
-    } else {
-        // Para admin, garantir que todas as seções estejam visíveis
-        const todasSecoes = ['dashboardSection', 'solicitacoesSection', 'reservasSection', 'agendaSection', 'colaboradoresSection', 'listarSection', 'configSection'];
-        todasSecoes.forEach(id => {
-            const secao = document.getElementById(id);
-            if (secao) {
-                secao.style.display = '';
-            }
-        });
     }
     
     console.log("✅ Atualização do menu concluída!");
@@ -641,6 +647,9 @@ async function carregarAdmin() {
     setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 100);
     setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 300);
     setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 800);
+    
+    // ============ DEFINIR SEÇÃO INICIAL ============
+    definirSecaoInicial(currentUser);
     
     try {
         const configDoc = await db.collection('configuracoes').doc('geral').get();

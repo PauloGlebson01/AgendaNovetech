@@ -33,13 +33,13 @@
         <div class="dashboard">
             <aside class="sidebar">
                 <ul>
-                    <!-- ==================== MENU DASHBOARD (APENAS ADMIN) ==================== -->
-                    <li id="menuDashboard" data-section="dashboard" style="display: none !important;">
+                    <!-- Menu Dashboard (APENAS ADMIN) -->
+                    <li id="menuDashboard" data-section="dashboard">
                         <i class="fas fa-chart-pie"></i> Dashboard
                     </li>
                     
-                    <!-- ==================== MENU SOLICITAÇÕES (APENAS ADMIN) ==================== -->
-                    <li id="menuSolicitacoes" data-section="solicitacoes" style="display: none !important;">
+                    <!-- Menu Solicitações (APENAS ADMIN) -->
+                    <li id="menuSolicitacoes" data-section="solicitacoes">
                         <i class="fas fa-user-plus"></i> 
                         Solicitações
                         <span id="solicitacoesBadge" style="
@@ -56,35 +56,35 @@
                         ">0</span>
                     </li>
 
-                    <!-- ==================== MENU RESERVAS (TODOS) ==================== -->
+                    <!-- Menu Reservas (TODOS) -->
                     <li id="menuReservas" data-section="reservas">
                         <i class="fas fa-door-open"></i> Reservas de Salas
                     </li>
 
-                    <!-- ==================== MENU GERENCIAR AGENDA (TODOS) ==================== -->
+                    <!-- Menu Gerenciar Agenda (TODOS) -->
                     <li id="menuAgenda" data-section="agenda">
                         <i class="fas fa-calendar-plus"></i> Gerenciar Agenda
                     </li>
 
-                    <!-- ==================== MENU COLABORADORES (APENAS ADMIN) ==================== -->
-                    <li id="menuColaboradores" data-section="colaboradores" style="display: none !important;">
+                    <!-- Menu Colaboradores (APENAS ADMIN) -->
+                    <li id="menuColaboradores" data-section="colaboradores">
                         <i class="fas fa-users"></i> Colaboradores
                     </li>
 
-                    <!-- ==================== MENU VER AGENDA (TODOS) ==================== -->
+                    <!-- Menu Ver Agenda (TODOS) -->
                     <li id="menuVerAgenda" data-section="listar">
                         <i class="fas fa-list"></i> Ver Agenda
                     </li>
 
-                    <!-- ==================== MENU CONFIGURAÇÕES (APENAS ADMIN) ==================== -->
-                    <li id="menuConfig" data-section="config" style="display: none !important;">
+                    <!-- Menu Configurações (APENAS ADMIN) -->
+                    <li id="menuConfig" data-section="config">
                         <i class="fas fa-sliders-h"></i> Configurações
                     </li>
                 </ul>
             </aside>
             <main class="main-content">
                 <!-- Seção: Dashboard (APENAS ADMIN) -->
-                <section id="dashboardSection" class="section">
+                <section id="dashboardSection" class="section active">
                     <h2><i class="fas fa-chart-pie"></i> Dashboard</h2>
 
                     <!-- Filtros de Período -->
@@ -208,7 +208,7 @@
                 </section>
 
                 <!-- Seção: Reservas de Salas -->
-                <section id="reservasSection" class="section active">
+                <section id="reservasSection" class="section">
                     <h2><i class="fas fa-door-open"></i> Reservas de Salas</h2>
                     
                     <!-- Filtros e Status -->
@@ -565,7 +565,7 @@
                         </div>
                     </div>
 
-                    <!-- ==================== CONFIGURAÇÃO DE LIMITE DE ADMINISTRADORES ==================== -->
+                    <!-- Configuração de Limite de Administradores -->
                     <div class="form-card" style="margin-bottom: 30px;">
                         <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-user-shield" style="color: #8b5cf6;"></i> Limite de Administradores
