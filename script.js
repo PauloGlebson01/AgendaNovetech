@@ -190,25 +190,25 @@ function definirSecaoInicial(userData) {
     
     const isAdmin = userData.tipo === 'admin';
     
-    // Se for admin, ativar Dashboard
+    // Remover active de todas as seções e ocultar
+    document.querySelectorAll('.section').forEach(sec => {
+        sec.classList.remove('active');
+        sec.style.display = 'none';
+    });
+    
+    // Remover active de todos os menus
+    document.querySelectorAll('.sidebar li').forEach(li => {
+        li.classList.remove('active');
+    });
+    
     if (isAdmin) {
-        // Remover active de todas as seções
-        document.querySelectorAll('.section').forEach(sec => {
-            sec.classList.remove('active');
-            sec.style.display = 'none';
-        });
-        
-        // Ativar Dashboard
+        // ADMIN - Ativar Dashboard
         const dashboard = document.getElementById('dashboardSection');
         if (dashboard) {
             dashboard.classList.add('active');
             dashboard.style.display = 'block';
         }
         
-        // Ativar menu Dashboard na sidebar
-        document.querySelectorAll('.sidebar li').forEach(li => {
-            li.classList.remove('active');
-        });
         const menuDashboard = document.getElementById('menuDashboard');
         if (menuDashboard) {
             menuDashboard.classList.add('active');
@@ -216,21 +216,13 @@ function definirSecaoInicial(userData) {
         
         console.log("✅ Dashboard definido como seção inicial para ADMIN");
     } else {
-        // Se for colaborador, ativar Reservas
-        document.querySelectorAll('.section').forEach(sec => {
-            sec.classList.remove('active');
-            sec.style.display = 'none';
-        });
-        
+        // COLABORADOR - Ativar Reservas
         const reservas = document.getElementById('reservasSection');
         if (reservas) {
             reservas.classList.add('active');
             reservas.style.display = 'block';
         }
         
-        document.querySelectorAll('.sidebar li').forEach(li => {
-            li.classList.remove('active');
-        });
         const menuReservas = document.getElementById('menuReservas');
         if (menuReservas) {
             menuReservas.classList.add('active');
@@ -276,7 +268,6 @@ function forcarAtualizacaoMenu(userData) {
             menuSolicitacoes.style.visibility = 'visible';
             menuSolicitacoes.style.opacity = '1';
             menuSolicitacoes.removeAttribute('style');
-            // Mostrar badge se houver solicitações
             const badge = document.getElementById('solicitacoesBadge');
             if (badge) {
                 badge.style.display = 'inline-block';
@@ -352,6 +343,14 @@ function forcarAtualizacaoMenu(userData) {
     }
     
     console.log("✅ Atualização do menu concluída!");
+}
+
+// ==================== FUNÇÃO PARA REINICIAR SIDEBAR ====================
+function reiniciarSidebar() {
+    setTimeout(() => {
+        iniciarSidebar();
+        console.log("🔄 Sidebar reiniciada");
+    }, 100);
 }
 
 // ==================== VERIFICAÇÃO DE AUTENTICAÇÃO ====================
@@ -678,6 +677,11 @@ async function carregarAdmin() {
     }
     
     iniciarSidebar();
+    
+    // Forçar reinício da sidebar após carregar tudo
+    setTimeout(() => {
+        reiniciarSidebar();
+    }, 500);
 }
 
 // ==================== LISTENERS EM TEMPO REAL ====================
@@ -3498,22 +3502,41 @@ async function salvarConfiguracoes() {
 
 // ==================== SIDEBAR ====================
 function iniciarSidebar() {
-    document.querySelectorAll('.sidebar li').forEach(item => {
+    // Remove todos os listeners antigos
+    const sidebarItems = document.querySelectorAll('.sidebar li');
+    sidebarItems.forEach(item => {
         item.removeEventListener('click', sidebarClickHandler);
         item.addEventListener('click', sidebarClickHandler);
     });
+    
+    console.log("✅ Sidebar inicializada com " + sidebarItems.length + " itens");
 }
 
 function sidebarClickHandler() {
-    document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
+    // Remove active de todos os itens do menu
+    document.querySelectorAll('.sidebar li').forEach(li => {
+        li.classList.remove('active');
+    });
+    
+    // Adiciona active ao item clicado
     this.classList.add('active');
+    
+    // Obtém a seção alvo
     const sectionId = this.dataset.section + 'Section';
     
-    document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+    // Oculta todas as seções
+    document.querySelectorAll('.section').forEach(sec => {
+        sec.classList.remove('active');
+        sec.style.display = 'none';
+    });
+    
+    // Mostra a seção alvo
     const targetSection = document.getElementById(sectionId);
     if (targetSection) {
         targetSection.classList.add('active');
+        targetSection.style.display = 'block';
         
+        // Funções específicas ao abrir cada seção
         if (sectionId === 'dashboardSection') {
             renderizarDashboard();
         }
@@ -3526,6 +3549,10 @@ function sidebarClickHandler() {
                 carregarSolicitacoesPendentes();
             }
         }
+        
+        console.log(`✅ Seção ativada: ${sectionId}`);
+    } else {
+        console.warn(`⚠️ Seção não encontrada: ${sectionId}`);
     }
 }
 
@@ -4354,6 +4381,23 @@ async function salvarLimiteAdmin() {
     }
 }
 
+// ==================== FUNÇÃO PARA DEBUG DO MENU ====================
+function debugMenu() {
+    console.log("=== DEBUG MENU ===");
+    const items = document.querySelectorAll('.sidebar li');
+    console.log("Total de itens no menu:", items.length);
+    items.forEach((item, index) => {
+        console.log(`Item ${index}:`, {
+            id: item.id,
+            section: item.dataset.section,
+            display: item.style.display,
+            visible: item.offsetParent !== null,
+            classes: item.className
+        });
+    });
+    console.log("=== FIM DEBUG ===");
+}
+
 // ==================== EXPOR FUNÇÕES GLOBAIS ====================
 window.criarAdminInicial = criarAdminInicial;
 window.trocarAba = trocarAba;
@@ -4425,6 +4469,7 @@ window.limparBloqueiosData = limparBloqueiosData;
 
 window.carregarConfigLimiteAdmin = carregarConfigLimiteAdmin;
 window.salvarLimiteAdmin = salvarLimiteAdmin;
+window.debugMenu = debugMenu;
 
 // ==================== VERIFICAR ADMIN EXISTENTE ====================
 async function verificarAdminExistente() {
