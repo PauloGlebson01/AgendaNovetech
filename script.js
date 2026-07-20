@@ -705,27 +705,63 @@ function iniciarListenersRealtime() {
             console.error("Erro no listener de colaboradores:", error);
         });
 
+    // Listener de eventos - carregar apenas por data, sem filtro de status
     if (unsubscribeEventos) {
         unsubscribeEventos();
     }
     
+    // Carregar eventos do dia atual por padrão
+    const hoje = new Date();
+    const dataHoje = hoje.toISOString().split('T')[0];
+    const dataInicio = dataHoje + 'T00:00:00.000Z';
+    const dataFim = dataHoje + 'T23:59:59.999Z';
+    
     unsubscribeEventos = db.collection('eventosAgenda')
+        .where('data', '>=', dataInicio)
+        .where('data', '<=', dataFim)
         .orderBy('data', 'asc')
         .onSnapshot((snapshot) => {
-            console.log("🔄 Eventos atualizados em tempo real!");
-            snapshot.docChanges().forEach(change => {
-                if (change.type === 'added') {
-                    console.log("📌 Novo evento adicionado:", change.doc.data().titulo);
-                }
-                if (change.type === 'modified') {
-                    console.log("✏️ Evento modificado:", change.doc.data().titulo);
-                }
-                if (change.type === 'removed') {
-                    console.log("🗑️ Evento removido");
-                }
+            console.log("🔄 Eventos do dia atual carregados!");
+            
+            // Verificar se há filtro de status
+            const statusFiltro = document.getElementById('filtroStatus')?.value || '';
+            let eventos = [];
+            snapshot.forEach(doc => {
+                eventos.push({ id: doc.id, ...doc.data() });
             });
-            atualizarListaEventos(snapshot);
-            atualizarContadorStatus(snapshot);
+            
+            // Aplicar filtro de status no cliente se necessário
+            if (statusFiltro) {
+                eventos = eventos.filter(e => e.status === statusFiltro);
+            }
+            
+            const snapshotSimulado = {
+                forEach: (callback) => {
+                    eventos.forEach(e => {
+                        callback({
+                            id: e.id,
+                            data: () => ({ ...e })
+                        });
+                    });
+                },
+                size: eventos.length,
+                docs: eventos.map(e => ({
+                    id: e.id,
+                    data: () => ({ ...e })
+                })),
+                docChanges: () => []
+            };
+            
+            atualizarListaEventos(snapshotSimulado);
+            atualizarContadorStatus(snapshotSimulado);
+            
+            // Atualizar o campo de data com a data atual
+            const filtroDataInput = document.getElementById('filtroData');
+            if (filtroDataInput && !filtroDataInput.value) {
+                filtroDataInput.value = dataHoje;
+            }
+            
+            atualizarDataExibicao(dataHoje);
         }, (error) => {
             console.error("Erro no listener de eventos:", error);
         });
@@ -1220,9 +1256,14 @@ function atualizarListaEventos(snapshot) {
     if (eventos.length === 0) {
         container.innerHTML = `
             <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
-                <i class="fas fa-calendar-plus" style="font-size: 48px; color: #cbd5e1;"></i>
-                <h3 style="margin-top: 12px; color: #475569;">Nenhum evento encontrado</h3>
-                <p style="color: #94a3b8;">Ajuste os filtros ou adicione um novo evento na aba "Gerenciar Agenda"</p>
+                <i class="fas fa-calendar-day" style="font-size: 48px; color: #cbd5e1;"></i>
+                <h3 style="margin-top: 12px; color: #475569;">Nenhum evento encontrado para esta data</h3>
+                <p style="color: #94a3b8;">Use os filtros para navegar para outras datas ou ver todos os eventos.</p>
+                <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-sm" style="background: #2563eb; color: white;" onclick="irParaHoje()">
+                        <i class="fas fa-calendar-day"></i> Ir para Hoje
+                    </button>
+                </div>
             </div>
         `;
         return;
@@ -1396,43 +1437,39 @@ function aplicarFiltrosCompletos() {
     filtroDataAtual = dataFiltro;
     filtroStatusAtual = statusFiltro;
 
-    if (!dataFiltro && !statusFiltro) {
-        if (unsubscribeEventos) {
-            unsubscribeEventos();
-        }
-        unsubscribeEventos = db.collection('eventosAgenda')
-            .orderBy('data', 'asc')
-            .onSnapshot((snapshot) => {
-                atualizarListaEventos(snapshot);
-                atualizarContadorStatus(snapshot);
-            });
-        return;
+    // Se não houver filtro de data, usar a data atual
+    let dataConsulta = dataFiltro;
+    if (!dataConsulta) {
+        const hoje = new Date();
+        dataConsulta = hoje.toISOString().split('T')[0];
     }
 
     const container = document.getElementById('listaEventosAdmin');
-    container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Filtrando...</div>';
+    container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Carregando eventos...</div>';
 
     if (unsubscribeEventos) {
         unsubscribeEventos();
     }
 
+    // Criar a consulta base - apenas por data para evitar índices compostos
     let query = db.collection('eventosAgenda');
 
-    if (dataFiltro) {
-        const dataInicio = dataFiltro + 'T00:00:00.000Z';
-        const dataFim = dataFiltro + 'T23:59:59.999Z';
-        query = query.where('data', '>=', dataInicio).where('data', '<=', dataFim);
-    }
-
-    if (statusFiltro) {
-        query = query.where('status', '==', statusFiltro);
-    }
+    // Aplicar filtro de data (sempre usar a data definida ou a data atual)
+    const dataInicio = dataConsulta + 'T00:00:00.000Z';
+    const dataFim = dataConsulta + 'T23:59:59.999Z';
+    query = query.where('data', '>=', dataInicio).where('data', '<=', dataFim);
+    query = query.orderBy('data', 'asc');
 
     unsubscribeEventos = query.onSnapshot((snapshot) => {
         let eventos = [];
         snapshot.forEach(doc => {
             eventos.push({ id: doc.id, ...doc.data() });
         });
+        
+        // Se houver filtro de status, aplicar no cliente (JavaScript)
+        if (statusFiltro) {
+            eventos = eventos.filter(e => e.status === statusFiltro);
+        }
         
         eventos.sort((a, b) => {
             if (a.data < b.data) return -1;
@@ -1460,14 +1497,22 @@ function aplicarFiltrosCompletos() {
         atualizarListaEventos(snapshotSimulado);
         atualizarContadorStatus(snapshotSimulado);
         
+        // Atualizar o campo de data com a data atual sendo consultada
+        const filtroDataInput = document.getElementById('filtroData');
+        if (filtroDataInput && !filtroDataInput.value) {
+            filtroDataInput.value = dataConsulta;
+        }
+        
+        atualizarDataExibicao(dataConsulta);
+        
     }, (error) => {
         console.error("Erro ao filtrar:", error);
         container.innerHTML = `
             <div class="card" style="grid-column: 1 / -1; color: #ef4444; text-align: center; padding: 40px;">
                 <i class="fas fa-exclamation-triangle" style="font-size: 32px;"></i>
-                <p style="margin-top: 8px;"><strong>Erro ao filtrar:</strong> ${error.message}</p>
-                <button onclick="limparFiltros()" style="margin-top: 12px; padding: 8px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">
-                    <i class="fas fa-undo"></i> Limpar Filtros
+                <p style="margin-top: 8px;"><strong>Erro ao carregar eventos:</strong> ${error.message}</p>
+                <button onclick="aplicarFiltrosCompletos()" style="margin-top: 12px; padding: 8px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    <i class="fas fa-redo"></i> Tentar novamente
                 </button>
             </div>
         `;
@@ -1514,15 +1559,8 @@ function limparFiltros() {
     filtroDataAtual = '';
     filtroStatusAtual = '';
     
-    if (unsubscribeEventos) {
-        unsubscribeEventos();
-    }
-    unsubscribeEventos = db.collection('eventosAgenda')
-        .orderBy('data', 'asc')
-        .onSnapshot((snapshot) => {
-            atualizarListaEventos(snapshot);
-            atualizarContadorStatus(snapshot);
-        });
+    // Recarregar com a data atual
+    aplicarFiltrosCompletos();
 }
 
 function verAgendaPublica() {
@@ -3502,7 +3540,6 @@ async function salvarConfiguracoes() {
 
 // ==================== SIDEBAR ====================
 function iniciarSidebar() {
-    // Remove todos os listeners antigos
     const sidebarItems = document.querySelectorAll('.sidebar li');
     sidebarItems.forEach(item => {
         item.removeEventListener('click', sidebarClickHandler);
@@ -3513,30 +3550,24 @@ function iniciarSidebar() {
 }
 
 function sidebarClickHandler() {
-    // Remove active de todos os itens do menu
     document.querySelectorAll('.sidebar li').forEach(li => {
         li.classList.remove('active');
     });
     
-    // Adiciona active ao item clicado
     this.classList.add('active');
     
-    // Obtém a seção alvo
     const sectionId = this.dataset.section + 'Section';
     
-    // Oculta todas as seções
     document.querySelectorAll('.section').forEach(sec => {
         sec.classList.remove('active');
         sec.style.display = 'none';
     });
     
-    // Mostra a seção alvo
     const targetSection = document.getElementById(sectionId);
     if (targetSection) {
         targetSection.classList.add('active');
         targetSection.style.display = 'block';
         
-        // Funções específicas ao abrir cada seção
         if (sectionId === 'dashboardSection') {
             renderizarDashboard();
         }
@@ -3548,6 +3579,13 @@ function sidebarClickHandler() {
             if (typeof carregarSolicitacoesPendentes === 'function') {
                 carregarSolicitacoesPendentes();
             }
+        }
+        if (sectionId === 'listarSection') {
+            // Ao abrir a agenda, carregar os eventos do dia atual
+            const hoje = new Date();
+            const dataHoje = hoje.toISOString().split('T')[0];
+            document.getElementById('filtroData').value = dataHoje;
+            aplicarFiltrosCompletos();
         }
         
         console.log(`✅ Seção ativada: ${sectionId}`);
@@ -3923,6 +3961,65 @@ async function corrigirDatasEventos() {
     } catch (error) {
         console.error("❌ Erro ao corrigir datas:", error);
         alert("❌ Erro ao corrigir datas: " + error.message);
+    }
+}
+
+// ==================== FUNÇÕES DE NAVEGAÇÃO DE DATA ====================
+
+function buscarEventosPorData(data) {
+    if (!data) {
+        const hoje = new Date();
+        data = hoje.toISOString().split('T')[0];
+    }
+    
+    document.getElementById('filtroData').value = data;
+    aplicarFiltrosCompletos();
+}
+
+function navegarData(direcao) {
+    const filtroData = document.getElementById('filtroData');
+    let dataAtual = filtroData.value;
+    
+    if (!dataAtual) {
+        const hoje = new Date();
+        dataAtual = hoje.toISOString().split('T')[0];
+    }
+    
+    const dataObj = new Date(dataAtual + 'T00:00:00');
+    dataObj.setDate(dataObj.getDate() + direcao);
+    
+    const novaData = dataObj.toISOString().split('T')[0];
+    filtroData.value = novaData;
+    buscarEventosPorData(novaData);
+}
+
+function irParaHoje() {
+    const hoje = new Date();
+    const dataHoje = hoje.toISOString().split('T')[0];
+    document.getElementById('filtroData').value = dataHoje;
+    buscarEventosPorData(dataHoje);
+}
+
+function atualizarDataExibicao(data) {
+    const el = document.getElementById('dataExibicao');
+    if (el) {
+        const hoje = new Date();
+        const hojeStr = hoje.toISOString().split('T')[0];
+        const dataObj = new Date(data + 'T00:00:00');
+        
+        let label = '📅 ' + dataObj.toLocaleDateString('pt-BR', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+        });
+        
+        if (data === hojeStr) {
+            label = '🔥 HOJE - ' + label;
+        }
+        
+        el.textContent = label;
+        el.style.color = data === hojeStr ? '#2563eb' : '#64748b';
+        el.style.fontWeight = data === hojeStr ? '600' : '400';
     }
 }
 
@@ -4470,6 +4567,12 @@ window.limparBloqueiosData = limparBloqueiosData;
 window.carregarConfigLimiteAdmin = carregarConfigLimiteAdmin;
 window.salvarLimiteAdmin = salvarLimiteAdmin;
 window.debugMenu = debugMenu;
+
+// Funções de navegação de data
+window.buscarEventosPorData = buscarEventosPorData;
+window.navegarData = navegarData;
+window.irParaHoje = irParaHoje;
+window.atualizarDataExibicao = atualizarDataExibicao;
 
 // ==================== VERIFICAR ADMIN EXISTENTE ====================
 async function verificarAdminExistente() {
