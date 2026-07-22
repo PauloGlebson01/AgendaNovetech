@@ -4588,17 +4588,15 @@ function atualizarDataExibicao(data) {
 
 // ==================== RESERVAS DE SALAS ====================
 
+// ==================== INICIAR LISTENER DE RESERVAS (CORRIGIDO) ====================
 function iniciarListenerReservas() {
     if (unsubscribeReservas) {
         unsubscribeReservas();
     }
 
     try {
-        const hoje = new Date();
-        const dataHoje = hoje.toISOString().split('T')[0];
-
+        // 🔥 CORRIGIDO: Buscar TODAS as reservas, sem filtro de data
         unsubscribeReservas = db.collection('reservasSalas')
-            .where('data', '==', dataHoje)
             .orderBy('data', 'asc')
             .onSnapshot((snapshot) => {
                 console.log("🔄 Reservas atualizadas em tempo real!");
@@ -4606,6 +4604,7 @@ function iniciarListenerReservas() {
                 snapshot.forEach(doc => {
                     reservasCache.push({ id: doc.id, ...doc.data() });
                 });
+                console.log(`📋 ${reservasCache.length} reservas carregadas`);
                 atualizarListaReservas();
                 atualizarStatsReservas();
             }, (error) => {
@@ -4616,6 +4615,7 @@ function iniciarListenerReservas() {
     }
 }
 
+// ==================== ATUALIZAR LISTA DE RESERVAS ====================
 function atualizarListaReservas() {
     const container = document.getElementById('listaReservas');
     if (!container) return;
@@ -4630,6 +4630,19 @@ function atualizarListaReservas() {
     }
     if (filtroReservaStatusAtual) {
         reservasFiltradas = reservasFiltradas.filter(r => r.status === filtroReservaStatusAtual);
+    }
+
+    // 🔥 CORRIGIDO: Se não houver filtros, mostrar reservas dos próximos 7 dias
+    if (!filtroReservaDataAtual && !filtroReservaSalaAtual && !filtroReservaStatusAtual) {
+        const hoje = new Date();
+        const dataHoje = hoje.toISOString().split('T')[0];
+        const dataLimite = new Date(hoje);
+        dataLimite.setDate(dataLimite.getDate() + 7);
+        const dataLimiteStr = dataLimite.toISOString().split('T')[0];
+        
+        reservasFiltradas = reservasFiltradas.filter(r => {
+            return r.data >= dataHoje && r.data <= dataLimiteStr && r.status !== 'cancelada';
+        });
     }
 
     reservasFiltradas.sort((a, b) => {
@@ -4759,6 +4772,7 @@ function verificarConflitoReserva(reserva) {
     });
 }
 
+// ==================== ATUALIZAR STATS RESERVAS ====================
 function atualizarStatsReservas() {
     const hoje = new Date();
     const hojeStr = hoje.toISOString().split('T')[0];
@@ -4767,9 +4781,10 @@ function atualizarStatsReservas() {
     const confirmadas = reservasCache.filter(r => r.status === 'confirmada' || r.status === 'em_andamento');
     const pendentes = reservasCache.filter(r => r.status === 'pendente');
     
-    const salasOcupadas = new Set(reservasHoje.map(r => r.sala));
+    const reservasHojeAtivas = reservasCache.filter(r => r.data === hojeStr && r.status !== 'cancelada');
+    const salasOcupadas = new Set(reservasHojeAtivas.map(r => r.sala));
     const totalSalas = Object.keys(SALAS_LABELS).length;
-    const salasDisponiveis = totalSalas - salasOcupadas.size;
+    const salasDisponiveis = Math.max(0, totalSalas - salasOcupadas.size);
 
     document.getElementById('reservaTotalHoje').textContent = reservasHoje.length;
     document.getElementById('reservaConfirmadas').textContent = confirmadas.length;
