@@ -43,8 +43,24 @@
             </div>
         </div>
 
+        <!-- Navegação de Data -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; background: white; padding: 12px 20px; border-radius: 12px; border: 1px solid #eef2ff;">
+            <button class="btn-sm" style="background: #e2e8f0; color: #475569;" onclick="navegarDataPublic(-1)">
+                <i class="fas fa-chevron-left"></i> Dia Anterior
+            </button>
+            <button class="btn-sm" style="background: #2563eb; color: white;" onclick="irParaHojePublic()">
+                <i class="fas fa-calendar-day"></i> Hoje
+            </button>
+            <button class="btn-sm" style="background: #e2e8f0; color: #475569;" onclick="navegarDataPublic(1)">
+                Próximo Dia <i class="fas fa-chevron-right"></i>
+            </button>
+            <span style="font-size: 14px; color: #64748b; margin-left: 8px;" id="dataExibicaoPublic">
+                <i class="fas fa-clock"></i> Exibindo eventos de hoje
+            </span>
+        </div>
+
         <div class="public-filters">
-            <input type="date" id="filtroDataPublic" placeholder="Filtrar por data">
+            <input type="date" id="filtroDataPublic" placeholder="Filtrar por data" onchange="aplicarFiltrosPublicos()">
             <select id="filtroTipoPublic">
                 <option value="">Todos os tipos</option>
             </select>
@@ -121,6 +137,10 @@
             duracaoSlot: 60,
             emailSuporte: 'suporte@novetech.com.br'
         };
+
+        // ==================== BLOQUEIOS (CACHE) ====================
+        let bloqueiosCachePublic = [];
+        let unsubscribeBloqueiosPublic = null;
 
         // ==================== AGENDA PÚBLICA ====================
         let unsubscribePublic = null;
@@ -210,10 +230,26 @@
             ]
         };
 
-        // ==================== FUNÇÃO PRINCIPAL DE GERAÇÃO DE SLOTS (STANDALONE) ====================
-        async function gerarSlotsHorarios(data) {
+        // ==================== FUNÇÃO AUXILIAR PARA ADICIONAR MINUTOS ====================
+        function addMinutes(time, minutes) {
+            if (!time) return time;
+            const [h, m] = time.split(':').map(Number);
+            const total = h * 60 + m + minutes;
+            const newH = Math.floor(total / 60);
+            const newM = total % 60;
+            return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+        }
+
+        // ==================== FUNÇÃO PARA EXTRAIR DATA ====================
+        function extrairDataISO(dataISO) {
+            if (!dataISO) return null;
+            return dataISO.split('T')[0];
+        }
+
+        // ==================== FUNÇÃO PRINCIPAL DE GERAÇÃO DE SLOTS ====================
+        async function gerarSlotsHorariosPublic(data) {
             try {
-                // Buscar configurações do Firestore
+                // 1. CARREGAR CONFIGURAÇÕES
                 let config = { ...HORARIOS_PADRAO };
                 try {
                     const doc = await db.collection('configuracoes').doc('configuracoesHorarios').get();
@@ -228,7 +264,7 @@
                     return { disponivel: false, slots: [], motivo: 'Sistema de agendamento desativado' };
                 }
 
-                // Verificar dia da semana
+                // 2. VALIDAR DATA
                 const dataObj = new Date(data + 'T00:00:00');
                 if (isNaN(dataObj.getTime())) {
                     return { disponivel: false, slots: [], motivo: 'Data inválida' };
@@ -246,11 +282,11 @@
                     };
                 }
 
-                // Gerar slots
+                // 3. GERAR SLOTS BASEADOS NA CONFIGURAÇÃO
                 const inicio = config.horarioInicio || '08:00';
                 const fim = config.horarioFim || '18:00';
                 const intervalo = config.intervaloSlots || 60;
-                const duracao = config.duracaoSlot || 60;
+                const duracaoSlot = config.duracaoSlot || 60;
 
                 const [horaInicio, minInicio] = inicio.split(':').map(Number);
                 const [horaFim, minFim] = fim.split(':').map(Number);
@@ -263,11 +299,19 @@
                     const horaStr = String(horaAtual).padStart(2, '0');
                     const minStr = String(minAtual).padStart(2, '0');
 
-                    let minFimSlot = minAtual + duracao;
+                    let minFimSlot = minAtual + duracaoSlot;
                     let horaFimSlot = horaAtual;
                     if (minFimSlot >= 60) {
                         horaFimSlot += Math.floor(minFimSlot / 60);
                         minFimSlot = minFimSlot % 60;
+                    }
+
+                    const fimTotalMin = horaFim * 60 + minFim;
+                    const inicioSlotMin = horaAtual * 60 + minAtual;
+                    const fimSlotMin = horaFimSlot * 60 + minFimSlot;
+
+                    if (fimSlotMin > fimTotalMin) {
+                        break;
                     }
 
                     const horaFimStr = String(horaFimSlot).padStart(2, '0');
@@ -276,8 +320,8 @@
                     slots.push({
                         inicio: `${horaStr}:${minStr}`,
                         fim: `${horaFimStr}:${minFimStr}`,
-                        inicioObj: new Date(0, 0, 0, horaAtual, minAtual),
-                        fimObj: new Date(0, 0, 0, horaFimSlot, minFimSlot)
+                        inicioMin: inicioSlotMin,
+                        fimMin: fimSlotMin
                     });
 
                     minAtual += intervalo;
@@ -287,62 +331,123 @@
                     }
                 }
 
-                // Buscar eventos do dia
-                const dataInicio = data + 'T00:00:00.000Z';
-                const dataFim = data + 'T23:59:59.999Z';
-
+                // 4. 🔥 BUSCAR EVENTOS DO DIA - USAR CACHE GLOBAL
                 let eventosAgendados = [];
-                try {
-                    const eventosSnapshot = await db.collection('eventosAgenda')
-                        .where('data', '>=', dataInicio)
-                        .where('data', '<=', dataFim)
-                        .get();
-
-                    eventosSnapshot.forEach(doc => {
-                        eventosAgendados.push({ id: doc.id, ...doc.data() });
+                
+                // Filtrar eventos do cache para a data específica
+                if (eventosCache && eventosCache.length > 0) {
+                    eventosAgendados = eventosCache.filter(e => {
+                        const eData = extrairDataISO(e.data);
+                        return eData === data;
                     });
-                } catch (e) {
-                    console.warn("⚠️ Erro ao buscar eventos:", e.message);
+                    console.log(`📊 Usando ${eventosAgendados.length} eventos do cache para ${data}`);
                 }
 
-                // Buscar bloqueios
-                let bloqueios = [];
-                try {
-                    const bloqueiosDoc = await db.collection('configuracoes').doc('bloqueiosHorarios').get();
-                    if (bloqueiosDoc.exists) {
-                        bloqueios = bloqueiosDoc.data().bloqueios || [];
+                // Se não encontrou no cache, buscar do Firestore
+                if (eventosAgendados.length === 0) {
+                    try {
+                        const dataInicio = data + 'T00:00:00.000Z';
+                        const dataFim = data + 'T23:59:59.999Z';
+                        const snapshot = await db.collection('eventosAgenda')
+                            .where('data', '>=', dataInicio)
+                            .where('data', '<=', dataFim)
+                            .get();
+                        
+                        snapshot.forEach(doc => {
+                            const evento = { id: doc.id, ...doc.data() };
+                            if (!evento.duracao) evento.duracao = 60;
+                            eventosAgendados.push(evento);
+                        });
+                        console.log(`📊 ${eventosAgendados.length} eventos encontrados no Firestore para ${data}`);
+                    } catch (e) {
+                        console.warn("⚠️ Erro ao buscar eventos:", e.message);
                     }
-                } catch (e) {
-                    console.warn("⚠️ Erro ao buscar bloqueios:", e.message);
                 }
 
-                const horariosBloqueados = bloqueios.filter(b => b.data === data).map(b => b.horario);
+                // 5. 🔥 LOG PARA DEBUG
+                console.log(`📋 EVENTOS DO DIA ${data}:`);
+                eventosAgendados.forEach(e => {
+                    const eData = new Date(e.data);
+                    const eHora = eData.getHours();
+                    const eMin = eData.getMinutes();
+                    const inicioStr = `${String(eHora).padStart(2, '0')}:${String(eMin).padStart(2, '0')}`;
+                    const fimStr = addMinutes(inicioStr, e.duracao || 60);
+                    console.log(`   - ${e.titulo} | ${inicioStr} - ${fimStr} (${e.duracao || 60}min)`);
+                });
 
-                // Verificar disponibilidade
+                // 6. BLOQUEIOS DO DIA
+                const bloqueios = bloqueiosCachePublic || [];
+                const bloqueiosDoDia = bloqueios.filter(b => b.data === data);
+                console.log(`🔒 ${bloqueiosDoDia.length} bloqueios para ${data}`);
+
+                // 7. 🔥 PROCESSAR CADA SLOT - VERIFICAÇÃO DE SOBREPOSIÇÃO
                 const slotsDisponiveis = slots.map(slot => {
-                    const ocupado = eventosAgendados.some(e => {
+                    // [1] VERIFICAR OCUPAÇÃO POR EVENTOS
+                    let eventoOcupante = null;
+                    let ocupado = false;
+                    
+                    for (const e of eventosAgendados) {
                         const eData = new Date(e.data);
                         const eHora = eData.getHours();
                         const eMin = eData.getMinutes();
                         const eDuracao = e.duracao || 60;
 
-                        const slotInicio = slot.inicioObj;
-                        const slotFim = slot.fimObj;
-                        const eventoInicio = new Date(0, 0, 0, eHora, eMin);
-                        const eventoFim = new Date(0, 0, 0, eHora, eMin + eDuracao);
+                        // Converter evento para minutos (início e fim)
+                        const eventoInicioMin = eHora * 60 + eMin;
+                        const eventoFimMin = eventoInicioMin + eDuracao;
 
-                        return (slotInicio < eventoFim && slotFim > eventoInicio);
-                    });
+                        // Slot em minutos
+                        const slotInicioMin = slot.inicioMin;
+                        const slotFimMin = slot.fimMin;
 
-                    const bloqueado = horariosBloqueados.includes(slot.inicio);
+                        // 🔥 VERIFICAÇÃO CORRETA DE SOBREPOSIÇÃO
+                        // Um slot está ocupado se o evento começa antes do slot terminar 
+                        // E o evento termina depois do slot começar
+                        const haSobreposicao = (eventoInicioMin < slotFimMin && eventoFimMin > slotInicioMin);
+                        
+                        if (haSobreposicao) {
+                            ocupado = true;
+                            eventoOcupante = e;
+                            console.log(`🔴 Slot ${slot.inicio}-${slot.fim} OCUPADO por: ${e.titulo} (${eDuracao}min)`);
+                            break;
+                        }
+                    }
+
+                    // [2] VERIFICAR BLOQUEIO
+                    let bloqueado = false;
+                    let bloqueioMotivo = null;
+
+                    for (const b of bloqueiosDoDia) {
+                        const [horaBloq, minBloq] = b.horario.split(':').map(Number);
+                        const duracaoBloq = b.duracao || 60;
+                        const inicioBloqMin = horaBloq * 60 + minBloq;
+                        const fimBloqMin = inicioBloqMin + duracaoBloq;
+
+                        const haSobreposicao = (slot.inicioMin < fimBloqMin && slot.fimMin > inicioBloqMin);
+                        
+                        if (haSobreposicao) {
+                            bloqueado = true;
+                            bloqueioMotivo = b.motivo || 'Indisponível';
+                            console.log(`🔒 Slot ${slot.inicio}-${slot.fim} BLOQUEADO por: ${b.horario} (${duracaoBloq}min)`);
+                            break;
+                        }
+                    }
 
                     return {
                         ...slot,
                         disponivel: !ocupado && !bloqueado,
                         ocupado: ocupado,
-                        bloqueado: bloqueado
+                        eventoOcupante: eventoOcupante,
+                        bloqueado: bloqueado,
+                        bloqueadoMotivo: bloqueioMotivo
                     };
                 });
+
+                // 8. LOG DO RESULTADO
+                const disponiveis = slotsDisponiveis.filter(s => s.disponivel).length;
+                const ocupados = slotsDisponiveis.filter(s => s.ocupado).length;
+                const bloqueados = slotsDisponiveis.filter(s => s.bloqueado).length;
+                console.log(`📊 Resultado final: ${disponiveis} disponíveis, ${ocupados} ocupados, ${bloqueados} bloqueados`);
 
                 return {
                     disponivel: true,
@@ -351,7 +456,7 @@
                         inicio,
                         fim,
                         intervalo,
-                        duracao,
+                        duracao: duracaoSlot,
                         emailSuporte: config.emailSuporte || 'suporte@novetech.com.br'
                     }
                 };
@@ -366,12 +471,33 @@
             }
         }
 
-        // ==================== FUNÇÕES DE UTILIDADE ====================
-        function extrairDataISO(dataISO) {
-            if (!dataISO) return null;
-            return dataISO.split('T')[0];
+        // ==================== LISTENER DE BLOQUEIOS ====================
+        function iniciarListenerBloqueiosPublic() {
+            if (unsubscribeBloqueiosPublic) {
+                unsubscribeBloqueiosPublic();
+            }
+
+            try {
+                unsubscribeBloqueiosPublic = db.collection('configuracoes').doc('bloqueiosHorarios')
+                    .onSnapshot((doc) => {
+                        if (doc.exists) {
+                            bloqueiosCachePublic = doc.data().bloqueios || [];
+                            console.log("🔄 Bloqueios atualizados na agenda pública:", bloqueiosCachePublic.length);
+                            
+                            const painel = document.getElementById('painelHorarios');
+                            if (painel && painel.style.display !== 'none') {
+                                carregarHorariosDisponiveis();
+                            }
+                        }
+                    }, (error) => {
+                        console.error("❌ Erro no listener de bloqueios da agenda pública:", error);
+                    });
+            } catch (error) {
+                console.error("❌ Erro ao iniciar listener de bloqueios da agenda pública:", error);
+            }
         }
 
+        // ==================== FUNÇÕES DE UTILIDADE ====================
         function formatarDataParaExibicao(dataISO) {
             if (!dataISO) return 'Data não definida';
             const partes = dataISO.split('T')[0].split('-');
@@ -549,7 +675,10 @@
             }
 
             try {
-                const result = await gerarSlotsHorarios(data);
+                console.log(`🔍 Carregando horários para data: ${data}`);
+                
+                // 🔥 GERAR SLOTS COM OS EVENTOS DO CACHE
+                const result = await gerarSlotsHorariosPublic(data);
 
                 container.style.display = 'block';
                 slotsContainer.innerHTML = '';
@@ -565,6 +694,46 @@
                 const disponiveis = result.slots.filter(s => s.disponivel);
                 const ocupados = result.slots.filter(s => s.ocupado);
                 const bloqueados = result.slots.filter(s => s.bloqueado);
+
+                // 🔥 MOSTRAR BLOQUEIOS (MENSAGEM SIMPLES)
+                if (bloqueados.length > 0) {
+                    const blockerDiv = document.createElement('div');
+                    blockerDiv.style.cssText = `
+                        width: 100%;
+                        padding: 8px 12px;
+                        background: #fee2e2;
+                        border-radius: 8px;
+                        margin-bottom: 8px;
+                        border-left: 4px solid #ef4444;
+                        font-size: 13px;
+                        color: #991b1b;
+                    `;
+                    blockerDiv.innerHTML = `
+                        <i class="fas fa-lock" style="color: #dc2626;"></i>
+                        <strong>${bloqueados.length} horário(s) bloqueado(s)</strong>
+                    `;
+                    slotsContainer.appendChild(blockerDiv);
+                }
+
+                // 🔥 MOSTRAR OCUPADOS (MENSAGEM SIMPLES)
+                if (ocupados.length > 0) {
+                    const ocupadoDiv = document.createElement('div');
+                    ocupadoDiv.style.cssText = `
+                        width: 100%;
+                        padding: 8px 12px;
+                        background: #fef3c7;
+                        border-radius: 8px;
+                        margin-bottom: 8px;
+                        border-left: 4px solid #f59e0b;
+                        font-size: 13px;
+                        color: #78350f;
+                    `;
+                    ocupadoDiv.innerHTML = `
+                        <i class="fas fa-calendar-check" style="color: #d97706;"></i>
+                        <strong>${ocupados.length} horário(s) ocupado(s) por eventos</strong>
+                    `;
+                    slotsContainer.appendChild(ocupadoDiv);
+                }
 
                 if (disponiveis.length === 0) {
                     let msg = '❌ Nenhum horário disponível para esta data.';
@@ -635,32 +804,6 @@
                     wrapper.appendChild(label);
                     slotsContainer.appendChild(wrapper);
                 });
-
-                // Mostrar ocupados (apenas informação)
-                if (ocupados.length > 0) {
-                    const ocupadoDiv = document.createElement('div');
-                    ocupadoDiv.style.cssText = `
-                        width: 100%;
-                        margin-top: 4px;
-                        font-size: 12px;
-                        color: #94a3b8;
-                    `;
-                    ocupadoDiv.textContent = `📋 ${ocupados.length} horário(s) ocupado(s) para esta data.`;
-                    slotsContainer.appendChild(ocupadoDiv);
-                }
-
-                // Mostrar bloqueados (apenas informação)
-                if (bloqueados.length > 0) {
-                    const blockerDiv = document.createElement('div');
-                    blockerDiv.style.cssText = `
-                        width: 100%;
-                        margin-top: 2px;
-                        font-size: 12px;
-                        color: #94a3b8;
-                    `;
-                    blockerDiv.textContent = `🔒 ${bloqueados.length} horário(s) bloqueado(s) para esta data.`;
-                    slotsContainer.appendChild(blockerDiv);
-                }
 
                 // Verificar se o botão já existe e remover
                 const btnExistente = document.getElementById('btnSolicitarAgendamento');
@@ -758,20 +901,23 @@
                     console.warn("⚠️ Usando configurações padrão para painel:", e.message);
                 }
 
+                // 🔥 INICIAR LISTENER DE BLOQUEIOS
+                iniciarListenerBloqueiosPublic();
+
                 const painel = document.getElementById('painelHorarios');
                 if (config.ativo !== false) {
                     painel.style.display = 'block';
                     const hoje = new Date();
                     const dataStr = hoje.toISOString().split('T')[0];
                     document.getElementById('horariosData').value = dataStr;
-                    // Carregar automaticamente
-                    carregarHorariosDisponiveis();
+                    setTimeout(() => {
+                        carregarHorariosDisponiveis();
+                    }, 500);
                 } else {
                     painel.style.display = 'none';
                 }
             } catch (error) {
                 console.error("Erro ao verificar painel de horários:", error);
-                // Fallback: mostrar painel mesmo com erro
                 const painel = document.getElementById('painelHorarios');
                 painel.style.display = 'block';
                 const hoje = new Date();
@@ -877,6 +1023,7 @@
             }
         }
 
+        // ==================== LISTENER DE EVENTOS ====================
         function iniciarListenerEventos() {
             if (unsubscribePublic) {
                 unsubscribePublic();
@@ -885,20 +1032,42 @@
             console.log("🔍 Iniciando listener para eventos públicos...");
 
             try {
+                const hoje = new Date();
+                const dataHoje = hoje.toISOString().split('T')[0];
+                const dataInicio = dataHoje + 'T00:00:00.000Z';
+                const dataFim = dataHoje + 'T23:59:59.999Z';
+
                 unsubscribePublic = db.collection('eventosAgenda')
+                    .where('data', '>=', dataInicio)
+                    .where('data', '<=', dataFim)
                     .orderBy('data', 'asc')
                     .onSnapshot((snapshot) => {
                         console.log("🔄 Agenda pública atualizada em tempo real!");
-                        console.log("📊 Total de eventos no banco:", snapshot.size);
+                        console.log("📊 Total de eventos do dia:", snapshot.size);
 
                         let eventos = [];
                         snapshot.forEach(doc => {
                             const evento = { id: doc.id, ...doc.data() };
+                            if (!evento.duracao) evento.duracao = 60;
                             eventos.push(evento);
                         });
 
                         eventosCache = eventos;
+                        
+                        // 🔥 ATUALIZAR A LISTA DE EVENTOS
                         renderizarEventos(eventosCache, reservasCache, isInternalUser);
+                        
+                        // 🔥 ATUALIZAR A DATA DE EXIBIÇÃO
+                        atualizarDataExibicaoPublic(dataHoje);
+
+                        // 🔥 ATUALIZAR HORÁRIOS DISPONÍVEIS SE O PAINEL ESTIVER VISÍVEL
+                        const painel = document.getElementById('painelHorarios');
+                        if (painel && painel.style.display !== 'none') {
+                            const dataPainel = document.getElementById('horariosData').value;
+                            if (dataPainel === dataHoje) {
+                                carregarHorariosDisponiveis();
+                            }
+                        }
 
                     }, (error) => {
                         console.error("❌ Erro no listener da agenda pública:", error);
@@ -919,6 +1088,7 @@
             }
         }
 
+        // ==================== LISTENER DE RESERVAS ====================
         function iniciarListenerReservas() {
             if (unsubscribeReservasPublic) {
                 unsubscribeReservasPublic();
@@ -927,11 +1097,15 @@
             console.log("🔍 Iniciando listener para reservas de salas (usuário interno)...");
 
             try {
+                const hoje = new Date();
+                const dataHoje = hoje.toISOString().split('T')[0];
+
                 unsubscribeReservasPublic = db.collection('reservasSalas')
+                    .where('data', '==', dataHoje)
                     .orderBy('data', 'asc')
                     .onSnapshot((snapshot) => {
                         console.log("🔄 Reservas de salas atualizadas em tempo real!");
-                        console.log("📊 Total de reservas no banco:", snapshot.size);
+                        console.log("📊 Total de reservas do dia:", snapshot.size);
 
                         let reservas = [];
                         snapshot.forEach(doc => {
@@ -952,6 +1126,117 @@
             }
         }
 
+        // ==================== BUSCAR EVENTOS POR DATA ====================
+        async function buscarEventosPorDataPublic(data) {
+            if (!data) {
+                const hoje = new Date();
+                data = hoje.toISOString().split('T')[0];
+            }
+
+            document.getElementById('filtroDataPublic').value = data;
+
+            const container = document.getElementById('listaEventosPublic');
+            container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Carregando eventos...</div>';
+
+            try {
+                const dataInicio = data + 'T00:00:00.000Z';
+                const dataFim = data + 'T23:59:59.999Z';
+
+                const snapshot = await db.collection('eventosAgenda')
+                    .where('data', '>=', dataInicio)
+                    .where('data', '<=', dataFim)
+                    .orderBy('data', 'asc')
+                    .get();
+
+                let eventos = [];
+                snapshot.forEach(doc => {
+                    const evento = { id: doc.id, ...doc.data() };
+                    if (!evento.duracao) evento.duracao = 60;
+                    eventos.push(evento);
+                });
+
+                eventosCache = eventos;
+                atualizarDataExibicaoPublic(data);
+                
+                if (isInternalUser) {
+                    const reservaSnapshot = await db.collection('reservasSalas')
+                        .where('data', '==', data)
+                        .get();
+                    
+                    let reservas = [];
+                    reservaSnapshot.forEach(doc => {
+                        const reserva = { id: doc.id, ...doc.data() };
+                        if (reserva.status !== 'cancelada') {
+                            reservas.push(reserva);
+                        }
+                    });
+                    reservasCache = reservas;
+                    renderizarEventos(eventos, reservas, isInternalUser);
+                } else {
+                    renderizarEventos(eventos, [], isInternalUser);
+                }
+            } catch (error) {
+                console.error("❌ Erro ao buscar eventos:", error);
+                container.innerHTML = `
+                    <div class="empty-state" style="color: #ef4444; grid-column: 1 / -1;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px;"></i>
+                        <h3 style="margin-top: 12px; color: #ef4444;">Erro ao buscar eventos</h3>
+                        <p style="font-size: 13px; color: #ef4444;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // ==================== NAVEGAÇÃO DE DATA ====================
+        function navegarDataPublic(direcao) {
+            const filtroData = document.getElementById('filtroDataPublic');
+            let dataAtual = filtroData.value;
+            
+            if (!dataAtual) {
+                const hoje = new Date();
+                dataAtual = hoje.toISOString().split('T')[0];
+            }
+            
+            const dataObj = new Date(dataAtual + 'T00:00:00');
+            dataObj.setDate(dataObj.getDate() + direcao);
+            
+            const novaData = dataObj.toISOString().split('T')[0];
+            filtroData.value = novaData;
+            buscarEventosPorDataPublic(novaData);
+            atualizarDataExibicaoPublic(novaData);
+        }
+
+        function irParaHojePublic() {
+            const hoje = new Date();
+            const dataHoje = hoje.toISOString().split('T')[0];
+            document.getElementById('filtroDataPublic').value = dataHoje;
+            buscarEventosPorDataPublic(dataHoje);
+            atualizarDataExibicaoPublic(dataHoje);
+        }
+
+        function atualizarDataExibicaoPublic(data) {
+            const el = document.getElementById('dataExibicaoPublic');
+            if (el) {
+                const hoje = new Date();
+                const hojeStr = hoje.toISOString().split('T')[0];
+                const dataObj = new Date(data + 'T00:00:00');
+                
+                let label = '📅 ' + dataObj.toLocaleDateString('pt-BR', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric' 
+                });
+                
+                if (data === hojeStr) {
+                    label = '🔥 HOJE - ' + label;
+                }
+                
+                el.textContent = label;
+                el.style.color = data === hojeStr ? '#2563eb' : '#64748b';
+                el.style.fontWeight = data === hojeStr ? '600' : '400';
+            }
+        }
+
         // ==================== RENDERIZAÇÃO ====================
         function renderizarEventos(eventos, reservas, isInternal) {
             const container = document.getElementById('listaEventosPublic');
@@ -968,7 +1253,6 @@
             const isFiltroEvento = (tipoFiltro && tipoFiltro !== '' && !isFiltroReserva);
             const isTodosTipos = (tipoFiltro === '');
 
-            // Filtrar eventos
             if (isFiltroReserva) {
                 eventosFiltrados = [];
             } else if (isFiltroEvento) {
@@ -982,7 +1266,6 @@
                 });
             }
 
-            // Filtrar reservas
             if (isFiltroReserva) {
                 if (isInternal) {
                     reservasFiltradas = [...reservas];
@@ -995,7 +1278,6 @@
                 reservasFiltradas = [];
             }
 
-            // Filtro por período
             if (periodoFiltro && periodoFiltro !== 'todos') {
                 eventosFiltrados = filtrarPorPeriodoEventos(eventosFiltrados, periodoFiltro);
                 reservasFiltradas = filtrarPorPeriodoReservas(reservasFiltradas, periodoFiltro);
@@ -1006,7 +1288,6 @@
                 atualizarPeriodoInfo('todos');
             }
 
-            // Filtro por data
             if (dataFiltro) {
                 eventosFiltrados = eventosFiltrados.filter(e => {
                     const dataEvento = extrairDataISO(e.data);
@@ -1085,7 +1366,6 @@
                 return;
             }
 
-            // Renderizar eventos
             eventosFiltrados.forEach(e => {
                 const dataStr = formatarDataParaExibicao(e.data);
                 const horaStr = extrairHoraParaExibicao(e.data);
@@ -1212,7 +1492,6 @@
                 container.appendChild(card);
             });
 
-            // Renderizar reservas
             if (isInternal && (isFiltroReserva || isTodosTipos)) {
                 reservasFiltradas.forEach(r => {
                     const dataStr = formatarDataParaExibicaoSimples(r.data);
@@ -1304,10 +1583,55 @@
 
         // ==================== FILTROS ====================
         function aplicarFiltrosPublicos() {
+            const dataFiltro = document.getElementById('filtroDataPublic').value;
             const periodoFiltro = document.getElementById('filtroPeriodoPublic').value;
+            
             filtroPeriodoPublic = periodoFiltro;
 
-            renderizarEventos(eventosCache, reservasCache, isInternalUser);
+            if (dataFiltro) {
+                buscarEventosPorDataPublic(dataFiltro);
+                return;
+            }
+
+            if (periodoFiltro && periodoFiltro !== 'todos') {
+                db.collection('eventosAgenda')
+                    .orderBy('data', 'asc')
+                    .get()
+                    .then((snapshot) => {
+                        let eventos = [];
+                        snapshot.forEach(doc => {
+                            const evento = { id: doc.id, ...doc.data() };
+                            if (!evento.duracao) evento.duracao = 60;
+                            eventos.push(evento);
+                        });
+                        
+                        eventosCache = eventos;
+                        
+                        if (isInternalUser) {
+                            db.collection('reservasSalas')
+                                .orderBy('data', 'asc')
+                                .get()
+                                .then((reservaSnapshot) => {
+                                    let reservas = [];
+                                    reservaSnapshot.forEach(doc => {
+                                        const reserva = { id: doc.id, ...doc.data() };
+                                        if (reserva.status !== 'cancelada') {
+                                            reservas.push(reserva);
+                                        }
+                                    });
+                                    reservasCache = reservas;
+                                    renderizarEventos(eventos, reservas, isInternalUser);
+                                });
+                        } else {
+                            renderizarEventos(eventos, [], isInternalUser);
+                        }
+                    });
+                return;
+            }
+
+            const hoje = new Date();
+            const dataHoje = hoje.toISOString().split('T')[0];
+            buscarEventosPorDataPublic(dataHoje);
         }
 
         function limparFiltrosPublicos() {
@@ -1315,8 +1639,10 @@
             document.getElementById('filtroTipoPublic').value = '';
             document.getElementById('filtroPeriodoPublic').value = 'todos';
             filtroPeriodoPublic = 'todos';
-
-            renderizarEventos(eventosCache, reservasCache, isInternalUser);
+            
+            const hoje = new Date();
+            const dataHoje = hoje.toISOString().split('T')[0];
+            buscarEventosPorDataPublic(dataHoje);
         }
 
         // ==================== EXPOR FUNÇÕES GLOBAIS ====================
@@ -1324,7 +1650,12 @@
         window.limparFiltrosPublicos = limparFiltrosPublicos;
         window.reiniciarConexao = reiniciarConexao;
         window.carregarHorariosDisponiveis = carregarHorariosDisponiveis;
-        window.gerarSlotsHorarios = gerarSlotsHorarios;
+        window.gerarSlotsHorariosPublic = gerarSlotsHorariosPublic;
+        window.buscarEventosPorDataPublic = buscarEventosPorDataPublic;
+        window.navegarDataPublic = navegarDataPublic;
+        window.irParaHojePublic = irParaHojePublic;
+        window.atualizarDataExibicaoPublic = atualizarDataExibicaoPublic;
+        window.iniciarListenerBloqueiosPublic = iniciarListenerBloqueiosPublic;
     </script>
 </body>
 

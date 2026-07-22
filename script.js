@@ -54,6 +54,7 @@ let unsubscribeEventos = null;
 let unsubscribeColaboradores = null;
 let unsubscribeDashboard = null;
 let unsubscribeFerias = null;
+let unsubscribeBloqueios = null;
 let filtroStatusAtual = '';
 let filtroDataAtual = '';
 let filtroPeriodo = 'todos';
@@ -184,25 +185,52 @@ const RESERVA_STATUS_TEXT_COLORS = {
     'cancelada': '#dc2626'
 };
 
+// ==================== FUNÇÃO AUXILIAR PARA ADICIONAR MINUTOS ====================
+function addMinutes(time, minutes) {
+    if (!time) return time;
+    const [h, m] = time.split(':').map(Number);
+    const total = h * 60 + m + minutes;
+    const newH = Math.floor(total / 60);
+    const newM = total % 60;
+    return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+}
+
+// ==================== FUNÇÃO PARA EXTRAIR DATA ====================
+function extrairDataISO(dataISO) {
+    if (!dataISO) return null;
+    return dataISO.split('T')[0];
+}
+
+// ==================== FUNÇÃO AUXILIAR PARA CONVERTER HORÁRIO EM MINUTOS ====================
+function horarioParaMinutos(horario) {
+    if (!horario) return 0;
+    const [h, m] = horario.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+}
+
+// ==================== FUNÇÃO AUXILIAR PARA CONVERTER MINUTOS EM HORÁRIO ====================
+function minutosParaHorario(minutos) {
+    const h = Math.floor(minutos / 60);
+    const m = minutos % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 // ==================== FUNÇÃO PARA DEFINIR SEÇÃO INICIAL ====================
 function definirSecaoInicial(userData) {
     if (!userData) return;
     
     const isAdmin = userData.tipo === 'admin';
     
-    // Remover active de todas as seções e ocultar
     document.querySelectorAll('.section').forEach(sec => {
         sec.classList.remove('active');
         sec.style.display = 'none';
     });
     
-    // Remover active de todos os menus
     document.querySelectorAll('.sidebar li').forEach(li => {
         li.classList.remove('active');
     });
     
     if (isAdmin) {
-        // ADMIN - Ativar Dashboard
         const dashboard = document.getElementById('dashboardSection');
         if (dashboard) {
             dashboard.classList.add('active');
@@ -216,7 +244,6 @@ function definirSecaoInicial(userData) {
         
         console.log("✅ Dashboard definido como seção inicial para ADMIN");
     } else {
-        // COLABORADOR - Ativar Reservas
         const reservas = document.getElementById('reservasSection');
         if (reservas) {
             reservas.classList.add('active');
@@ -244,7 +271,6 @@ function forcarAtualizacaoMenu(userData) {
     
     console.log(`🔧 Forçando atualização do menu para: ${tipo} (Admin: ${isAdmin})`);
     
-    // LISTA DE TODOS OS MENUS
     const menuDashboard = document.getElementById('menuDashboard');
     const menuSolicitacoes = document.getElementById('menuSolicitacoes');
     const menuReservas = document.getElementById('menuReservas');
@@ -253,9 +279,7 @@ function forcarAtualizacaoMenu(userData) {
     const menuVerAgenda = document.getElementById('menuVerAgenda');
     const menuConfig = document.getElementById('menuConfig');
     
-    // ============ MENUS APENAS PARA ADMIN ============
     if (isAdmin) {
-        // ADMIN - Mostrar todos os menus administrativos
         if (menuDashboard) {
             menuDashboard.style.display = 'block';
             menuDashboard.style.visibility = 'visible';
@@ -291,7 +315,6 @@ function forcarAtualizacaoMenu(userData) {
         console.log("✅ Menu ADMIN carregado com sucesso!");
         
     } else {
-        // COLABORADOR - Ocultar menus administrativos
         if (menuDashboard) {
             menuDashboard.style.display = 'none';
             menuDashboard.style.visibility = 'hidden';
@@ -323,7 +346,6 @@ function forcarAtualizacaoMenu(userData) {
         console.log("✅ Menu COLABORADOR carregado com sucesso!");
     }
     
-    // ============ MENUS PARA TODOS OS USUÁRIOS ============
     if (menuReservas) {
         menuReservas.style.display = 'block';
         menuReservas.style.visibility = 'visible';
@@ -514,6 +536,10 @@ async function logout() {
             unsubscribeReservas();
             unsubscribeReservas = null;
         }
+        if (unsubscribeBloqueios) {
+            unsubscribeBloqueios();
+            unsubscribeBloqueios = null;
+        }
         if (typeof unsubscribeSolicitacoes !== 'undefined' && unsubscribeSolicitacoes) {
             unsubscribeSolicitacoes();
             unsubscribeSolicitacoes = null;
@@ -640,14 +666,12 @@ async function carregarAdmin() {
     
     document.getElementById('adminName').textContent = currentUser.nome;
     
-    // Forçar atualização do menu (múltiplas vezes)
     forcarAtualizacaoMenu(currentUser);
     
     setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 100);
     setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 300);
     setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 800);
     
-    // ============ DEFINIR SEÇÃO INICIAL ============
     definirSecaoInicial(currentUser);
     
     try {
@@ -666,6 +690,10 @@ async function carregarAdmin() {
         await carregarConfiguracoesHorarios();
         await carregarBloqueiosHorarios();
         await carregarConfigLimiteAdmin();
+        
+        // 🔥 INICIAR LISTENER DE BLOQUEIOS
+        iniciarListenerBloqueios();
+        
         iniciarListenersRealtime();
         
         if (currentUser.tipo === 'admin') {
@@ -678,7 +706,6 @@ async function carregarAdmin() {
     
     iniciarSidebar();
     
-    // Forçar reinício da sidebar após carregar tudo
     setTimeout(() => {
         reiniciarSidebar();
     }, 500);
@@ -705,12 +732,11 @@ function iniciarListenersRealtime() {
             console.error("Erro no listener de colaboradores:", error);
         });
 
-    // Listener de eventos - carregar apenas por data, sem filtro de status
+    // 🔥 BUSCAR APENAS EVENTOS DO DIA ATUAL
     if (unsubscribeEventos) {
         unsubscribeEventos();
     }
     
-    // Carregar eventos do dia atual por padrão
     const hoje = new Date();
     const dataHoje = hoje.toISOString().split('T')[0];
     const dataInicio = dataHoje + 'T00:00:00.000Z';
@@ -723,14 +749,12 @@ function iniciarListenersRealtime() {
         .onSnapshot((snapshot) => {
             console.log("🔄 Eventos do dia atual carregados!");
             
-            // Verificar se há filtro de status
             const statusFiltro = document.getElementById('filtroStatus')?.value || '';
             let eventos = [];
             snapshot.forEach(doc => {
                 eventos.push({ id: doc.id, ...doc.data() });
             });
             
-            // Aplicar filtro de status no cliente se necessário
             if (statusFiltro) {
                 eventos = eventos.filter(e => e.status === statusFiltro);
             }
@@ -755,7 +779,6 @@ function iniciarListenersRealtime() {
             atualizarListaEventos(snapshotSimulado);
             atualizarContadorStatus(snapshotSimulado);
             
-            // Atualizar o campo de data com a data atual
             const filtroDataInput = document.getElementById('filtroData');
             if (filtroDataInput && !filtroDataInput.value) {
                 filtroDataInput.value = dataHoje;
@@ -1430,6 +1453,7 @@ function filtrarPorStatus(status) {
     aplicarFiltrosCompletos();
 }
 
+// ==================== APLICAR FILTROS COMPLETOS (COM DATA ESPECÍFICA) ====================
 function aplicarFiltrosCompletos() {
     const dataFiltro = document.getElementById('filtroData').value;
     const statusFiltro = document.getElementById('filtroStatus').value;
@@ -1437,7 +1461,6 @@ function aplicarFiltrosCompletos() {
     filtroDataAtual = dataFiltro;
     filtroStatusAtual = statusFiltro;
 
-    // Se não houver filtro de data, usar a data atual
     let dataConsulta = dataFiltro;
     if (!dataConsulta) {
         const hoje = new Date();
@@ -1451,14 +1474,13 @@ function aplicarFiltrosCompletos() {
         unsubscribeEventos();
     }
 
-    // Criar a consulta base - apenas por data para evitar índices compostos
-    let query = db.collection('eventosAgenda');
-
-    // Aplicar filtro de data (sempre usar a data definida ou a data atual)
     const dataInicio = dataConsulta + 'T00:00:00.000Z';
     const dataFim = dataConsulta + 'T23:59:59.999Z';
-    query = query.where('data', '>=', dataInicio).where('data', '<=', dataFim);
-    query = query.orderBy('data', 'asc');
+    
+    let query = db.collection('eventosAgenda')
+        .where('data', '>=', dataInicio)
+        .where('data', '<=', dataFim)
+        .orderBy('data', 'asc');
 
     unsubscribeEventos = query.onSnapshot((snapshot) => {
         let eventos = [];
@@ -1466,7 +1488,6 @@ function aplicarFiltrosCompletos() {
             eventos.push({ id: doc.id, ...doc.data() });
         });
         
-        // Se houver filtro de status, aplicar no cliente (JavaScript)
         if (statusFiltro) {
             eventos = eventos.filter(e => e.status === statusFiltro);
         }
@@ -1497,7 +1518,6 @@ function aplicarFiltrosCompletos() {
         atualizarListaEventos(snapshotSimulado);
         atualizarContadorStatus(snapshotSimulado);
         
-        // Atualizar o campo de data com a data atual sendo consultada
         const filtroDataInput = document.getElementById('filtroData');
         if (filtroDataInput && !filtroDataInput.value) {
             filtroDataInput.value = dataConsulta;
@@ -1559,7 +1579,9 @@ function limparFiltros() {
     filtroDataAtual = '';
     filtroStatusAtual = '';
     
-    // Recarregar com a data atual
+    const hoje = new Date();
+    const dataHoje = hoje.toISOString().split('T')[0];
+    document.getElementById('filtroData').value = dataHoje;
     aplicarFiltrosCompletos();
 }
 
@@ -2096,6 +2118,417 @@ async function getConfiguracoesHorarios() {
     }
 }
 
+// ==================== FUNÇÃO GERAR SLOTS (COM DURAÇÃO DOS EVENTOS) - MELHORADA ====================
+async function gerarSlotsHorarios(data) {
+    try {
+        const config = await getConfiguracoesHorarios();
+        
+        if (!config.ativo) {
+            return { disponivel: false, slots: [], motivo: 'Sistema de agendamento desativado' };
+        }
+        
+        const dataObj = new Date(data + 'T00:00:00');
+        const diaSemana = dataObj.getDay();
+        const diaNumero = diaSemana === 0 ? 7 : diaSemana;
+        
+        if (!config.diasDisponiveis.includes(diaNumero)) {
+            const nomeDia = DIAS_SEMANA_COMPLETO[diaSemana];
+            return { 
+                disponivel: false, 
+                slots: [], 
+                motivo: `${nomeDia} não é um dia disponível para agendamento` 
+            };
+        }
+        
+        const inicio = config.horarioInicio || '08:00';
+        const fim = config.horarioFim || '18:00';
+        const intervalo = config.intervaloSlots || 60;
+        const duracaoSlot = config.duracaoSlot || 60;
+        
+        const [horaInicio, minInicio] = inicio.split(':').map(Number);
+        const [horaFim, minFim] = fim.split(':').map(Number);
+        
+        const slots = [];
+        let horaAtual = horaInicio;
+        let minAtual = minInicio;
+        
+        while (horaAtual < horaFim || (horaAtual === horaFim && minAtual < minFim)) {
+            const horaStr = String(horaAtual).padStart(2, '0');
+            const minStr = String(minAtual).padStart(2, '0');
+            
+            // Calcular fim do slot baseado na duração padrão
+            let minFimSlot = minAtual + duracaoSlot;
+            let horaFimSlot = horaAtual;
+            if (minFimSlot >= 60) {
+                horaFimSlot += Math.floor(minFimSlot / 60);
+                minFimSlot = minFimSlot % 60;
+            }
+            
+            // Garantir que não ultrapasse o horário de fim
+            const fimTotalMin = horaFim * 60 + minFim;
+            const inicioSlotMin = horaAtual * 60 + minAtual;
+            const fimSlotMin = horaFimSlot * 60 + minFimSlot;
+            
+            if (fimSlotMin > fimTotalMin) {
+                break;
+            }
+            
+            const horaFimStr = String(horaFimSlot).padStart(2, '0');
+            const minFimStr = String(minFimSlot).padStart(2, '0');
+            
+            slots.push({
+                inicio: `${horaStr}:${minStr}`,
+                fim: `${horaFimStr}:${minFimStr}`,
+                inicioObj: new Date(0, 0, 0, horaAtual, minAtual),
+                fimObj: new Date(0, 0, 0, horaFimSlot, minFimSlot),
+                inicioMin: horaAtual * 60 + minAtual,
+                fimMin: horaFimSlot * 60 + minFimSlot,
+                duracaoPadrao: duracaoSlot
+            });
+            
+            minAtual += intervalo;
+            if (minAtual >= 60) {
+                horaAtual += Math.floor(minAtual / 60);
+                minAtual = minAtual % 60;
+            }
+        }
+        
+        // Buscar eventos do dia com suas durações
+        const dataInicio = data + 'T00:00:00.000Z';
+        const dataFim = data + 'T23:59:59.999Z';
+        
+        const eventosSnapshot = await db.collection('eventosAgenda')
+            .where('data', '>=', dataInicio)
+            .where('data', '<=', dataFim)
+            .get();
+        
+        const eventosAgendados = [];
+        eventosSnapshot.forEach(doc => {
+            const evento = { id: doc.id, ...doc.data() };
+            // Garantir que duracao existe
+            if (!evento.duracao) evento.duracao = 60;
+            eventosAgendados.push(evento);
+        });
+        
+        console.log(`📊 ${eventosAgendados.length} eventos encontrados para ${data}`);
+        
+        // Bloqueios do dia
+        const bloqueios = bloqueiosCache.filter(b => b.data === data);
+        const bloqueiosComDuracao = bloqueios.map(b => ({
+            horario: b.horario,
+            duracao: b.duracao || 60,
+            motivo: b.motivo
+        }));
+        
+        // Processar cada slot
+        const slotsDisponiveis = slots.map(slot => {
+            // Verificar ocupação por eventos (considerando a duração de cada evento)
+            let eventoOcupante = null;
+            const ocupado = eventosAgendados.some(e => {
+                const eData = new Date(e.data);
+                const eHora = eData.getHours();
+                const eMin = eData.getMinutes();
+                const eDuracao = e.duracao || 60;
+                
+                // Calcular início e fim do evento em minutos
+                const eventoInicioMin = eHora * 60 + eMin;
+                const eventoFimMin = eventoInicioMin + eDuracao;
+                
+                // Verificar sobreposição
+                const haSobreposicao = (slot.inicioMin < eventoFimMin && slot.fimMin > eventoInicioMin);
+                
+                if (haSobreposicao) {
+                    eventoOcupante = e;
+                    console.log(`🔴 Slot ${slot.inicio}-${slot.fim} OCUPADO por: ${e.titulo} (${eHora}:${String(eMin).padStart(2,'0')} - ${eDuracao}min)`);
+                }
+                
+                return haSobreposicao;
+            });
+            
+            // Verificar bloqueio
+            let bloqueado = false;
+            let bloqueioMotivo = null;
+            
+            for (const b of bloqueiosComDuracao) {
+                const [horaBloq, minBloq] = b.horario.split(':').map(Number);
+                const inicioBloqMin = horaBloq * 60 + minBloq;
+                const fimBloqMin = inicioBloqMin + b.duracao;
+                
+                const haSobreposicao = (slot.inicioMin < fimBloqMin && slot.fimMin > inicioBloqMin);
+                
+                if (haSobreposicao) {
+                    bloqueado = true;
+                    bloqueioMotivo = b.motivo || 'Indisponível';
+                    console.log(`🔒 Slot ${slot.inicio}-${slot.fim} BLOQUEADO por: ${b.horario} (${b.duracao}min)`);
+                    break;
+                }
+            }
+            
+            return {
+                ...slot,
+                disponivel: !ocupado && !bloqueado,
+                ocupado: ocupado,
+                eventoOcupante: eventoOcupante,
+                bloqueado: bloqueado,
+                bloqueadoMotivo: bloqueioMotivo
+            };
+        });
+        
+        const disponiveis = slotsDisponiveis.filter(s => s.disponivel).length;
+        const ocupados = slotsDisponiveis.filter(s => s.ocupado).length;
+        const bloqueados = slotsDisponiveis.filter(s => s.bloqueado).length;
+        
+        console.log(`📊 Resultado final: ${disponiveis} disponíveis, ${ocupados} ocupados, ${bloqueados} bloqueados`);
+        
+        return {
+            disponivel: true,
+            slots: slotsDisponiveis,
+            config: {
+                inicio,
+                fim,
+                intervalo,
+                duracao: duracaoSlot,
+                emailSuporte: config.emailSuporte
+            }
+        };
+        
+    } catch (error) {
+        console.error("❌ Erro ao gerar slots de horários:", error);
+        return { disponivel: false, slots: [], motivo: 'Erro ao gerar horários' };
+    }
+}
+
+// ==================== FUNÇÃO PARA VALIDAR HORÁRIO DISPONÍVEL ====================
+async function validarHorarioDisponivel(data, horario, duracao, eventoId = null) {
+    const conflitos = await verificarTodosConflitos(data, horario, duracao, eventoId);
+    
+    return {
+        disponivel: !conflitos.temConflito,
+        conflitos: conflitos,
+        mensagem: conflitos.temConflito ? conflitos.mensagem : 'Horário disponível'
+    };
+}
+
+// ==================== FUNÇÃO PARA OBTER HORÁRIOS OCUPADOS DO DIA ====================
+async function getHorariosOcupados(data) {
+    try {
+        const dataInicio = data + 'T00:00:00.000Z';
+        const dataFim = data + 'T23:59:59.999Z';
+        
+        const snapshot = await db.collection('eventosAgenda')
+            .where('data', '>=', dataInicio)
+            .where('data', '<=', dataFim)
+            .get();
+        
+        const ocupados = [];
+        snapshot.forEach(doc => {
+            const e = { id: doc.id, ...doc.data() };
+            const eData = new Date(e.data);
+            const eHora = eData.getHours();
+            const eMin = eData.getMinutes();
+            const eDuracao = e.duracao || 60;
+            
+            ocupados.push({
+                inicio: `${String(eHora).padStart(2, '0')}:${String(eMin).padStart(2, '0')}`,
+                duracao: eDuracao,
+                titulo: e.titulo,
+                responsavel: e.responsavelNome
+            });
+        });
+        
+        return ocupados;
+    } catch (error) {
+        console.error("❌ Erro ao buscar horários ocupados:", error);
+        return [];
+    }
+}
+
+// ==================== FUNÇÃO PARA BLOQUEAR HORÁRIOS AUTOMATICAMENTE ====================
+async function bloquearHorariosAutomaticamente(data, horario, duracao, titulo) {
+    try {
+        // 1. CARREGAR CONFIGURAÇÕES DE HORÁRIOS
+        let config = { ...HORARIOS_PADRAO };
+        try {
+            const doc = await db.collection('configuracoes').doc('configuracoesHorarios').get();
+            if (doc.exists) {
+                config = { ...HORARIOS_PADRAO, ...doc.data() };
+            }
+        } catch (e) {
+            console.warn("⚠️ Usando configurações padrão:", e.message);
+        }
+
+        if (!config.ativo) {
+            console.log("ℹ️ Sistema de horários desativado. Pulando bloqueio automático.");
+            return;
+        }
+
+        // 2. CALCULAR O PERÍODO OCUPADO PELO EVENTO
+        const [horaEvento, minEvento] = horario.split(':').map(Number);
+        const inicioEventoMin = horaEvento * 60 + minEvento;
+        const fimEventoMin = inicioEventoMin + duracao;
+
+        console.log(`🔍 Bloqueio automático: ${horario} - ${addMinutes(horario, duracao)} (${duracao}min) - ${titulo || 'Evento'}`);
+
+        // 3. GERAR SLOTS DE HORÁRIOS CONFORME CONFIGURAÇÃO
+        const inicio = config.horarioInicio || '08:00';
+        const fim = config.horarioFim || '18:00';
+        const intervalo = config.intervaloSlots || 60;
+        const duracaoSlot = config.duracaoSlot || 60;
+
+        const [horaInicio, minInicio] = inicio.split(':').map(Number);
+        const [horaFim, minFim] = fim.split(':').map(Number);
+
+        const slotsOcupados = [];
+        let horaAtual = horaInicio;
+        let minAtual = minInicio;
+
+        while (horaAtual < horaFim || (horaAtual === horaFim && minAtual < minFim)) {
+            const inicioSlotMin = horaAtual * 60 + minAtual;
+            let minFimSlot = minAtual + duracaoSlot;
+            let horaFimSlot = horaAtual;
+            if (minFimSlot >= 60) {
+                horaFimSlot += Math.floor(minFimSlot / 60);
+                minFimSlot = minFimSlot % 60;
+            }
+            const fimSlotMin = horaFimSlot * 60 + minFimSlot;
+
+            // Verificar se o slot está dentro do período ocupado pelo evento
+            const haSobreposicao = (inicioEventoMin < fimSlotMin && fimEventoMin > inicioSlotMin);
+            
+            if (haSobreposicao) {
+                const horaStr = String(horaAtual).padStart(2, '0');
+                const minStr = String(minAtual).padStart(2, '0');
+                const horaFimStr = String(horaFimSlot).padStart(2, '0');
+                const minFimStr = String(minFimSlot).padStart(2, '0');
+                
+                slotsOcupados.push({
+                    inicio: `${horaStr}:${minStr}`,
+                    fim: `${horaFimStr}:${minFimStr}`,
+                    inicioMin: inicioSlotMin,
+                    fimMin: fimSlotMin
+                });
+                console.log(`🔒 Slot ${horaStr}:${minStr} - ${horaFimStr}:${minFimStr} será bloqueado`);
+            }
+
+            minAtual += intervalo;
+            if (minAtual >= 60) {
+                horaAtual += Math.floor(minAtual / 60);
+                minAtual = minAtual % 60;
+            }
+        }
+
+        // 4. VERIFICAR BLOQUEIOS EXISTENTES
+        const bloqueiosExistentes = bloqueiosCache.filter(b => b.data === data);
+        
+        // 5. ADICIONAR NOVOS BLOQUEIOS (apenas os que não existem)
+        let novosBloqueios = 0;
+        for (const slot of slotsOcupados) {
+            // Verificar se já existe bloqueio para este slot
+            const existe = bloqueiosExistentes.some(b => {
+                const [horaBloq, minBloq] = b.horario.split(':').map(Number);
+                const inicioBloqMin = horaBloq * 60 + minBloq;
+                const fimBloqMin = inicioBloqMin + (b.duracao || 60);
+                return (slot.inicioMin >= inicioBloqMin && slot.fimMin <= fimBloqMin);
+            });
+
+            if (!existe) {
+                const novoBloqueio = {
+                    id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 5),
+                    data: data,
+                    horario: slot.inicio,
+                    duracao: duracaoSlot,
+                    motivo: `Evento: ${titulo || 'Agendado'} - ${duracao}min`,
+                    criadoEm: new Date().toISOString(),
+                    criadoPor: currentUser?.uid || 'sistema',
+                    criadoPorNome: currentUser?.nome || 'sistema',
+                    automatico: true
+                };
+                
+                bloqueiosCache.push(novoBloqueio);
+                novosBloqueios++;
+                console.log(`✅ Bloqueio automático adicionado: ${slot.inicio} - ${slot.fim}`);
+            } else {
+                console.log(`ℹ️ Slot ${slot.inicio} - ${slot.fim} já está bloqueado`);
+            }
+        }
+
+        // 6. SALVAR BLOQUEIOS NO FIRESTORE
+        if (novosBloqueios > 0) {
+            await db.collection('configuracoes').doc(CONFIG_BLOQUEIOS_DOC).set({
+                bloqueios: bloqueiosCache,
+                atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                atualizadoPor: currentUser?.uid || 'sistema',
+                atualizadoPorNome: currentUser?.nome || 'sistema'
+            });
+            console.log(`✅ ${novosBloqueios} bloqueios automáticos salvos com sucesso!`);
+        }
+
+        return slotsOcupados;
+
+    } catch (error) {
+        console.error("❌ Erro ao bloquear horários automaticamente:", error);
+        return [];
+    }
+}
+
+// ==================== FUNÇÃO PARA REMOVER BLOQUEIOS AUTOMÁTICOS (CORRIGIDA) ====================
+async function removerBloqueiosAutomaticos(eventoId) {
+    // 🔥 VERIFICAR SE O ID É VÁLIDO
+    if (!eventoId) {
+        console.warn("⚠️ ID do evento não fornecido para remover bloqueios");
+        return;
+    }
+    
+    try {
+        // Buscar o evento para saber data e horário
+        const doc = await db.collection('eventosAgenda').doc(eventoId).get();
+        if (!doc.exists) {
+            console.warn(`⚠️ Evento ${eventoId} não encontrado para remover bloqueios`);
+            return;
+        }
+
+        const evento = doc.data();
+        const data = extrairDataISO(evento.data);
+        const eData = new Date(evento.data);
+        const horario = String(eData.getHours()).padStart(2, '0') + ':' + String(eData.getMinutes()).padStart(2, '0');
+        const duracao = evento.duracao || 60;
+
+        console.log(`🔍 Removendo bloqueios automáticos (função): ${data} - ${horario} (${duracao}min)`);
+
+        // Remover bloqueios automáticos relacionados a este evento
+        const bloqueiosRemover = bloqueiosCache.filter(b => 
+            b.data === data && 
+            b.automatico === true &&
+            b.horario === horario
+        );
+
+        if (bloqueiosRemover.length === 0) {
+            console.log(`ℹ️ Nenhum bloqueio automático encontrado para o evento ${eventoId}`);
+            return;
+        }
+
+        bloqueiosCache = bloqueiosCache.filter(b => 
+            !(b.data === data && b.automatico === true && b.horario === horario)
+        );
+
+        await db.collection('configuracoes').doc(CONFIG_BLOQUEIOS_DOC).set({
+            bloqueios: bloqueiosCache,
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            atualizadoPor: currentUser?.uid || 'sistema',
+            atualizadoPorNome: currentUser?.nome || 'sistema'
+        });
+
+        console.log(`✅ ${bloqueiosRemover.length} bloqueios automáticos removidos para o evento ${eventoId}`);
+        
+        // Atualizar a interface
+        atualizarListaBloqueios();
+        atualizarContadorBloqueios();
+
+    } catch (error) {
+        console.error("❌ Erro ao remover bloqueios automáticos:", error);
+        // Não lançar o erro para não interromper a exclusão do evento    }
+}}
+
 async function visualizarHorariosDisponiveis() {
     const data = new Date();
     const dataStr = data.toISOString().split('T')[0];
@@ -2204,6 +2637,7 @@ async function visualizarHorariosDisponiveis() {
                                     font-weight: 500;
                                 ">
                                     ${s.inicio} - ${s.fim}
+                                    ${s.eventoOcupante ? ` (${s.eventoOcupante.titulo})` : ''}
                                 </span>
                             `).join('')}
                         </div>
@@ -2252,6 +2686,120 @@ async function visualizarHorariosDisponiveis() {
 const CONFIG_BLOQUEIOS_DOC = 'bloqueiosHorarios';
 let bloqueiosCache = [];
 
+// ==================== FUNÇÃO PARA VERIFICAR CONFLITO COM BLOQUEIOS ====================
+async function verificarConflitoComBloqueios(data, horario, duracao = 60) {
+    if (!data || !horario) {
+        return { temConflito: false, bloqueios: [] };
+    }
+
+    try {
+        const bloqueiosDoDia = bloqueiosCache.filter(b => b.data === data);
+        
+        if (bloqueiosDoDia.length === 0) {
+            return { temConflito: false, bloqueios: [] };
+        }
+
+        const [horaEvento, minEvento] = horario.split(':').map(Number);
+        const inicioEventoMin = horaEvento * 60 + minEvento;
+        const fimEventoMin = inicioEventoMin + duracao;
+
+        const conflitos = bloqueiosDoDia.filter(b => {
+            const [horaBloqueio, minBloqueio] = b.horario.split(':').map(Number);
+            const inicioBloqueioMin = horaBloqueio * 60 + minBloqueio;
+            const duracaoBloqueio = b.duracao || 60;
+            const fimBloqueioMin = inicioBloqueioMin + duracaoBloqueio;
+
+            return (inicioEventoMin < fimBloqueioMin && fimEventoMin > inicioBloqueioMin);
+        });
+
+        return {
+            temConflito: conflitos.length > 0,
+            bloqueios: conflitos
+        };
+
+    } catch (error) {
+        console.error("❌ Erro ao verificar conflito com bloqueios:", error);
+        return { temConflito: false, bloqueios: [] };
+    }
+}
+
+// ==================== VERIFICAR CONFLITO COM EVENTOS EXISTENTES (MELHORADA) ====================
+async function verificarConflitoComEventos(data, horario, duracao = 60, eventoId = null) {
+    if (!data || !horario) {
+        return { temConflito: false, eventos: [] };
+    }
+
+    try {
+        const dataInicio = data + 'T00:00:00.000Z';
+        const dataFim = data + 'T23:59:59.999Z';
+
+        const snapshot = await db.collection('eventosAgenda')
+            .where('data', '>=', dataInicio)
+            .where('data', '<=', dataFim)
+            .get();
+
+        const eventos = [];
+        snapshot.forEach(doc => {
+            if (doc.id === eventoId) return;
+            const e = { id: doc.id, ...doc.data() };
+            if (!e.duracao) e.duracao = 60;
+            eventos.push(e);
+        });
+
+        const [horaEvento, minEvento] = horario.split(':').map(Number);
+        const inicioEventoMin = horaEvento * 60 + minEvento;
+        const fimEventoMin = inicioEventoMin + duracao;
+
+        const conflitos = eventos.filter(e => {
+            const eData = new Date(e.data);
+            const eHora = eData.getHours();
+            const eMin = eData.getMinutes();
+            const eDuracao = e.duracao || 60;
+
+            const inicioExistenteMin = eHora * 60 + eMin;
+            const fimExistenteMin = inicioExistenteMin + eDuracao;
+
+            // Verificar sobreposição completa
+            return (inicioEventoMin < fimExistenteMin && fimEventoMin > inicioExistenteMin);
+        });
+
+        return {
+            temConflito: conflitos.length > 0,
+            eventos: conflitos
+        };
+
+    } catch (error) {
+        console.error("❌ Erro ao verificar conflito com eventos:", error);
+        return { temConflito: false, eventos: [] };
+    }
+}
+
+// ==================== VERIFICAR TODOS OS CONFLITOS ====================
+async function verificarTodosConflitos(data, horario, duracao = 60, eventoId = null) {
+    const resultados = {
+        temConflito: false,
+        bloqueios: [],
+        eventos: [],
+        mensagem: ''
+    };
+
+    const conflitoBloqueios = await verificarConflitoComBloqueios(data, horario, duracao);
+    if (conflitoBloqueios.temConflito) {
+        resultados.temConflito = true;
+        resultados.bloqueios = conflitoBloqueios.bloqueios;
+        resultados.mensagem += `🔒 Este horário está bloqueado (${conflitoBloqueios.bloqueios.map(b => b.horario).join(', ')}). `;
+    }
+
+    const conflitoEventos = await verificarConflitoComEventos(data, horario, duracao, eventoId);
+    if (conflitoEventos.temConflito) {
+        resultados.temConflito = true;
+        resultados.eventos = conflitoEventos.eventos;
+        resultados.mensagem += `📋 Conflito com ${conflitoEventos.eventos.length} evento(s) existente(s). `;
+    }
+
+    return resultados;
+}
+
 async function carregarBloqueiosHorarios() {
     try {
         const doc = await db.collection('configuracoes').doc(CONFIG_BLOQUEIOS_DOC).get();
@@ -2280,6 +2828,35 @@ async function carregarBloqueiosHorarios() {
     } catch (error) {
         console.error("❌ Erro ao carregar bloqueios:", error);
         bloqueiosCache = [];
+    }
+}
+
+// ==================== LISTENER DE BLOQUEIOS EM TEMPO REAL ====================
+function iniciarListenerBloqueios() {
+    if (unsubscribeBloqueios) {
+        unsubscribeBloqueios();
+    }
+
+    try {
+        unsubscribeBloqueios = db.collection('configuracoes').doc('bloqueiosHorarios')
+            .onSnapshot((doc) => {
+                if (doc.exists) {
+                    bloqueiosCache = doc.data().bloqueios || [];
+                    console.log("🔄 Bloqueios atualizados em tempo real:", bloqueiosCache.length);
+                    
+                    atualizarListaBloqueios();
+                    atualizarContadorBloqueios();
+                    
+                    const select = document.getElementById('bloqueioHorario');
+                    if (select && select.options.length > 0) {
+                        atualizarSelectBloqueioHorarios();
+                    }
+                }
+            }, (error) => {
+                console.error("❌ Erro no listener de bloqueios:", error);
+            });
+    } catch (error) {
+        console.error("❌ Erro ao iniciar listener de bloqueios:", error);
     }
 }
 
@@ -2313,6 +2890,9 @@ function atualizarListaBloqueios() {
     container.innerHTML = '';
     bloqueiosOrdenados.forEach(b => {
         const dataStr = formatarDataParaExibicaoSimples(b.data);
+        const duracao = b.duracao || 60;
+        const horarioFim = addMinutes(b.horario, duracao);
+        
         const item = document.createElement('div');
         item.style.cssText = `
             display: flex;
@@ -2328,8 +2908,10 @@ function atualizarListaBloqueios() {
         item.innerHTML = `
             <span>
                 <i class="fas fa-calendar-day" style="color: #64748b;"></i>
-                ${dataStr} - <strong>${b.horario}</strong>
-                ${b.motivo ? ` (${b.motivo})` : ''}
+                ${dataStr} - <strong>${b.horario} às ${horarioFim}</strong>
+                (${duracao}min)
+                ${b.motivo ? ` - ${b.motivo}` : ''}
+                ${b.automatico ? ' 🔄 (Automático)' : ''}
             </span>
             <button onclick="desbloquearHorario('${b.id}')" style="
                 background: none;
@@ -2377,18 +2959,35 @@ async function atualizarSelectBloqueioHorarios() {
         }
         
         const bloqueios = bloqueiosCache.filter(b => b.data === data);
-        const horariosBloqueados = bloqueios.map(b => b.horario);
         
         result.slots.forEach(slot => {
             const option = document.createElement('option');
             option.value = slot.inicio;
             
-            const estaBloqueado = horariosBloqueados.includes(slot.inicio);
+            const estaBloqueado = bloqueios.some(b => {
+                const [horaBloq, minBloq] = b.horario.split(':').map(Number);
+                const [horaSlot, minSlot] = slot.inicio.split(':').map(Number);
+                const inicioBloq = horaBloq * 60 + minBloq;
+                const fimBloq = inicioBloq + (b.duracao || 60);
+                const inicioSlot = horaSlot * 60 + minSlot;
+                const fimSlot = inicioSlot + 60;
+                return (inicioSlot < fimBloq && fimSlot > inicioBloq);
+            });
+            
             const estaOcupado = slot.ocupado === true;
             
             let label = `${slot.inicio} - ${slot.fim}`;
             if (estaBloqueado) {
-                label += ' 🔒 (Bloqueado)';
+                const bloqueio = bloqueios.find(b => {
+                    const [horaBloq, minBloq] = b.horario.split(':').map(Number);
+                    const [horaSlot, minSlot] = slot.inicio.split(':').map(Number);
+                    const inicioBloq = horaBloq * 60 + minBloq;
+                    const fimBloq = inicioBloq + (b.duracao || 60);
+                    const inicioSlot = horaSlot * 60 + minSlot;
+                    const fimSlot = inicioSlot + 60;
+                    return (inicioSlot < fimBloq && fimSlot > inicioBloq);
+                });
+                label += ` 🔒 (Bloqueado${bloqueio?.duracao ? ` ${bloqueio.duracao}min` : ''})`;
                 option.disabled = true;
                 option.style.color = '#94a3b8';
             } else if (estaOcupado) {
@@ -2414,6 +3013,14 @@ async function bloquearHorario() {
     const horario = document.getElementById('bloqueioHorario').value;
     const motivo = prompt('Motivo do bloqueio (opcional):');
     
+    const duracaoInput = prompt('Duração do bloqueio em minutos (padrão 60):', '60');
+    const duracao = parseInt(duracaoInput) || 60;
+    
+    if (duracao < 15 || duracao > 480) {
+        alert('❌ A duração do bloqueio deve ser entre 15 e 480 minutos.');
+        return;
+    }
+    
     if (!data) {
         alert('❌ Selecione uma data para bloquear.');
         return;
@@ -2424,8 +3031,20 @@ async function bloquearHorario() {
         return;
     }
     
-    if (bloqueiosCache.some(b => b.data === data && b.horario === horario)) {
-        alert('⚠️ Este horário já está bloqueado.');
+    // Verificar se já existe bloqueio no período
+    const conflito = bloqueiosCache.some(b => {
+        if (b.data !== data) return false;
+        const [horaExistente, minExistente] = b.horario.split(':').map(Number);
+        const [horaNovo, minNovo] = horario.split(':').map(Number);
+        const inicioExistente = horaExistente * 60 + minExistente;
+        const fimExistente = inicioExistente + (b.duracao || 60);
+        const inicioNovo = horaNovo * 60 + minNovo;
+        const fimNovo = inicioNovo + duracao;
+        return (inicioNovo < fimExistente && fimNovo > inicioExistente);
+    });
+    
+    if (conflito) {
+        alert('⚠️ Este período já possui um bloqueio. Verifique a lista de bloqueios.');
         return;
     }
     
@@ -2446,10 +3065,12 @@ async function bloquearHorario() {
             id: Date.now().toString(),
             data: data,
             horario: horario,
+            duracao: duracao,
             motivo: motivo || 'Indisponível',
             criadoEm: new Date().toISOString(),
             criadoPor: currentUser?.uid || 'sistema',
-            criadoPorNome: currentUser?.nome || 'sistema'
+            criadoPorNome: currentUser?.nome || 'sistema',
+            automatico: false
         };
         
         bloqueiosCache.push(novoBloqueio);
@@ -2541,123 +3162,7 @@ async function limparBloqueiosData() {
     }
 }
 
-// ==================== FUNÇÃO GERAR SLOTS ATUALIZADA (COM BLOQUEIOS) ====================
-
-async function gerarSlotsHorarios(data) {
-    try {
-        const config = await getConfiguracoesHorarios();
-        
-        if (!config.ativo) {
-            return { disponivel: false, slots: [], motivo: 'Sistema de agendamento desativado' };
-        }
-        
-        const dataObj = new Date(data + 'T00:00:00');
-        const diaSemana = dataObj.getDay();
-        const diaNumero = diaSemana === 0 ? 7 : diaSemana;
-        
-        if (!config.diasDisponiveis.includes(diaNumero)) {
-            const nomeDia = DIAS_SEMANA_COMPLETO[diaSemana];
-            return { 
-                disponivel: false, 
-                slots: [], 
-                motivo: `${nomeDia} não é um dia disponível para agendamento` 
-            };
-        }
-        
-        const inicio = config.horarioInicio || '08:00';
-        const fim = config.horarioFim || '18:00';
-        const intervalo = config.intervaloSlots || 60;
-        const duracao = config.duracaoSlot || 60;
-        
-        const [horaInicio, minInicio] = inicio.split(':').map(Number);
-        const [horaFim, minFim] = fim.split(':').map(Number);
-        
-        const slots = [];
-        let horaAtual = horaInicio;
-        let minAtual = minInicio;
-        
-        while (horaAtual < horaFim || (horaAtual === horaFim && minAtual < minFim)) {
-            const horaStr = String(horaAtual).padStart(2, '0');
-            const minStr = String(minAtual).padStart(2, '0');
-            const horaFimSlot = new Date(0, 0, 0, horaAtual, minAtual + duracao);
-            const horaFimStr = String(horaFimSlot.getHours()).padStart(2, '0');
-            const minFimStr = String(horaFimSlot.getMinutes()).padStart(2, '0');
-            
-            slots.push({
-                inicio: `${horaStr}:${minStr}`,
-                fim: `${horaFimStr}:${minFimStr}`,
-                inicioObj: new Date(0, 0, 0, horaAtual, minAtual),
-                fimObj: new Date(0, 0, 0, horaFimSlot.getHours(), horaFimSlot.getMinutes())
-            });
-            
-            minAtual += intervalo;
-            if (minAtual >= 60) {
-                horaAtual += Math.floor(minAtual / 60);
-                minAtual = minAtual % 60;
-            }
-        }
-        
-        const dataInicio = data + 'T00:00:00.000Z';
-        const dataFim = data + 'T23:59:59.999Z';
-        
-        const eventosSnapshot = await db.collection('eventosAgenda')
-            .where('data', '>=', dataInicio)
-            .where('data', '<=', dataFim)
-            .get();
-        
-        const eventosAgendados = [];
-        eventosSnapshot.forEach(doc => {
-            eventosAgendados.push({ id: doc.id, ...doc.data() });
-        });
-        
-        const bloqueios = bloqueiosCache.filter(b => b.data === data);
-        const horariosBloqueados = bloqueios.map(b => b.horario);
-        
-        const slotsDisponiveis = slots.map(slot => {
-            const ocupado = eventosAgendados.some(e => {
-                const eData = new Date(e.data);
-                const eHora = eData.getHours();
-                const eMin = eData.getMinutes();
-                const eDuracao = e.duracao || 60;
-                
-                const slotInicio = slot.inicioObj;
-                const slotFim = slot.fimObj;
-                const eventoInicio = new Date(0, 0, 0, eHora, eMin);
-                const eventoFim = new Date(0, 0, 0, eHora, eMin + eDuracao);
-                
-                return (slotInicio < eventoFim && slotFim > eventoInicio);
-            });
-            
-            const bloqueado = horariosBloqueados.includes(slot.inicio);
-            
-            return {
-                ...slot,
-                disponivel: !ocupado && !bloqueado,
-                ocupado: ocupado,
-                bloqueado: bloqueado,
-                bloqueadoMotivo: bloqueado ? bloqueios.find(b => b.horario === slot.inicio)?.motivo : null
-            };
-        });
-        
-        return {
-            disponivel: true,
-            slots: slotsDisponiveis,
-            config: {
-                inicio,
-                fim,
-                intervalo,
-                duracao,
-                emailSuporte: config.emailSuporte
-            }
-        };
-        
-    } catch (error) {
-        console.error("❌ Erro ao gerar slots de horários:", error);
-        return { disponivel: false, slots: [], motivo: 'Erro ao gerar horários' };
-    }
-}
-
-// ==================== CONTROLE DE LIMITE DE EVENTOS POR COLABORADOR ====================
+// ==================== CONTROLE DE LIMITE DE EVENTOS POR COLABORADOR (CORRIGIDO - SEM ÍNDICE COMPOSTO) ====================
 
 async function verificarDemandaColaborador(colaboradorId, data, duracao = 60) {
     if (!colaboradorId || !data) {
@@ -2688,20 +3193,32 @@ async function verificarDemandaColaborador(colaboradorId, data, duracao = 60) {
             };
         }
 
+        // 🔥 MODIFICADO: Buscar eventos do colaborador sem filtro de data composto
+        // Depois filtrar em memória para evitar erro de índice composto
+        
+        // Buscar todos os eventos do colaborador (limitado a 1000 para performance)
+        const eventosSnapshot = await db.collection('eventosAgenda')
+            .where('responsavelId', '==', colaboradorId)
+            .get();
+
+        const eventosDoColaborador = [];
+        eventosSnapshot.forEach(doc => {
+            const e = { id: doc.id, ...doc.data() };
+            if (!e.duracao) e.duracao = 60;
+            eventosDoColaborador.push(e);
+        });
+
+        // Filtrar por data em memória
+        const hoje = new Date();
         const dataInicio = data + 'T00:00:00.000Z';
         const dataFim = data + 'T23:59:59.999Z';
 
-        const eventosDiaSnapshot = await db.collection('eventosAgenda')
-            .where('responsavelId', '==', colaboradorId)
-            .where('data', '>=', dataInicio)
-            .where('data', '<=', dataFim)
-            .get();
-
-        const eventosDia = [];
-        eventosDiaSnapshot.forEach(doc => {
-            eventosDia.push({ id: doc.id, ...doc.data() });
+        // Eventos do dia
+        const eventosDia = eventosDoColaborador.filter(e => {
+            return e.data >= dataInicio && e.data <= dataFim;
         });
 
+        // Calcular minutos ocupados
         let minutosOcupados = 0;
         eventosDia.forEach(e => {
             const duracaoEvento = e.duracao || 60;
@@ -2711,38 +3228,41 @@ async function verificarDemandaColaborador(colaboradorId, data, duracao = 60) {
         const minutosTotais = minutosOcupados + (duracao || 60);
         const horasTotais = Math.round(minutosTotais / 60 * 10) / 10;
 
-        const hoje = new Date();
+        // Eventos da semana (últimos 7 dias)
         const dataSemanaInicio = new Date(hoje);
         dataSemanaInicio.setDate(hoje.getDate() - 7);
         const dataSemanaInicioStr = dataSemanaInicio.toISOString().split('T')[0] + 'T00:00:00.000Z';
 
-        const eventosSemanaSnapshot = await db.collection('eventosAgenda')
-            .where('responsavelId', '==', colaboradorId)
-            .where('data', '>=', dataSemanaInicioStr)
-            .get();
+        const eventosSemana = eventosDoColaborador.filter(e => {
+            return e.data >= dataSemanaInicioStr;
+        });
 
-        const totalEventosSemana = eventosSemanaSnapshot.size;
+        const totalEventosSemana = eventosSemana.length;
 
+        // Eventos do mês (últimos 30 dias)
         const dataMesInicio = new Date(hoje);
         dataMesInicio.setDate(hoje.getDate() - 30);
         const dataMesInicioStr = dataMesInicio.toISOString().split('T')[0] + 'T00:00:00.000Z';
 
-        const eventosMesSnapshot = await db.collection('eventosAgenda')
-            .where('responsavelId', '==', colaboradorId)
-            .where('data', '>=', dataMesInicioStr)
-            .get();
+        const eventosMes = eventosDoColaborador.filter(e => {
+            return e.data >= dataMesInicioStr;
+        });
 
-        const totalEventosMes = eventosMesSnapshot.size;
+        const totalEventosMes = eventosMes.length;
 
-        const dataCompleta = data + 'T' + document.getElementById('eventoHorario')?.value + ':00.000Z' || '';
+        // Verificar conflitos de horário
+        const horarioEvento = document.getElementById('eventoHorario')?.value || '00:00';
+        const dataCompleta = data + 'T' + horarioEvento + ':00.000Z';
+        const novaData = new Date(dataCompleta);
+        
         const conflitos = eventosDia.filter(e => {
             if (e.id === 'novo') return false;
             const eData = new Date(e.data);
-            const novaData = new Date(dataCompleta);
             const diffMinutos = Math.abs(eData.getTime() - novaData.getTime()) / (1000 * 60);
             return diffMinutos < (e.duracao || 60);
         });
 
+        // Determinar nível de demanda
         let nivelDemanda = 'baixa';
         let mensagemDemanda = '';
         let corDemanda = '#10b981';
@@ -3138,7 +3658,7 @@ async function exibirRelatorioDemanda(colaboradorId) {
                             ${eventosHoje.map(e => `
                                 <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 4px; border-left: 3px solid ${TIPO_BORDER_COLORS[e.tipo] || '#2563eb'};">
                                     <span style="font-size: 13px;">${e.titulo}</span>
-                                    <span style="font-size: 12px; color: #64748b;">${extrairHoraParaExibicao(e.data)}</span>
+                                    <span style="font-size: 12px; color: #64748b;">${extrairHoraParaExibicao(e.data)} (${e.duracao || 60}min)</span>
                                 </div>
                             `).join('')}
                         </div>
@@ -3181,7 +3701,7 @@ async function exibirRelatorioDemanda(colaboradorId) {
     }
 }
 
-// ==================== ADICIONAR EVENTO ====================
+// ==================== ADICIONAR EVENTO (COM BLOQUEIO AUTOMÁTICO DE HORÁRIOS) ====================
 async function adicionarEvento() {
     const data = document.getElementById('eventoData').value;
     const horario = document.getElementById('eventoHorario').value;
@@ -3203,6 +3723,40 @@ async function adicionarEvento() {
     if (!responsavelId) {
         alert('Selecione um colaborador responsável para este evento.');
         return;
+    }
+
+    // 🔥 VERIFICAR BLOQUEIOS E CONFLITOS (considerando a duração)
+    const conflitos = await verificarTodosConflitos(data, horario, duracao);
+    
+    if (conflitos.temConflito) {
+        let mensagem = '⚠️ Foram encontrados conflitos:\n\n';
+        
+        if (conflitos.bloqueios.length > 0) {
+            mensagem += '🔒 BLOQUEIOS:\n';
+            conflitos.bloqueios.forEach(b => {
+                const duracaoBloq = b.duracao || 60;
+                const fimBloq = addMinutes(b.horario, duracaoBloq);
+                mensagem += `   - ${b.horario} às ${fimBloq} (${duracaoBloq}min) ${b.motivo ? `- ${b.motivo}` : ''}\n`;
+            });
+            mensagem += '\n';
+        }
+        
+        if (conflitos.eventos.length > 0) {
+            mensagem += '📋 EVENTOS EXISTENTES:\n';
+            conflitos.eventos.forEach(e => {
+                const eData = new Date(e.data);
+                const eHora = String(eData.getHours()).padStart(2, '0') + ':' + String(eData.getMinutes()).padStart(2, '0');
+                const eFim = addMinutes(eHora, e.duracao || 60);
+                mensagem += `   - ${eHora} às ${eFim} - ${e.titulo} (${e.responsavelNome || 'Sem responsável'})\n`;
+            });
+            mensagem += '\n';
+        }
+        
+        mensagem += 'Deseja continuar mesmo assim?';
+        
+        if (!confirm(mensagem)) {
+            return;
+        }
     }
 
     if (colaboradorEstaDeFerias(responsavelId)) {
@@ -3240,6 +3794,7 @@ async function adicionarEvento() {
         const dataEvento = new Date(Date.UTC(ano, mes - 1, dia, hora, minuto, 0));
         const dataISO = dataEvento.toISOString();
 
+        // 🔥 ADICIONAR EVENTO
         await db.collection('eventosAgenda').add({
             data: dataISO,
             tipo: tipo,
@@ -3260,8 +3815,12 @@ async function adicionarEvento() {
             criadoPorNome: currentUser.nome
         });
 
-        alert('✅ Evento adicionado à agenda com sucesso!');
+        // 🔥 BLOQUEAR HORÁRIOS AUTOMATICAMENTE
+        await bloquearHorariosAutomaticamente(data, horario, duracao, titulo);
 
+        alert('✅ Evento adicionado à agenda com sucesso! Os horários foram bloqueados automaticamente.');
+
+        // 🔥 LIMPAR FORMULÁRIO
         document.getElementById('eventoData').value = '';
         document.getElementById('eventoHorario').value = '';
         document.getElementById('eventoTitulo').value = '';
@@ -3279,7 +3838,7 @@ async function adicionarEvento() {
     }
 }
 
-// ==================== EDIÇÃO DE EVENTOS ====================
+// ==================== EDIÇÃO DE EVENTOS (COM VERIFICAÇÃO DE DURAÇÃO) ====================
 function editarEvento(id) {
     fecharEdicao();
     
@@ -3396,6 +3955,7 @@ function editarEvento(id) {
         });
 }
 
+// ==================== SALVAR EDIÇÃO DE EVENTO (COM BLOQUEIO AUTOMÁTICO) ====================
 async function salvarEdicao(id) {
     const data = document.getElementById(`edit-data-${id}`).value;
     const horario = document.getElementById(`edit-horario-${id}`).value;
@@ -3417,6 +3977,40 @@ async function salvarEdicao(id) {
     if (!responsavelId) {
         alert('Selecione um colaborador responsável para este evento.');
         return;
+    }
+
+    // 🔥 VERIFICAR BLOQUEIOS E CONFLITOS (considerando a duração, ignorando o próprio evento)
+    const conflitos = await verificarTodosConflitos(data, horario, duracao, id);
+    
+    if (conflitos.temConflito) {
+        let mensagem = '⚠️ Foram encontrados conflitos:\n\n';
+        
+        if (conflitos.bloqueios.length > 0) {
+            mensagem += '🔒 BLOQUEIOS:\n';
+            conflitos.bloqueios.forEach(b => {
+                const duracaoBloq = b.duracao || 60;
+                const fimBloq = addMinutes(b.horario, duracaoBloq);
+                mensagem += `   - ${b.horario} às ${fimBloq} (${duracaoBloq}min) ${b.motivo ? `- ${b.motivo}` : ''}\n`;
+            });
+            mensagem += '\n';
+        }
+        
+        if (conflitos.eventos.length > 0) {
+            mensagem += '📋 EVENTOS EXISTENTES:\n';
+            conflitos.eventos.forEach(e => {
+                const eData = new Date(e.data);
+                const eHora = String(eData.getHours()).padStart(2, '0') + ':' + String(eData.getMinutes()).padStart(2, '0');
+                const eFim = addMinutes(eHora, e.duracao || 60);
+                mensagem += `   - ${eHora} às ${eFim} - ${e.titulo} (${e.responsavelNome || 'Sem responsável'})\n`;
+            });
+            mensagem += '\n';
+        }
+        
+        mensagem += 'Deseja continuar mesmo assim?';
+        
+        if (!confirm(mensagem)) {
+            return;
+        }
     }
 
     if (colaboradorEstaDeFerias(responsavelId)) {
@@ -3458,6 +4052,7 @@ async function salvarEdicao(id) {
         const dataEvento = new Date(Date.UTC(ano, mes - 1, dia, hora, minuto, 0));
         const dataISO = dataEvento.toISOString();
         
+        // 🔥 ATUALIZAR EVENTO
         await db.collection('eventosAgenda').doc(id).update({
             data: dataISO,
             tipo: tipo,
@@ -3477,7 +4072,11 @@ async function salvarEdicao(id) {
             atualizadoPorNome: currentUser.nome
         });
 
-        alert('✅ Evento atualizado com sucesso!');
+        // 🔥 REMOVER BLOQUEIOS AUTOMÁTICOS ANTIGOS E CRIAR NOVOS
+        await removerBloqueiosAutomaticos(id);
+        await bloquearHorariosAutomaticamente(data, horario, duracao, titulo);
+
+        alert('✅ Evento atualizado com sucesso! Os horários foram ajustados automaticamente.');
         fecharEdicao();
 
     } catch (error) {
@@ -3486,13 +4085,7 @@ async function salvarEdicao(id) {
     }
 }
 
-function fecharEdicao() {
-    document.querySelectorAll('.edit-form-container').forEach(el => el.remove());
-    document.querySelectorAll('.card-content').forEach(el => el.style.display = 'block');
-    eventoEmEdicao = null;
-}
-
-// ==================== EXCLUIR EVENTOS ====================
+// ==================== EXCLUIR EVENTOS (CORRIGIDO - REMOVE BLOQUEIOS AUTOMÁTICOS) ====================
 function excluirEvento(id) {
     eventoParaExcluir = { id, tipo: 'evento' };
     abrirModal(
@@ -3503,20 +4096,84 @@ function excluirEvento(id) {
 }
 
 async function excluirEventoConfirmado() {
+    // 🔥 VERIFICAR SE EXISTE EVENTO PARA EXCLUIR
     if (!eventoParaExcluir || eventoParaExcluir.tipo !== 'evento') {
         console.error("Nenhum evento para excluir");
+        alert('Erro: Nenhum evento selecionado para excluir.');
+        return;
+    }
+    
+    // 🔥 SALVAR O ID ANTES DE LIMPAR
+    const eventoId = eventoParaExcluir.id;
+    
+    if (!eventoId) {
+        console.error("ID do evento não encontrado");
+        alert('Erro: ID do evento não encontrado.');
+        eventoParaExcluir = null;
         return;
     }
     
     try {
-        await db.collection('eventosAgenda').doc(eventoParaExcluir.id).delete();
-        alert('✅ Evento excluído com sucesso!');
+        // 🔥 BUSCAR O EVENTO ANTES DE EXCLUIR PARA SABER DATA E HORÁRIO
+        const doc = await db.collection('eventosAgenda').doc(eventoId).get();
+        
+        if (doc.exists) {
+            const evento = doc.data();
+            const data = extrairDataISO(evento.data);
+            const eData = new Date(evento.data);
+            const horario = String(eData.getHours()).padStart(2, '0') + ':' + String(eData.getMinutes()).padStart(2, '0');
+            const duracao = evento.duracao || 60;
+            
+            console.log(`🔍 Removendo bloqueios automáticos para: ${data} - ${horario} (${duracao}min)`);
+            
+            // 🔥 REMOVER BLOQUEIOS AUTOMÁTICOS DO CACHE
+            const bloqueiosRemover = bloqueiosCache.filter(b => 
+                b.data === data && 
+                b.automatico === true &&
+                b.horario === horario
+            );
+            
+            if (bloqueiosRemover.length > 0) {
+                // Remover do cache
+                bloqueiosCache = bloqueiosCache.filter(b => 
+                    !(b.data === data && b.automatico === true && b.horario === horario)
+                );
+                
+                // Salvar no Firestore
+                await db.collection('configuracoes').doc(CONFIG_BLOQUEIOS_DOC).set({
+                    bloqueios: bloqueiosCache,
+                    atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                    atualizadoPor: currentUser?.uid || 'sistema',
+                    atualizadoPorNome: currentUser?.nome || 'sistema'
+                });
+                
+                console.log(`✅ ${bloqueiosRemover.length} bloqueios automáticos removidos para o evento ${eventoId}`);
+                
+                // Atualizar a interface
+                atualizarListaBloqueios();
+                atualizarContadorBloqueios();
+            } else {
+                console.log(`ℹ️ Nenhum bloqueio automático encontrado para o evento ${eventoId}`);
+            }
+        }
+        
+        // 🔥 EXCLUIR O EVENTO
+        await db.collection('eventosAgenda').doc(eventoId).delete();
+        alert('✅ Evento excluído com sucesso! Os bloqueios automáticos foram removidos.');
+        
     } catch (error) {
-        console.error("Erro ao excluir evento:", error);
+        console.error("❌ Erro ao excluir evento:", error);
         alert('❌ Erro ao excluir: ' + error.message);
     } finally {
+        // 🔥 SEMPRE LIMPAR O eventoParaExcluir
         eventoParaExcluir = null;
     }
+}
+
+function fecharEdicao() {
+    document.querySelectorAll('.edit-form-container').forEach(el => el.remove());
+    document.querySelectorAll('.card-content').forEach(el => el.style.display = 'block');
+    eventoEmEdicao = null;
 }
 
 // ==================== CONFIGURAÇÕES ====================
@@ -3581,7 +4238,6 @@ function sidebarClickHandler() {
             }
         }
         if (sectionId === 'listarSection') {
-            // Ao abrir a agenda, carregar os eventos do dia atual
             const hoje = new Date();
             const dataHoje = hoje.toISOString().split('T')[0];
             document.getElementById('filtroData').value = dataHoje;
@@ -4031,7 +4687,11 @@ function iniciarListenerReservas() {
     }
 
     try {
+        const hoje = new Date();
+        const dataHoje = hoje.toISOString().split('T')[0];
+
         unsubscribeReservas = db.collection('reservasSalas')
+            .where('data', '==', dataHoje)
             .orderBy('data', 'asc')
             .onSnapshot((snapshot) => {
                 console.log("🔄 Reservas atualizadas em tempo real!");
@@ -4187,15 +4847,6 @@ function verificarConflitoReserva(reserva) {
         
         return (reservaStart < rEndMinutes && reservaEndMinutes > rStart);
     });
-}
-
-function addMinutes(time, minutes) {
-    if (!time) return time;
-    const [h, m] = time.split(':').map(Number);
-    const total = h * 60 + m + minutes;
-    const newH = Math.floor(total / 60);
-    const newM = total % 60;
-    return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
 }
 
 function atualizarStatsReservas() {
@@ -4563,6 +5214,17 @@ window.atualizarSelectBloqueioHorarios = atualizarSelectBloqueioHorarios;
 window.bloquearHorario = bloquearHorario;
 window.desbloquearHorario = desbloquearHorario;
 window.limparBloqueiosData = limparBloqueiosData;
+window.iniciarListenerBloqueios = iniciarListenerBloqueios;
+window.bloquearHorariosAutomaticamente = bloquearHorariosAutomaticamente;
+window.removerBloqueiosAutomaticos = removerBloqueiosAutomaticos;
+
+window.verificarConflitoComBloqueios = verificarConflitoComBloqueios;
+window.verificarConflitoComEventos = verificarConflitoComEventos;
+window.verificarTodosConflitos = verificarTodosConflitos;
+window.validarHorarioDisponivel = validarHorarioDisponivel;
+window.getHorariosOcupados = getHorariosOcupados;
+window.horarioParaMinutos = horarioParaMinutos;
+window.minutosParaHorario = minutosParaHorario;
 
 window.carregarConfigLimiteAdmin = carregarConfigLimiteAdmin;
 window.salvarLimiteAdmin = salvarLimiteAdmin;
