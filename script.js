@@ -1955,7 +1955,7 @@ function atualizarDisplayHorarios(config) {
 function atualizarLinkAgendaPublica() {
     const link = document.getElementById('linkAgendaPublica');
     if (link) {
-        const url = "https://pauloglebson01.github.io/AgendaNovetech/agenda-publica.html";
+        const url = "https://agendanovetech.vercel.app/agenda-publica.html";
         link.textContent = url;
         link.href = url;
     }
