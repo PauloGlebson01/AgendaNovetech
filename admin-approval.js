@@ -85,19 +85,17 @@ async function verificarLimiteAdmin() {
     }
 }
 
-// ==================== FUNÇÃO PARA SOLICITAR CADASTRO (CORRIGIDA) ====================
-async function solicitarCadastroAdmin() {
-    const nome = document.getElementById('criarNome').value.trim();
-    const email = document.getElementById('criarEmail').value.trim();
-    const senha = document.getElementById('criarSenha').value;
-    const senhaConfirm = document.getElementById('criarSenhaConfirm').value;
-    const telefone = document.getElementById('criarTelefone')?.value?.trim() || '';
-    const empresa = document.getElementById('criarEmpresa')?.value?.trim() || '';
-    const cargo = document.getElementById('criarCargo')?.value?.trim() || '';
-    const motivo = document.getElementById('criarMotivo')?.value?.trim() || '';
+// ==================== FUNÇÃO PARA SOLICITAR CADASTRO COMO COLABORADOR ====================
+async function solicitarCadastroColaborador() {
+    const nome = document.getElementById('solicitacaoNome').value.trim();
+    const email = document.getElementById('solicitacaoEmail').value.trim();
+    const senha = document.getElementById('solicitacaoSenha').value;
+    const confirmarSenha = document.getElementById('solicitacaoConfirmarSenha').value;
+    const telefone = document.getElementById('solicitacaoTelefone')?.value?.trim() || '';
+    const cargo = document.getElementById('solicitacaoCargo')?.value?.trim() || '';
 
     // Validações
-    if (!nome || !email || !senha || !senhaConfirm) {
+    if (!nome || !email || !senha || !confirmarSenha) {
         mostrarNotificacao('❌ Preencha todos os campos obrigatórios.', 'error');
         return;
     }
@@ -113,7 +111,7 @@ async function solicitarCadastroAdmin() {
         return;
     }
 
-    if (senha !== senhaConfirm) {
+    if (senha !== confirmarSenha) {
         mostrarNotificacao('❌ As senhas não coincidem.', 'error');
         return;
     }
@@ -153,7 +151,7 @@ async function solicitarCadastroAdmin() {
             return;
         }
 
-        // 🔥 PASSO 1: CRIAR USUÁRIO NO AUTH PRIMEIRO (obter UID real)
+        // 🔥 PASSO 1: CRIAR USUÁRIO NO AUTH
         let uid = null;
         try {
             const userCred = await auth.createUserWithEmailAndPassword(email, senha);
@@ -164,7 +162,6 @@ async function solicitarCadastroAdmin() {
             await auth.signOut();
         } catch (authError) {
             if (authError.code === 'auth/email-already-in-use') {
-                // Se o e-mail já existe no Auth, tentamos encontrar o UID
                 try {
                     const userCred = await auth.signInWithEmailAndPassword(email, senha);
                     uid = userCred.user.uid;
@@ -188,21 +185,19 @@ async function solicitarCadastroAdmin() {
             return;
         }
 
-        // 🔥 PASSO 2: SALVAR SOLICITAÇÃO COM O UID REAL
+        // 🔥 PASSO 2: SALVAR SOLICITAÇÃO COMO COLABORADOR
         await db.collection(SOLICITACOES_COLLECTION).doc(uid).set({
             uid: uid,
             nome: nome,
             email: email,
             telefone: telefone || '',
-            empresa: empresa || '',
             cargo: cargo || '',
-            motivo: motivo || '',
             status: 'pendente',
             senha: senha,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
             criadoPor: 'anonimo',
             criadoPorNome: nome,
-            tipoSolicitado: 'admin'
+            tipoSolicitado: 'colaborador'
         });
 
         // 🔥 PASSO 3: SALVAR USUÁRIO COMO SOLICITANTE
@@ -213,11 +208,11 @@ async function solicitarCadastroAdmin() {
             tipo: 'solicitante',
             aprovado: false,
             telefone: telefone || '',
-            empresa: empresa || '',
             cargo: cargo || '',
             criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
             solicitaAprovacao: true,
-            solicitacaoId: uid
+            solicitacaoId: uid,
+            tipoSolicitado: 'colaborador'
         });
 
         // Restaurar botão
@@ -225,19 +220,18 @@ async function solicitarCadastroAdmin() {
         btn.innerHTML = textoOriginal;
 
         // Limpar formulário
-        document.getElementById('criarNome').value = '';
-        document.getElementById('criarEmail').value = '';
-        document.getElementById('criarSenha').value = '';
-        document.getElementById('criarSenhaConfirm').value = '';
-        if (document.getElementById('criarTelefone')) document.getElementById('criarTelefone').value = '';
-        if (document.getElementById('criarEmpresa')) document.getElementById('criarEmpresa').value = '';
-        if (document.getElementById('criarCargo')) document.getElementById('criarCargo').value = '';
-        if (document.getElementById('criarMotivo')) document.getElementById('criarMotivo').value = '';
+        document.getElementById('solicitacaoNome').value = '';
+        document.getElementById('solicitacaoEmail').value = '';
+        document.getElementById('solicitacaoSenha').value = '';
+        document.getElementById('solicitacaoConfirmarSenha').value = '';
+        if (document.getElementById('solicitacaoTelefone')) document.getElementById('solicitacaoTelefone').value = '';
+        if (document.getElementById('solicitacaoCargo')) document.getElementById('solicitacaoCargo').value = '';
 
         // Mostrar notificação de sucesso
         mostrarNotificacaoSucessoComRedirecionamento({
             nome: nome,
-            email: email
+            email: email,
+            tipo: 'colaborador'
         });
 
     } catch (error) {
@@ -267,6 +261,150 @@ async function solicitarCadastroAdmin() {
     }
 }
 
+// ==================== FUNÇÃO PARA SOLICITAR CADASTRO COMO ADMIN ====================
+async function solicitarCadastroAdmin() {
+    // Verificar limite de administradores
+    const limiteInfo = await verificarLimiteAdmin();
+    
+    if (!limiteInfo.podeCriar) {
+        mostrarNotificacao(`❌ ${limiteInfo.mensagem}`, 'error');
+        return;
+    }
+
+    const nome = document.getElementById('solicitacaoNome')?.value?.trim() || prompt('Digite seu nome completo:');
+    const email = document.getElementById('solicitacaoEmail')?.value?.trim() || prompt('Digite seu e-mail:');
+    const senha = document.getElementById('solicitacaoSenha')?.value || prompt('Digite sua senha (mínimo 6 caracteres):');
+    const confirmarSenha = document.getElementById('solicitacaoConfirmarSenha')?.value || prompt('Confirme sua senha:');
+
+    if (!nome || !email || !senha || !confirmarSenha) {
+        mostrarNotificacao('❌ Preencha todos os campos obrigatórios.', 'error');
+        return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        mostrarNotificacao('❌ Por favor, insira um e-mail válido.', 'error');
+        return;
+    }
+
+    if (senha.length < 6) {
+        mostrarNotificacao('❌ A senha deve ter pelo menos 6 caracteres.', 'error');
+        return;
+    }
+
+    if (senha !== confirmarSenha) {
+        mostrarNotificacao('❌ As senhas não coincidem.', 'error');
+        return;
+    }
+
+    const btn = document.querySelector('#criarTab .btn-primary');
+    if (!btn) return;
+    
+    const textoOriginal = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando solicitação...';
+
+    try {
+        // Verificar se já existe solicitação pendente
+        const existing = await db.collection(SOLICITACOES_COLLECTION)
+            .where('email', '==', email)
+            .where('status', '==', 'pendente')
+            .get()
+            .catch(() => ({ empty: true }));
+
+        if (!existing.empty) {
+            mostrarNotificacao('⚠️ Você já possui uma solicitação pendente.', 'warning');
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+            return;
+        }
+
+        // Verificar se já é um usuário
+        const userSnapshot = await db.collection('usuarios')
+            .where('email', '==', email)
+            .get()
+            .catch(() => ({ empty: true }));
+
+        if (!userSnapshot.empty) {
+            mostrarNotificacao('⚠️ Este e-mail já está cadastrado no sistema.', 'warning');
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+            return;
+        }
+
+        // Criar usuário no Auth
+        let uid = null;
+        try {
+            const userCred = await auth.createUserWithEmailAndPassword(email, senha);
+            uid = userCred.user.uid;
+            await auth.signOut();
+        } catch (authError) {
+            if (authError.code === 'auth/email-already-in-use') {
+                try {
+                    const userCred = await auth.signInWithEmailAndPassword(email, senha);
+                    uid = userCred.user.uid;
+                    await auth.signOut();
+                } catch (loginError) {
+                    mostrarNotificacao('❌ Este e-mail já está em uso.', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = textoOriginal;
+                    return;
+                }
+            } else {
+                throw authError;
+            }
+        }
+
+        if (!uid) {
+            mostrarNotificacao('❌ Erro ao criar usuário.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+            return;
+        }
+
+        // Salvar solicitação como ADMIN
+        await db.collection(SOLICITACOES_COLLECTION).doc(uid).set({
+            uid: uid,
+            nome: nome,
+            email: email,
+            status: 'pendente',
+            senha: senha,
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            criadoPor: 'anonimo',
+            criadoPorNome: nome,
+            tipoSolicitado: 'admin'
+        });
+
+        // Salvar usuário como solicitante
+        await db.collection('usuarios').doc(uid).set({
+            uid: uid,
+            nome: nome,
+            email: email,
+            tipo: 'solicitante',
+            aprovado: false,
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            solicitaAprovacao: true,
+            solicitacaoId: uid,
+            tipoSolicitado: 'admin'
+        });
+
+        btn.disabled = false;
+        btn.innerHTML = textoOriginal;
+
+        mostrarNotificacaoSucessoComRedirecionamento({
+            nome: nome,
+            email: email,
+            tipo: 'admin'
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao solicitar cadastro como admin:', error);
+        btn.disabled = false;
+        btn.innerHTML = textoOriginal;
+        mostrarNotificacao('❌ Erro ao solicitar: ' + error.message, 'error');
+    }
+}
+
 // ==================== NOTIFICAÇÃO DE SUCESSO COM REDIRECIONAMENTO ====================
 
 function mostrarNotificacaoSucessoComRedirecionamento(dados) {
@@ -275,6 +413,8 @@ function mostrarNotificacaoSucessoComRedirecionamento(dados) {
     if (notificacaoExistente) {
         notificacaoExistente.remove();
     }
+
+    const tipoLabel = dados.tipo === 'admin' ? 'Administrador' : 'Colaborador';
 
     const notification = document.createElement('div');
     notification.className = 'custom-notification-success';
@@ -336,8 +476,8 @@ function mostrarNotificacaoSucessoComRedirecionamento(dados) {
                         ⏳ Seu cadastro está aguardando aprovação
                     </div>
                     <div style="color: #92400e; font-size: 14px; line-height: 1.6;">
-                        O administrador irá analisar sua solicitação e você receberá 
-                        acesso assim que for aprovado.
+                        O administrador irá analisar sua solicitação como <strong>${tipoLabel}</strong> 
+                        e você receberá acesso assim que for aprovado.
                     </div>
                 </div>
             </div>
@@ -354,6 +494,9 @@ function mostrarNotificacaoSucessoComRedirecionamento(dados) {
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
                 <i class="fas fa-user" style="color: #2563eb; width: 20px;"></i>
                 <span style="font-weight: 500; color: #0f172a;">${dados.nome || 'Usuário'}</span>
+                <span style="font-size: 11px; background: #e0e7ff; color: #4338ca; padding: 2px 10px; border-radius: 12px;">
+                    ${tipoLabel}
+                </span>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <i class="fas fa-envelope" style="color: #2563eb; width: 20px;"></i>
@@ -617,6 +760,9 @@ async function carregarSolicitacoesPendentes() {
             const dataStr = dataCriacao.toLocaleDateString('pt-BR');
             const horaStr = dataCriacao.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+            const tipoLabel = s.tipoSolicitado === 'admin' ? '👑 Administrador' : '👤 Colaborador';
+            const tipoColor = s.tipoSolicitado === 'admin' ? '#7c3aed' : '#2563eb';
+
             const card = document.createElement('div');
             card.className = 'card';
             card.style.borderLeft = '4px solid #f59e0b';
@@ -629,12 +775,13 @@ async function carregarSolicitacoesPendentes() {
                             <span class="status-badge" style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 10px;">
                                 ⏳ Pendente
                             </span>
+                            <span class="status-badge" style="background: ${tipoColor}20; color: ${tipoColor}; font-size: 11px; padding: 2px 10px;">
+                                ${tipoLabel}
+                            </span>
                         </h3>
                         <p><i class="fas fa-envelope" style="color: #64748b;"></i> <strong>${s.email || 'Email não informado'}</strong></p>
                         ${s.telefone ? `<p><i class="fas fa-phone" style="color: #64748b;"></i> ${s.telefone}</p>` : ''}
-                        ${s.empresa ? `<p><i class="fas fa-building" style="color: #64748b;"></i> ${s.empresa}</p>` : ''}
                         ${s.cargo ? `<p><i class="fas fa-briefcase" style="color: #64748b;"></i> ${s.cargo}</p>` : ''}
-                        ${s.motivo ? `<p style="color: #475569; font-size: 13px; margin-top: 4px; background: #f8fafc; padding: 8px; border-radius: 6px;"><i class="fas fa-info-circle" style="color: #64748b;"></i> ${s.motivo}</p>` : ''}
                         <p style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
                             <i class="fas fa-clock"></i> Solicitado em: ${dataStr} às ${horaStr}
                         </p>
@@ -685,22 +832,14 @@ async function carregarSolicitacoesPendentes() {
     }
 }
 
-// ==================== APROVAR SOLICITAÇÃO (VERSÃO CORRIGIDA COM LIMITE CONFIGURÁVEL) ====================
+// ==================== APROVAR SOLICITAÇÃO (CORRIGIDA) ====================
 
 async function aprovarSolicitacao(solicitacaoId) {
-    if (!confirm('Deseja aprovar esta solicitação? O usuário terá acesso completo ao sistema.')) {
+    if (!confirm('Deseja aprovar esta solicitação? O usuário terá acesso ao sistema.')) {
         return;
     }
 
     try {
-        // 🔥 VERIFICAR LIMITE DE ADMINISTRADORES
-        const limiteInfo = await verificarLimiteAdmin();
-        
-        if (!limiteInfo.podeCriar) {
-            mostrarNotificacao(`❌ ${limiteInfo.mensagem}`, 'error');
-            return;
-        }
-
         // Buscar a solicitação completa
         const doc = await db.collection(SOLICITACOES_COLLECTION).doc(solicitacaoId).get();
         if (!doc.exists) {
@@ -709,14 +848,25 @@ async function aprovarSolicitacao(solicitacaoId) {
         }
 
         const data = doc.data();
-        console.log('📋 Aprovando solicitação:', {
+        
+        // 🔥 DETERMINAR O TIPO COM BASE NA SOLICITAÇÃO
+        let tipoUsuario = 'colaborador'; // padrão
+        if (data.tipoSolicitado === 'admin') {
+            // Verificar limite de admin
+            const limiteInfo = await verificarLimiteAdmin();
+            if (!limiteInfo.podeCriar) {
+                mostrarNotificacao(`❌ ${limiteInfo.mensagem}`, 'error');
+                return;
+            }
+            tipoUsuario = 'admin';
+        }
+        
+        console.log(`📋 Aprovando solicitação como: ${tipoUsuario}`, {
             id: solicitacaoId,
             nome: data.nome,
-            email: data.email,
-            uid: data.uid
+            email: data.email
         });
         
-        // 🔥 O UID É O ID DO DOCUMENTO (já é o UID real do Auth)
         const userUid = solicitacaoId;
         
         // 🔥 1. ATUALIZAR SOLICITAÇÃO
@@ -732,36 +882,33 @@ async function aprovarSolicitacao(solicitacaoId) {
         const userDoc = await userRef.get();
         
         if (!userDoc.exists) {
-            // Criar usuário se não existir
             await userRef.set({
                 uid: userUid,
                 nome: data.nome,
                 email: data.email,
                 telefone: data.telefone || '',
-                empresa: data.empresa || '',
                 cargo: data.cargo || '',
-                tipo: 'admin',
+                tipo: tipoUsuario,
                 aprovado: true,
                 aprovadoEm: firebase.firestore.FieldValue.serverTimestamp(),
                 aprovadoPor: currentUser.uid,
                 aprovadoPorNome: currentUser.nome,
                 criadoEm: firebase.firestore.FieldValue.serverTimestamp()
             });
-            console.log(`✅ Usuário criado com sucesso: ${userUid}`);
+            console.log(`✅ Usuário criado com sucesso como ${tipoUsuario}: ${userUid}`);
         } else {
-            // Atualizar usuário existente
             await userRef.update({
-                tipo: 'admin',
+                tipo: tipoUsuario,
                 aprovado: true,
                 aprovadoEm: firebase.firestore.FieldValue.serverTimestamp(),
                 aprovadoPor: currentUser.uid,
                 aprovadoPorNome: currentUser.nome
             });
-            console.log(`✅ Usuário atualizado com sucesso: ${userUid}`);
+            console.log(`✅ Usuário atualizado com sucesso para ${tipoUsuario}: ${userUid}`);
         }
 
-        const novaInfo = await verificarLimiteAdmin();
-        mostrarNotificacao(`✅ Usuário "${data.nome}" aprovado com sucesso!\n\n${novaInfo.mensagem}`, 'success');
+        const tipoLabel = tipoUsuario === 'admin' ? 'Administrador' : 'Colaborador';
+        mostrarNotificacao(`✅ Usuário "${data.nome}" aprovado como ${tipoLabel}!`, 'success');
         await carregarSolicitacoesPendentes();
 
     } catch (error) {
@@ -880,6 +1027,7 @@ function iniciarListenerSolicitacoes() {
 
 // ==================== EXPOR FUNÇÕES ====================
 
+window.solicitarCadastroColaborador = solicitarCadastroColaborador;
 window.solicitarCadastroAdmin = solicitarCadastroAdmin;
 window.carregarSolicitacoesPendentes = carregarSolicitacoesPendentes;
 window.aprovarSolicitacao = aprovarSolicitacao;

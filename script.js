@@ -157,8 +157,8 @@ const SALAS_LABELS = {
 };
 
 const SALAS_CAPACIDADE = {
-    'sala_01': 0,
-    'sala_02': 0,
+    'sala_01': 8,
+    'sala_02': 12,
 };
 
 const RESERVA_STATUS_LABELS = {
@@ -221,16 +221,19 @@ function definirSecaoInicial(userData) {
     
     const isAdmin = userData.tipo === 'admin';
     
+    // Ocultar todas as seções primeiro
     document.querySelectorAll('.section').forEach(sec => {
         sec.classList.remove('active');
         sec.style.display = 'none';
     });
     
+    // Remover active de todos os itens do menu
     document.querySelectorAll('.sidebar li').forEach(li => {
         li.classList.remove('active');
     });
     
     if (isAdmin) {
+        // Admin: Dashboard como seção inicial
         const dashboard = document.getElementById('dashboardSection');
         if (dashboard) {
             dashboard.classList.add('active');
@@ -244,6 +247,7 @@ function definirSecaoInicial(userData) {
         
         console.log("✅ Dashboard definido como seção inicial para ADMIN");
     } else {
+        // Colaborador: Reservas como seção inicial
         const reservas = document.getElementById('reservasSection');
         if (reservas) {
             reservas.classList.add('active');
@@ -259,7 +263,7 @@ function definirSecaoInicial(userData) {
     }
 }
 
-// ==================== FUNÇÃO PARA FORÇAR ATUALIZAÇÃO DO MENU ====================
+// ==================== FUNÇÃO PARA FORÇAR ATUALIZAÇÃO DO MENU (CORRIGIDA) ====================
 function forcarAtualizacaoMenu(userData) {
     if (!userData) {
         console.warn("⚠️ userData não fornecido para forcarAtualizacaoMenu");
@@ -271,6 +275,7 @@ function forcarAtualizacaoMenu(userData) {
     
     console.log(`🔧 Forçando atualização do menu para: ${tipo} (Admin: ${isAdmin})`);
     
+    // Elementos do menu
     const menuDashboard = document.getElementById('menuDashboard');
     const menuSolicitacoes = document.getElementById('menuSolicitacoes');
     const menuReservas = document.getElementById('menuReservas');
@@ -278,91 +283,70 @@ function forcarAtualizacaoMenu(userData) {
     const menuColaboradores = document.getElementById('menuColaboradores');
     const menuVerAgenda = document.getElementById('menuVerAgenda');
     const menuConfig = document.getElementById('menuConfig');
+    const solicBadge = document.getElementById('solicitacoesBadge');
+    
+    // Função auxiliar para esconder um menu
+    function hideMenu(el) {
+        if (!el) return;
+        el.style.display = 'none';
+        el.style.visibility = 'hidden';
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        el.style.height = '0';
+        el.style.padding = '0';
+        el.style.margin = '0';
+        el.style.overflow = 'hidden';
+        el.style.border = 'none';
+        el.classList.add('menu-hidden');
+    }
+    
+    // Função auxiliar para mostrar um menu
+    function showMenu(el) {
+        if (!el) return;
+        el.style.display = 'block';
+        el.style.visibility = 'visible';
+        el.style.opacity = '1';
+        el.style.pointerEvents = 'auto';
+        el.style.height = 'auto';
+        el.style.padding = '';
+        el.style.margin = '';
+        el.style.overflow = '';
+        el.style.border = '';
+        el.classList.remove('menu-hidden');
+        el.removeAttribute('style');
+    }
     
     if (isAdmin) {
-        if (menuDashboard) {
-            menuDashboard.style.display = 'block';
-            menuDashboard.style.visibility = 'visible';
-            menuDashboard.style.opacity = '1';
-            menuDashboard.removeAttribute('style');
-        }
+        // ADMIN - Mostrar todos os menus
+        showMenu(menuDashboard);
+        showMenu(menuSolicitacoes);
+        showMenu(menuColaboradores);
+        showMenu(menuConfig);
         
-        if (menuSolicitacoes) {
-            menuSolicitacoes.style.display = 'block';
-            menuSolicitacoes.style.visibility = 'visible';
-            menuSolicitacoes.style.opacity = '1';
-            menuSolicitacoes.removeAttribute('style');
-            const badge = document.getElementById('solicitacoesBadge');
-            if (badge) {
-                badge.style.display = 'inline-block';
-            }
-        }
-        
-        if (menuColaboradores) {
-            menuColaboradores.style.display = 'block';
-            menuColaboradores.style.visibility = 'visible';
-            menuColaboradores.style.opacity = '1';
-            menuColaboradores.removeAttribute('style');
-        }
-        
-        if (menuConfig) {
-            menuConfig.style.display = 'block';
-            menuConfig.style.visibility = 'visible';
-            menuConfig.style.opacity = '1';
-            menuConfig.removeAttribute('style');
+        if (solicBadge) {
+            solicBadge.style.display = 'inline-block';
         }
         
         console.log("✅ Menu ADMIN carregado com sucesso!");
         
     } else {
-        if (menuDashboard) {
-            menuDashboard.style.display = 'none';
-            menuDashboard.style.visibility = 'hidden';
-            menuDashboard.style.opacity = '0';
-        }
+        // COLABORADOR - Ocultar menus de admin
+        hideMenu(menuDashboard);
+        hideMenu(menuSolicitacoes);
+        hideMenu(menuColaboradores);
+        hideMenu(menuConfig);
         
-        if (menuSolicitacoes) {
-            menuSolicitacoes.style.display = 'none';
-            menuSolicitacoes.style.visibility = 'hidden';
-            menuSolicitacoes.style.opacity = '0';
-            const badge = document.getElementById('solicitacoesBadge');
-            if (badge) {
-                badge.style.display = 'none';
-            }
-        }
-        
-        if (menuColaboradores) {
-            menuColaboradores.style.display = 'none';
-            menuColaboradores.style.visibility = 'hidden';
-            menuColaboradores.style.opacity = '0';
-        }
-        
-        if (menuConfig) {
-            menuConfig.style.display = 'none';
-            menuConfig.style.visibility = 'hidden';
-            menuConfig.style.opacity = '0';
+        if (solicBadge) {
+            solicBadge.style.display = 'none';
         }
         
         console.log("✅ Menu COLABORADOR carregado com sucesso!");
     }
     
-    if (menuReservas) {
-        menuReservas.style.display = 'block';
-        menuReservas.style.visibility = 'visible';
-        menuReservas.style.opacity = '1';
-    }
-    
-    if (menuAgenda) {
-        menuAgenda.style.display = 'block';
-        menuAgenda.style.visibility = 'visible';
-        menuAgenda.style.opacity = '1';
-    }
-    
-    if (menuVerAgenda) {
-        menuVerAgenda.style.display = 'block';
-        menuVerAgenda.style.visibility = 'visible';
-        menuVerAgenda.style.opacity = '1';
-    }
+    // Menus comuns a todos (sempre visíveis)
+    showMenu(menuReservas);
+    showMenu(menuAgenda);
+    showMenu(menuVerAgenda);
     
     console.log("✅ Atualização do menu concluída!");
 }
@@ -423,6 +407,7 @@ auth.onAuthStateChanged(async (user) => {
             } else if (path.includes('admin.html')) {
                 await carregarAdmin();
                 
+                // FORÇAR ATUALIZAÇÃO DO MENU COM MÚLTIPLAS TENTATIVAS
                 forcarAtualizacaoMenu(currentUser);
                 
                 setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 100);
@@ -666,12 +651,15 @@ async function carregarAdmin() {
     
     document.getElementById('adminName').textContent = currentUser.nome;
     
+    // FORÇAR ATUALIZAÇÃO DO MENU COM MÚLTIPLAS TENTATIVAS
     forcarAtualizacaoMenu(currentUser);
     
     setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 100);
     setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 300);
     setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 800);
+    setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 1500);
     
+    // Definir seção inicial baseada no tipo
     definirSecaoInicial(currentUser);
     
     try {
@@ -893,8 +881,7 @@ function atualizarListaColaboradores() {
                 </button>
                 ${emFerias ? `
                     <button class="btn-sm" style="background: #fef3c7; color: #d97706; cursor: default;" title="Colaborador em férias">
-                        <i class="fas fa-umbrella-beach"></i> Em Férias
-                    </button>
+                        <i class="fas fa-umbrella-beach"></i> Em Férias                    </button>
                 ` : ''}
                 <button class="btn-sm ${c.ativo !== false ? 'btn-warning' : 'btn-aprovar'}" onclick="toggleColaborador('${c.id}', ${c.ativo !== false})" title="${c.ativo !== false ? 'Desativar' : 'Ativar'} colaborador">
                     <i class="fas ${c.ativo !== false ? 'fa-pause' : 'fa-play'}"></i>
@@ -2473,14 +2460,12 @@ async function bloquearHorariosAutomaticamente(data, horario, duracao, titulo) {
 
 // ==================== FUNÇÃO PARA REMOVER BLOQUEIOS AUTOMÁTICOS (CORRIGIDA) ====================
 async function removerBloqueiosAutomaticos(eventoId) {
-    // 🔥 VERIFICAR SE O ID É VÁLIDO
     if (!eventoId) {
         console.warn("⚠️ ID do evento não fornecido para remover bloqueios");
         return;
     }
     
     try {
-        // Buscar o evento para saber data e horário
         const doc = await db.collection('eventosAgenda').doc(eventoId).get();
         if (!doc.exists) {
             console.warn(`⚠️ Evento ${eventoId} não encontrado para remover bloqueios`);
@@ -2493,9 +2478,8 @@ async function removerBloqueiosAutomaticos(eventoId) {
         const horario = String(eData.getHours()).padStart(2, '0') + ':' + String(eData.getMinutes()).padStart(2, '0');
         const duracao = evento.duracao || 60;
 
-        console.log(`🔍 Removendo bloqueios automáticos (função): ${data} - ${horario} (${duracao}min)`);
+        console.log(`🔍 Removendo bloqueios automáticos: ${data} - ${horario} (${duracao}min)`);
 
-        // Remover bloqueios automáticos relacionados a este evento
         const bloqueiosRemover = bloqueiosCache.filter(b => 
             b.data === data && 
             b.automatico === true &&
@@ -2520,14 +2504,13 @@ async function removerBloqueiosAutomaticos(eventoId) {
 
         console.log(`✅ ${bloqueiosRemover.length} bloqueios automáticos removidos para o evento ${eventoId}`);
         
-        // Atualizar a interface
         atualizarListaBloqueios();
         atualizarContadorBloqueios();
 
     } catch (error) {
         console.error("❌ Erro ao remover bloqueios automáticos:", error);
-        // Não lançar o erro para não interromper a exclusão do evento    }
-}}
+    }
+}
 
 async function visualizarHorariosDisponiveis() {
     const data = new Date();
@@ -2759,7 +2742,6 @@ async function verificarConflitoComEventos(data, horario, duracao = 60, eventoId
             const inicioExistenteMin = eHora * 60 + eMin;
             const fimExistenteMin = inicioExistenteMin + eDuracao;
 
-            // Verificar sobreposição completa
             return (inicioEventoMin < fimExistenteMin && fimEventoMin > inicioExistenteMin);
         });
 
@@ -3162,7 +3144,7 @@ async function limparBloqueiosData() {
     }
 }
 
-// ==================== CONTROLE DE LIMITE DE EVENTOS POR COLABORADOR (CORRIGIDO - SEM ÍNDICE COMPOSTO) ====================
+// ==================== CONTROLE DE LIMITE DE EVENTOS POR COLABORADOR ====================
 
 async function verificarDemandaColaborador(colaboradorId, data, duracao = 60) {
     if (!colaboradorId || !data) {
@@ -3193,10 +3175,6 @@ async function verificarDemandaColaborador(colaboradorId, data, duracao = 60) {
             };
         }
 
-        // 🔥 MODIFICADO: Buscar eventos do colaborador sem filtro de data composto
-        // Depois filtrar em memória para evitar erro de índice composto
-        
-        // Buscar todos os eventos do colaborador (limitado a 1000 para performance)
         const eventosSnapshot = await db.collection('eventosAgenda')
             .where('responsavelId', '==', colaboradorId)
             .get();
@@ -3208,17 +3186,14 @@ async function verificarDemandaColaborador(colaboradorId, data, duracao = 60) {
             eventosDoColaborador.push(e);
         });
 
-        // Filtrar por data em memória
         const hoje = new Date();
         const dataInicio = data + 'T00:00:00.000Z';
         const dataFim = data + 'T23:59:59.999Z';
 
-        // Eventos do dia
         const eventosDia = eventosDoColaborador.filter(e => {
             return e.data >= dataInicio && e.data <= dataFim;
         });
 
-        // Calcular minutos ocupados
         let minutosOcupados = 0;
         eventosDia.forEach(e => {
             const duracaoEvento = e.duracao || 60;
@@ -3228,7 +3203,6 @@ async function verificarDemandaColaborador(colaboradorId, data, duracao = 60) {
         const minutosTotais = minutosOcupados + (duracao || 60);
         const horasTotais = Math.round(minutosTotais / 60 * 10) / 10;
 
-        // Eventos da semana (últimos 7 dias)
         const dataSemanaInicio = new Date(hoje);
         dataSemanaInicio.setDate(hoje.getDate() - 7);
         const dataSemanaInicioStr = dataSemanaInicio.toISOString().split('T')[0] + 'T00:00:00.000Z';
@@ -3239,7 +3213,6 @@ async function verificarDemandaColaborador(colaboradorId, data, duracao = 60) {
 
         const totalEventosSemana = eventosSemana.length;
 
-        // Eventos do mês (últimos 30 dias)
         const dataMesInicio = new Date(hoje);
         dataMesInicio.setDate(hoje.getDate() - 30);
         const dataMesInicioStr = dataMesInicio.toISOString().split('T')[0] + 'T00:00:00.000Z';
@@ -3250,7 +3223,6 @@ async function verificarDemandaColaborador(colaboradorId, data, duracao = 60) {
 
         const totalEventosMes = eventosMes.length;
 
-        // Verificar conflitos de horário
         const horarioEvento = document.getElementById('eventoHorario')?.value || '00:00';
         const dataCompleta = data + 'T' + horarioEvento + ':00.000Z';
         const novaData = new Date(dataCompleta);
@@ -3262,7 +3234,6 @@ async function verificarDemandaColaborador(colaboradorId, data, duracao = 60) {
             return diffMinutos < (e.duracao || 60);
         });
 
-        // Determinar nível de demanda
         let nivelDemanda = 'baixa';
         let mensagemDemanda = '';
         let corDemanda = '#10b981';
@@ -3725,7 +3696,6 @@ async function adicionarEvento() {
         return;
     }
 
-    // 🔥 VERIFICAR BLOQUEIOS E CONFLITOS (considerando a duração)
     const conflitos = await verificarTodosConflitos(data, horario, duracao);
     
     if (conflitos.temConflito) {
@@ -3794,7 +3764,6 @@ async function adicionarEvento() {
         const dataEvento = new Date(Date.UTC(ano, mes - 1, dia, hora, minuto, 0));
         const dataISO = dataEvento.toISOString();
 
-        // 🔥 ADICIONAR EVENTO
         await db.collection('eventosAgenda').add({
             data: dataISO,
             tipo: tipo,
@@ -3815,12 +3784,10 @@ async function adicionarEvento() {
             criadoPorNome: currentUser.nome
         });
 
-        // 🔥 BLOQUEAR HORÁRIOS AUTOMATICAMENTE
         await bloquearHorariosAutomaticamente(data, horario, duracao, titulo);
 
         alert('✅ Evento adicionado à agenda com sucesso! Os horários foram bloqueados automaticamente.');
 
-        // 🔥 LIMPAR FORMULÁRIO
         document.getElementById('eventoData').value = '';
         document.getElementById('eventoHorario').value = '';
         document.getElementById('eventoTitulo').value = '';
@@ -3838,7 +3805,7 @@ async function adicionarEvento() {
     }
 }
 
-// ==================== EDIÇÃO DE EVENTOS (COM VERIFICAÇÃO DE DURAÇÃO) ====================
+// ==================== EDIÇÃO DE EVENTOS ====================
 function editarEvento(id) {
     fecharEdicao();
     
@@ -3955,7 +3922,7 @@ function editarEvento(id) {
         });
 }
 
-// ==================== SALVAR EDIÇÃO DE EVENTO (COM BLOQUEIO AUTOMÁTICO) ====================
+// ==================== SALVAR EDIÇÃO DE EVENTO ====================
 async function salvarEdicao(id) {
     const data = document.getElementById(`edit-data-${id}`).value;
     const horario = document.getElementById(`edit-horario-${id}`).value;
@@ -3979,7 +3946,6 @@ async function salvarEdicao(id) {
         return;
     }
 
-    // 🔥 VERIFICAR BLOQUEIOS E CONFLITOS (considerando a duração, ignorando o próprio evento)
     const conflitos = await verificarTodosConflitos(data, horario, duracao, id);
     
     if (conflitos.temConflito) {
@@ -4052,7 +4018,6 @@ async function salvarEdicao(id) {
         const dataEvento = new Date(Date.UTC(ano, mes - 1, dia, hora, minuto, 0));
         const dataISO = dataEvento.toISOString();
         
-        // 🔥 ATUALIZAR EVENTO
         await db.collection('eventosAgenda').doc(id).update({
             data: dataISO,
             tipo: tipo,
@@ -4072,7 +4037,6 @@ async function salvarEdicao(id) {
             atualizadoPorNome: currentUser.nome
         });
 
-        // 🔥 REMOVER BLOQUEIOS AUTOMÁTICOS ANTIGOS E CRIAR NOVOS
         await removerBloqueiosAutomaticos(id);
         await bloquearHorariosAutomaticamente(data, horario, duracao, titulo);
 
@@ -4085,7 +4049,7 @@ async function salvarEdicao(id) {
     }
 }
 
-// ==================== EXCLUIR EVENTOS (CORRIGIDO - REMOVE BLOQUEIOS AUTOMÁTICOS) ====================
+// ==================== EXCLUIR EVENTOS ====================
 function excluirEvento(id) {
     eventoParaExcluir = { id, tipo: 'evento' };
     abrirModal(
@@ -4096,14 +4060,12 @@ function excluirEvento(id) {
 }
 
 async function excluirEventoConfirmado() {
-    // 🔥 VERIFICAR SE EXISTE EVENTO PARA EXCLUIR
     if (!eventoParaExcluir || eventoParaExcluir.tipo !== 'evento') {
         console.error("Nenhum evento para excluir");
         alert('Erro: Nenhum evento selecionado para excluir.');
         return;
     }
     
-    // 🔥 SALVAR O ID ANTES DE LIMPAR
     const eventoId = eventoParaExcluir.id;
     
     if (!eventoId) {
@@ -4114,7 +4076,6 @@ async function excluirEventoConfirmado() {
     }
     
     try {
-        // 🔥 BUSCAR O EVENTO ANTES DE EXCLUIR PARA SABER DATA E HORÁRIO
         const doc = await db.collection('eventosAgenda').doc(eventoId).get();
         
         if (doc.exists) {
@@ -4122,11 +4083,9 @@ async function excluirEventoConfirmado() {
             const data = extrairDataISO(evento.data);
             const eData = new Date(evento.data);
             const horario = String(eData.getHours()).padStart(2, '0') + ':' + String(eData.getMinutes()).padStart(2, '0');
-            const duracao = evento.duracao || 60;
             
-            console.log(`🔍 Removendo bloqueios automáticos para: ${data} - ${horario} (${duracao}min)`);
+            console.log(`🔍 Removendo bloqueios automáticos para: ${data} - ${horario}`);
             
-            // 🔥 REMOVER BLOQUEIOS AUTOMÁTICOS DO CACHE
             const bloqueiosRemover = bloqueiosCache.filter(b => 
                 b.data === data && 
                 b.automatico === true &&
@@ -4134,12 +4093,10 @@ async function excluirEventoConfirmado() {
             );
             
             if (bloqueiosRemover.length > 0) {
-                // Remover do cache
                 bloqueiosCache = bloqueiosCache.filter(b => 
                     !(b.data === data && b.automatico === true && b.horario === horario)
                 );
                 
-                // Salvar no Firestore
                 await db.collection('configuracoes').doc(CONFIG_BLOQUEIOS_DOC).set({
                     bloqueios: bloqueiosCache,
                     atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
@@ -4149,15 +4106,11 @@ async function excluirEventoConfirmado() {
                 
                 console.log(`✅ ${bloqueiosRemover.length} bloqueios automáticos removidos para o evento ${eventoId}`);
                 
-                // Atualizar a interface
                 atualizarListaBloqueios();
                 atualizarContadorBloqueios();
-            } else {
-                console.log(`ℹ️ Nenhum bloqueio automático encontrado para o evento ${eventoId}`);
             }
         }
         
-        // 🔥 EXCLUIR O EVENTO
         await db.collection('eventosAgenda').doc(eventoId).delete();
         alert('✅ Evento excluído com sucesso! Os bloqueios automáticos foram removidos.');
         
@@ -4165,7 +4118,6 @@ async function excluirEventoConfirmado() {
         console.error("❌ Erro ao excluir evento:", error);
         alert('❌ Erro ao excluir: ' + error.message);
     } finally {
-        // 🔥 SEMPRE LIMPAR O eventoParaExcluir
         eventoParaExcluir = null;
     }
 }
@@ -4763,12 +4715,12 @@ function atualizarListaReservas() {
         const dataReserva = new Date(r.data + 'T00:00:00');
         const isPassado = dataReserva < hoje;
 
+        const temConflito = verificarConflitoReserva(r);
+
         const card = document.createElement('div');
         card.className = 'card';
         card.id = `card-reserva-${r.id}`;
         card.style.borderLeft = `4px solid ${isPassado && r.status !== 'cancelada' ? '#94a3b8' : '#2563eb'}`;
-
-        const temConflito = verificarConflitoReserva(r);
 
         card.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
@@ -4826,26 +4778,29 @@ function atualizarListaReservas() {
     });
 }
 
+// ==================== FUNÇÃO VERIFICAR CONFLITO RESERVA (CORRIGIDA) ====================
 function verificarConflitoReserva(reserva) {
+    if (!reserva || !reserva.horario) {
+        return false;
+    }
+    
     return reservasCache.some(r => {
         if (r.id === reserva.id) return false;
         if (r.status === 'cancelada') return false;
         if (r.sala !== reserva.sala) return false;
         if (r.data !== reserva.data) return false;
         
-        const rInicio = r.horario ? r.horario.split(':').map(Number) : [0, 0];
-        const rFim = r.duracao ? addMinutes(r.horario, r.duracao) : r.horario;
-        const reservaInicio = reserva.horario ? reserva.horario.split(':').map(Number) : [0, 0];
-        const reservaFim = reserva.duracao ? addMinutes(reserva.horario, reserva.duracao) : reserva.horario;
+        if (!r.horario || !reserva.horario) return false;
+        
+        const rInicio = r.horario.split(':').map(Number);
+        const reservaInicio = reserva.horario.split(':').map(Number);
         
         const rStart = rInicio[0] * 60 + rInicio[1];
-        const rEnd = rFim ? rFim.split(':').map(Number) : rInicio;
-        const rEndMinutes = rEnd[0] * 60 + rEnd[1];
+        const rEnd = rStart + (r.duracao || 60);
         const reservaStart = reservaInicio[0] * 60 + reservaInicio[1];
-        const reservaEnd = reservaFim ? reservaFim.split(':').map(Number) : reservaInicio;
-        const reservaEndMinutes = reservaEnd[0] * 60 + reservaEnd[1];
+        const reservaEnd = reservaStart + (reserva.duracao || 60);
         
-        return (reservaStart < rEndMinutes && reservaEndMinutes > rStart);
+        return (reservaStart < rEnd && reservaEnd > rStart);
     });
 }
 
@@ -4892,7 +4847,7 @@ function abrirModalReserva(reservaId = null) {
         titulo.textContent = '📋 Nova Reserva de Sala';
         document.getElementById('reservaId').value = '';
         document.getElementById('reservaSala').value = '';
-        document.getElementById('reservaCapacidade').value = 0;
+        document.getElementById('reservaCapacidade').value = 4;
         document.getElementById('reservaData').value = '';
         document.getElementById('reservaHorario').value = '';
         document.getElementById('reservaDuracao').value = 60;
@@ -4922,10 +4877,11 @@ function fecharModalReserva() {
     reservaEmEdicao = null;
 }
 
+// ==================== FUNÇÃO SALVAR RESERVA (CORRIGIDA) ====================
 async function salvarReserva() {
     const id = document.getElementById('reservaId').value;
     const sala = document.getElementById('reservaSala').value;
-    const capacidade = parseInt(document.getElementById('reservaCapacidade').value) || 1;
+    const capacidade = parseInt(document.getElementById('reservaCapacidade').value) || 4;
     const data = document.getElementById('reservaData').value;
     const horario = document.getElementById('reservaHorario').value;
     const duracao = parseInt(document.getElementById('reservaDuracao').value) || 60;
@@ -4934,11 +4890,13 @@ async function salvarReserva() {
     const descricao = document.getElementById('reservaDescricao').value.trim();
     const status = document.getElementById('reservaStatus').value;
 
+    // ✅ PRIMEIRO: Validar campos obrigatórios
     if (!sala || !data || !horario || !responsavelId || !titulo) {
         alert('❌ Preencha todos os campos obrigatórios: Sala, Data, Horário, Responsável e Título.');
         return;
     }
 
+    // ✅ SEGUNDO: Verificar colaborador
     const colaborador = colaboradoresCache.find(c => c.id === responsavelId);
     if (!colaborador) {
         alert('❌ Colaborador não encontrado!');
@@ -4950,25 +4908,32 @@ async function salvarReserva() {
         return;
     }
 
-    const reservaTeste = {
-        id: id || 'novo',
-        sala: sala,
-        data: data,
-        horario: horario,
-        duracao: duracao,
-        status: status
-    };
+    // ✅ TERCEIRO: Verificar conflitos (com try-catch para segurança)
+    try {
+        const reservaTeste = {
+            id: id || 'novo',
+            sala: sala,
+            data: data,
+            horario: horario,
+            duracao: duracao,
+            status: status
+        };
 
-    if (verificarConflitoReserva(reservaTeste)) {
-        if (!confirm('⚠️ Esta reserva conflita com outra reserva existente na mesma sala e horário. Deseja continuar mesmo assim?')) {
-            return;
+        if (verificarConflitoReserva(reservaTeste)) {
+            if (!confirm('⚠️ Esta reserva conflita com outra reserva existente na mesma sala e horário. Deseja continuar mesmo assim?')) {
+                return;
+            }
         }
+    } catch (error) {
+        console.error('Erro ao verificar conflitos:', error);
+        // Continua mesmo com erro na verificação
     }
 
+    // ✅ QUARTO: Salvar reserva
     try {
         const dados = {
             sala: sala,
-            capacidade: capacidade || SALAS_CAPACIDADE[sala] || 0,
+            capacidade: capacidade || SALAS_CAPACIDADE[sala] || 4,
             data: data,
             horario: horario,
             duracao: duracao,
@@ -5070,6 +5035,58 @@ function limparFiltrosReservas() {
 
 // ==================== FUNÇÕES PARA LIMITE DE ADMINISTRADORES ====================
 
+async function verificarLimiteAdmin() {
+    try {
+        const configDoc = await db.collection('configuracoes').doc('limiteAdmin').get();
+        let limite = 2;
+        
+        if (configDoc.exists) {
+            limite = configDoc.data().limite || 2;
+        }
+        
+        const adminsSnapshot = await db.collection('usuarios')
+            .where('tipo', '==', 'admin')
+            .get();
+        
+        const totalAdmins = adminsSnapshot.size;
+        const vagas = Math.max(0, limite - totalAdmins);
+        
+        return {
+            limite: limite,
+            total: totalAdmins,
+            vagas: vagas,
+            podeCriar: vagas > 0,
+            mensagem: `Total: ${totalAdmins} administradores | Limite: ${limite} | Vagas: ${vagas}`
+        };
+    } catch (error) {
+        console.error("❌ Erro ao verificar limite de admin:", error);
+        return {
+            limite: 2,
+            total: 0,
+            vagas: 2,
+            podeCriar: true,
+            mensagem: 'Erro ao verificar limite'
+        };
+    }
+}
+
+async function atualizarLimiteAdmin(novoLimite) {
+    try {
+        await db.collection('configuracoes').doc('limiteAdmin').set({
+            limite: novoLimite,
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            atualizadoPor: currentUser?.uid || 'sistema'
+        });
+        
+        alert(`✅ Limite de administradores atualizado para ${novoLimite}.`);
+        return true;
+    } catch (error) {
+        console.error("❌ Erro ao atualizar limite:", error);
+        alert('❌ Erro ao salvar: ' + error.message);
+        return false;
+    }
+}
+
 async function carregarConfigLimiteAdmin() {
     try {
         const limiteInfo = await verificarLimiteAdmin();
@@ -5110,7 +5127,7 @@ async function salvarLimiteAdmin() {
     const novoLimite = parseInt(input.value);
     
     if (isNaN(novoLimite) || novoLimite < 1 || novoLimite > 20) {
-        mostrarNotificacao('❌ O limite deve ser entre 1 e 20.', 'error');
+        alert('❌ O limite deve ser entre 1 e 20.');
         return;
     }
     

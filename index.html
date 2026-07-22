@@ -60,45 +60,37 @@
             <div id="criarTab" class="tab-content">
                 <div style="margin-bottom: 20px; text-align: center; color: #64748b; font-size: 14px; background: #fef3c7; padding: 12px; border-radius: 8px; border: 1px solid #fcd34d;">
                     <i class="fas fa-shield-alt" style="color: #d97706;"></i> 
-                    Solicite acesso ao sistema. Um administrador analisará seu pedido.
+                    Solicite acesso ao sistema como <strong>Colaborador</strong>. Um administrador analisará seu pedido.
                 </div>
                 
                 <form id="criarForm" autocomplete="off" onsubmit="return false;">
                     <div class="input-group">
                         <i class="fas fa-user"></i>
-                        <input type="text" id="criarNome" placeholder="Nome completo *" autocomplete="off" required>
+                        <input type="text" id="solicitacaoNome" placeholder="Nome completo *" autocomplete="off" required>
                     </div>
                     <div class="input-group">
                         <i class="fas fa-envelope"></i>
-                        <input type="email" id="criarEmail" placeholder="E-mail *" autocomplete="off" required>
+                        <input type="email" id="solicitacaoEmail" placeholder="E-mail *" autocomplete="off" required>
                     </div>
                     <div class="input-group">
                         <i class="fas fa-phone"></i>
-                        <input type="tel" id="criarTelefone" placeholder="Telefone (opcional)" autocomplete="off">
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-building"></i>
-                        <input type="text" id="criarEmpresa" placeholder="Empresa (opcional)" autocomplete="off">
+                        <input type="tel" id="solicitacaoTelefone" placeholder="Telefone (opcional)" autocomplete="off">
                     </div>
                     <div class="input-group">
                         <i class="fas fa-briefcase"></i>
-                        <input type="text" id="criarCargo" placeholder="Cargo (opcional)" autocomplete="off">
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-info-circle"></i>
-                        <input type="text" id="criarMotivo" placeholder="Motivo da solicitação (opcional)" autocomplete="off">
+                        <input type="text" id="solicitacaoCargo" placeholder="Cargo (opcional)" autocomplete="off">
                     </div>
                     <div class="input-group">
                         <i class="fas fa-lock"></i>
-                        <input type="password" id="criarSenha" placeholder="Senha (mínimo 6 caracteres) *" autocomplete="new-password" required>
+                        <input type="password" id="solicitacaoSenha" placeholder="Senha (mínimo 6 caracteres) *" autocomplete="new-password" required>
                     </div>
                     <div class="input-group">
                         <i class="fas fa-check-circle"></i>
-                        <input type="password" id="criarSenhaConfirm" placeholder="Confirmar senha *" autocomplete="new-password" required>
+                        <input type="password" id="solicitacaoConfirmarSenha" placeholder="Confirmar senha *" autocomplete="new-password" required>
                     </div>
                     
-                    <button class="btn-primary" onclick="solicitarCadastroAdmin()" type="button" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
-                        <i class="fas fa-paper-plane"></i> Solicitar Acesso
+                    <button class="btn-primary" onclick="enviarSolicitacaoCadastro()" type="button" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                        <i class="fas fa-paper-plane"></i> Solicitar Acesso como Colaborador
                     </button>
                 </form>
                 
@@ -183,7 +175,7 @@
                         </div>
                         <div style="color: #92400e; font-size: 13px; line-height: 1.5;">
                             ${nome ? `Olá <strong>${nome}</strong>, ` : ''}
-                            O administrador irá analisar sua solicitação. 
+                            O administrador irá analisar sua solicitação como <strong>Colaborador</strong>. 
                             Você receberá acesso assim que for aprovado.
                             <br><br>
                             <span style="font-size: 12px; color: #78350f;">
@@ -243,6 +235,22 @@
                 }, 10000);
             }
         });
+
+        // ==================== FUNÇÃO PARA ENVIAR SOLICITAÇÃO ====================
+        function enviarSolicitacaoCadastro() {
+            // Verifica se a função existe no admin-approval.js
+            if (typeof solicitarCadastroColaborador === 'function') {
+                solicitarCadastroColaborador();
+            } else {
+                // Fallback - tenta usar a função antiga
+                console.warn('⚠️ Função solicitarCadastroColaborador não encontrada, usando fallback');
+                if (typeof solicitarCadastroAdmin === 'function') {
+                    solicitarCadastroAdmin();
+                } else {
+                    alert('❌ Erro: Função de solicitação não disponível. Recarregue a página.');
+                }
+            }
+        }
     </script>
 </body>
 </html>

@@ -2123,6 +2123,19 @@ input:-ms-input-placeholder {
     margin-right: 8px;
 }
 
+/* Estilos para ocultar menus de admin para colaboradores */
+.sidebar li.menu-hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    border: none !important;
+}
+
 .status-counter .counter-item .count.designado { color: #1d4ed8; }
 .status-counter .counter-item .count.em_andamento { color: #d97706; }
 .status-counter .counter-item .count.realizado { color: #059669; }
