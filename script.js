@@ -4593,7 +4593,7 @@ function atualizarDataExibicao(data) {
 
 // ==================== RESERVAS DE SALAS ====================
 
-// ==================== INICIAR LISTENER DE RESERVAS (CORRIGIDO) ====================
+// ==================== INICIAR LISTENER DE RESERVAS ====================
 function iniciarListenerReservas() {
     if (unsubscribeReservas) {
         unsubscribeReservas();
@@ -4601,7 +4601,7 @@ function iniciarListenerReservas() {
     }
 
     try {
-        // 🔥 CORRIGIDO: Buscar TODAS as reservas, sem filtro de data
+        // 🔥 Buscar TODAS as reservas para manter o cache atualizado
         unsubscribeReservas = db.collection('reservasSalas')
             .orderBy('data', 'asc')
             .onSnapshot((snapshot) => {
@@ -4615,16 +4615,16 @@ function iniciarListenerReservas() {
                         data: data.data || ''
                     });
                 });
-                console.log(`📋 ${reservasCache.length} reservas carregadas`);
+                console.log(`📋 ${reservasCache.length} reservas carregadas no cache`);
                 
-                // Forçar atualização da interface
+                // Atualizar a lista com o filtro padrão (HOJE)
                 atualizarListaReservas();
                 atualizarStatsReservas();
             }, (error) => {
                 console.error("❌ Erro no listener de reservas:", error);
             });
             
-        console.log("✅ Listener de reservas iniciado - buscando TODAS as reservas");
+        console.log("✅ Listener de reservas iniciado - cache atualizado com TODAS as reservas");
         
     } catch (error) {
         console.error("❌ Erro ao iniciar listener de reservas:", error);
@@ -4639,11 +4639,11 @@ function atualizarListaReservas() {
         return;
     }
 
-    console.log(`📊 Atualizando lista com ${reservasCache.length} reservas`);
+    console.log(`📊 Atualizando lista com ${reservasCache.length} reservas no cache`);
 
     let reservasFiltradas = [...reservasCache];
 
-    // Aplicar filtros
+    // Aplicar filtros manuais (se houver)
     if (filtroReservaDataAtual) {
         reservasFiltradas = reservasFiltradas.filter(r => r.data === filtroReservaDataAtual);
         console.log(`📅 Filtro por data: ${filtroReservaDataAtual} -> ${reservasFiltradas.length} reservas`);
@@ -4657,19 +4657,16 @@ function atualizarListaReservas() {
         console.log(`📌 Filtro por status: ${filtroReservaStatusAtual} -> ${reservasFiltradas.length} reservas`);
     }
 
-    // Se não houver filtros, mostrar reservas dos próximos 30 dias
+    // 🔥 PADRÃO: Se não houver filtros, mostrar APENAS reservas de HOJE
     if (!filtroReservaDataAtual && !filtroReservaSalaAtual && !filtroReservaStatusAtual) {
         const hoje = new Date();
         const dataHoje = hoje.toISOString().split('T')[0];
-        const dataLimite = new Date(hoje);
-        dataLimite.setDate(dataLimite.getDate() + 30);
-        const dataLimiteStr = dataLimite.toISOString().split('T')[0];
         
         reservasFiltradas = reservasFiltradas.filter(r => {
             if (!r.data) return false;
-            return r.data >= dataHoje && r.data <= dataLimiteStr && r.status !== 'cancelada';
+            return r.data === dataHoje && r.status !== 'cancelada';
         });
-        console.log(`📆 Mostrando reservas de ${dataHoje} até ${dataLimiteStr} -> ${reservasFiltradas.length} reservas`);
+        console.log(`📆 Padrão: Mostrando apenas reservas de HOJE (${dataHoje}) -> ${reservasFiltradas.length} reservas`);
     }
 
     // Ordenar por data e horário
@@ -4683,14 +4680,14 @@ function atualizarListaReservas() {
         container.innerHTML = `
             <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
                 <i class="fas fa-door-open" style="font-size: 48px; color: #cbd5e1;"></i>
-                <h3 style="margin-top: 12px; color: #475569;">Nenhuma reserva encontrada</h3>
-                <p style="color: #94a3b8;">Ajuste os filtros ou faça uma nova reserva de sala.</p>
+                <h3 style="margin-top: 12px; color: #475569;">Nenhuma reserva para hoje</h3>
+                <p style="color: #94a3b8;">Use o filtro de data para visualizar reservas de outras datas.</p>
                 <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
                     <button onclick="abrirModalReserva()" class="btn-primary" style="width: auto; padding: 12px 40px; min-width: 200px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                         <i class="fas fa-plus"></i> Nova Reserva
                     </button>
-                    <button onclick="limparFiltrosReservas()" class="btn-secondary" style="width: auto; padding: 12px 24px;">
-                        <i class="fas fa-undo"></i> Limpar Filtros
+                    <button onclick="document.getElementById('filtroReservaData').focus()" class="btn-secondary" style="width: auto; padding: 12px 24px;">
+                        <i class="fas fa-calendar-day"></i> Filtrar por Data
                     </button>
                 </div>
             </div>
