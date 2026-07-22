@@ -4137,6 +4137,11 @@ function sidebarClickHandler() {
             renderizarDashboard();
         }
         if (sectionId === 'reservasSection') {
+            // Forçar atualização quando a seção for ativada
+            if (unsubscribeReservas) {
+                // Reiniciar o listener para garantir dados atualizados
+                iniciarListenerReservas();
+            }
             atualizarListaReservas();
             atualizarStatsReservas();
         }
@@ -4592,6 +4597,7 @@ function atualizarDataExibicao(data) {
 function iniciarListenerReservas() {
     if (unsubscribeReservas) {
         unsubscribeReservas();
+        unsubscribeReservas = null;
     }
 
     try {
@@ -4602,14 +4608,24 @@ function iniciarListenerReservas() {
                 console.log("🔄 Reservas atualizadas em tempo real!");
                 reservasCache = [];
                 snapshot.forEach(doc => {
-                    reservasCache.push({ id: doc.id, ...doc.data() });
+                    const data = doc.data();
+                    reservasCache.push({ 
+                        id: doc.id, 
+                        ...data,
+                        data: data.data || ''
+                    });
                 });
                 console.log(`📋 ${reservasCache.length} reservas carregadas`);
+                
+                // Forçar atualização da interface
                 atualizarListaReservas();
                 atualizarStatsReservas();
             }, (error) => {
-                console.error("Erro no listener de reservas:", error);
+                console.error("❌ Erro no listener de reservas:", error);
             });
+            
+        console.log("✅ Listener de reservas iniciado - buscando TODAS as reservas");
+        
     } catch (error) {
         console.error("❌ Erro ao iniciar listener de reservas:", error);
     }
@@ -4618,33 +4634,45 @@ function iniciarListenerReservas() {
 // ==================== ATUALIZAR LISTA DE RESERVAS ====================
 function atualizarListaReservas() {
     const container = document.getElementById('listaReservas');
-    if (!container) return;
+    if (!container) {
+        console.warn("⚠️ Container 'listaReservas' não encontrado");
+        return;
+    }
+
+    console.log(`📊 Atualizando lista com ${reservasCache.length} reservas`);
 
     let reservasFiltradas = [...reservasCache];
 
+    // Aplicar filtros
     if (filtroReservaDataAtual) {
         reservasFiltradas = reservasFiltradas.filter(r => r.data === filtroReservaDataAtual);
+        console.log(`📅 Filtro por data: ${filtroReservaDataAtual} -> ${reservasFiltradas.length} reservas`);
     }
     if (filtroReservaSalaAtual) {
         reservasFiltradas = reservasFiltradas.filter(r => r.sala === filtroReservaSalaAtual);
+        console.log(`🏢 Filtro por sala: ${filtroReservaSalaAtual} -> ${reservasFiltradas.length} reservas`);
     }
     if (filtroReservaStatusAtual) {
         reservasFiltradas = reservasFiltradas.filter(r => r.status === filtroReservaStatusAtual);
+        console.log(`📌 Filtro por status: ${filtroReservaStatusAtual} -> ${reservasFiltradas.length} reservas`);
     }
 
-    // 🔥 CORRIGIDO: Se não houver filtros, mostrar reservas dos próximos 7 dias
+    // Se não houver filtros, mostrar reservas dos próximos 30 dias
     if (!filtroReservaDataAtual && !filtroReservaSalaAtual && !filtroReservaStatusAtual) {
         const hoje = new Date();
         const dataHoje = hoje.toISOString().split('T')[0];
         const dataLimite = new Date(hoje);
-        dataLimite.setDate(dataLimite.getDate() + 7);
+        dataLimite.setDate(dataLimite.getDate() + 30);
         const dataLimiteStr = dataLimite.toISOString().split('T')[0];
         
         reservasFiltradas = reservasFiltradas.filter(r => {
+            if (!r.data) return false;
             return r.data >= dataHoje && r.data <= dataLimiteStr && r.status !== 'cancelada';
         });
+        console.log(`📆 Mostrando reservas de ${dataHoje} até ${dataLimiteStr} -> ${reservasFiltradas.length} reservas`);
     }
 
+    // Ordenar por data e horário
     reservasFiltradas.sort((a, b) => {
         if (a.data < b.data) return -1;
         if (a.data > b.data) return 1;
@@ -4657,9 +4685,12 @@ function atualizarListaReservas() {
                 <i class="fas fa-door-open" style="font-size: 48px; color: #cbd5e1;"></i>
                 <h3 style="margin-top: 12px; color: #475569;">Nenhuma reserva encontrada</h3>
                 <p style="color: #94a3b8;">Ajuste os filtros ou faça uma nova reserva de sala.</p>
-                <div style="display: flex; justify-content: center; margin-top: 16px;">
+                <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
                     <button onclick="abrirModalReserva()" class="btn-primary" style="width: auto; padding: 12px 40px; min-width: 200px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                         <i class="fas fa-plus"></i> Nova Reserva
+                    </button>
+                    <button onclick="limparFiltrosReservas()" class="btn-secondary" style="width: auto; padding: 12px 24px;">
+                        <i class="fas fa-undo"></i> Limpar Filtros
                     </button>
                 </div>
             </div>
@@ -4790,6 +4821,8 @@ function atualizarStatsReservas() {
     document.getElementById('reservaConfirmadas').textContent = confirmadas.length;
     document.getElementById('reservaPendentes').textContent = pendentes.length;
     document.getElementById('reservaTotalSalas').textContent = `${salasDisponiveis}/${totalSalas}`;
+    
+    console.log(`📊 Stats: Hoje=${reservasHoje.length}, Confirmadas=${confirmadas.length}, Pendentes=${pendentes.length}, Salas=${salasDisponiveis}/${totalSalas}`);
 }
 
 function abrirModalReserva(reservaId = null) {
