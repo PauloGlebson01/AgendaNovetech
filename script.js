@@ -349,6 +349,48 @@ function reiniciarSidebar() {
     }, 100);
 }
 
+// ==================== ATUALIZAR BADGE DO USUÁRIO ====================
+function atualizarBadgeUsuario(userData) {
+    if (!userData) {
+        console.warn("⚠️ userData não fornecido para atualizarBadgeUsuario");
+        return;
+    }
+    
+    const badgeEl = document.getElementById('userTypeBadge');
+    const adminNameEl = document.getElementById('adminName');
+    const userIconEl = document.getElementById('userIcon');
+    
+    if (!badgeEl) return;
+    
+    // Atualiza o nome
+    if (adminNameEl) {
+        adminNameEl.textContent = userData.nome || userData.email || 'Usuário';
+    }
+    
+    // Atualiza o badge
+    if (userData.tipo === 'admin') {
+        badgeEl.textContent = '👑 Administrador';
+        badgeEl.style.background = '#dbeafe';
+        badgeEl.style.color = '#1d4ed8';
+        badgeEl.style.border = '1px solid #93c5fd';
+        if (userIconEl) {
+            userIconEl.className = 'fas fa-user-cog';
+            userIconEl.style.color = '#1d4ed8';
+        }
+    } else {
+        badgeEl.textContent = '👤 Colaborador';
+        badgeEl.style.background = '#f0fdf4';
+        badgeEl.style.color = '#059669';
+        badgeEl.style.border = '1px solid #86efac';
+        if (userIconEl) {
+            userIconEl.className = 'fas fa-user';
+            userIconEl.style.color = '#059669';
+        }
+    }
+    
+    console.log(`✅ Badge atualizado: ${userData.tipo} - ${badgeEl.textContent}`);
+}
+
 // ==================== VERIFICAÇÃO DE AUTENTICAÇÃO ====================
 auth.onAuthStateChanged(async (user) => {
     console.log("Auth state changed:", user ? user.email : "null");
@@ -395,6 +437,8 @@ auth.onAuthStateChanged(async (user) => {
             if (path.includes('index.html') || path === '/' || path.endsWith('/')) {
                 window.location.href = 'admin.html';
             } else if (path.includes('admin.html')) {
+                // 🔥 Atualizar o badge ANTES de carregar o admin
+                atualizarBadgeUsuario(currentUser);
                 await carregarAdmin();
                 
                 forcarAtualizacaoMenu(currentUser);
@@ -638,8 +682,41 @@ async function carregarAdmin() {
     
     console.log("📋 Carregando admin para:", currentUser.nome, "Tipo:", currentUser.tipo);
     
-    document.getElementById('adminName').textContent = currentUser.nome;
+    // ==================== CORREÇÃO: EXIBIR NOME E TIPO CORRETAMENTE ====================
+    const adminNameEl = document.getElementById('adminName');
+    const badgeEl = document.getElementById('userTypeBadge');
+    const userIconEl = document.getElementById('userIcon');
     
+    // Define o nome do usuário
+    if (currentUser.nome) {
+        adminNameEl.textContent = currentUser.nome;
+    } else {
+        adminNameEl.textContent = currentUser.email || 'Usuário';
+    }
+    
+    // Define o badge e ícone conforme o tipo
+    if (currentUser.tipo === 'admin') {
+        badgeEl.textContent = '👑 Administrador';
+        badgeEl.style.background = '#dbeafe';
+        badgeEl.style.color = '#1d4ed8';
+        badgeEl.style.border = '1px solid #93c5fd';
+        if (userIconEl) {
+            userIconEl.className = 'fas fa-user-cog';
+            userIconEl.style.color = '#1d4ed8';
+        }
+    } else {
+        badgeEl.textContent = '👤 Colaborador';
+        badgeEl.style.background = '#f0fdf4';
+        badgeEl.style.color = '#059669';
+        badgeEl.style.border = '1px solid #86efac';
+        if (userIconEl) {
+            userIconEl.className = 'fas fa-user';
+            userIconEl.style.color = '#059669';
+        }
+    }
+    // ==================== FIM DA CORREÇÃO ====================
+    
+    // Forçar atualização do menu
     forcarAtualizacaoMenu(currentUser);
     
     setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 100);

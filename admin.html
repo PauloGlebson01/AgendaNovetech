@@ -23,9 +23,31 @@
                 <span style="font-weight: 700; font-size: 20px; color: #0f172a;">Agenda<span style="color: #2563eb;">Novetech</span></span>
             </div>
             <div class="user-info">
-                <i class="fas fa-user-shield"></i>
-                <span id="adminName">Carregando...</span>
-                <button onclick="logout()" class="icon-btn" title="Sair">
+                <i class="fas fa-user-shield" id="userIcon" style="transition: all 0.3s ease;"></i>
+                <span id="adminName" style="font-weight: 500;">Carregando...</span>
+                <span id="userTypeBadge" class="user-type-badge" style="
+                    font-size: 11px;
+                    padding: 3px 14px;
+                    border-radius: 20px;
+                    font-weight: 600;
+                    margin-left: 8px;
+                    white-space: nowrap;
+                    background: #e2e8f0;
+                    color: #475569;
+                    transition: all 0.3s ease;
+                    border: 1px solid transparent;
+                ">Carregando...</span>
+                <button onclick="logout()" class="icon-btn" title="Sair" style="
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 18px;
+                    color: #64748b;
+                    padding: 8px 12px;
+                    border-radius: 8px;
+                    transition: all 0.2s;
+                    margin-left: 8px;
+                " onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>

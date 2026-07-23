@@ -2136,6 +2136,46 @@ input:-ms-input-placeholder {
     border: none !important;
 }
 
+/* ==================== BADGE DO USUÁRIO ==================== */
+.user-type-badge {
+    font-size: 11px;
+    padding: 3px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-left: 8px;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.user-type-badge.admin {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border: 1px solid #93c5fd;
+}
+
+.user-type-badge.colaborador {
+    background: #f0fdf4;
+    color: #059669;
+    border: 1px solid #86efac;
+}
+
+.user-type-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.user-icon {
+    transition: all 0.3s ease;
+}
+
+.user-icon.admin {
+    color: #1d4ed8;
+}
+
+.user-icon.colaborador {
+    color: #059669;
+}
+
 .status-counter .counter-item .count.designado { color: #1d4ed8; }
 .status-counter .counter-item .count.em_andamento { color: #d97706; }
 .status-counter .counter-item .count.realizado { color: #059669; }
