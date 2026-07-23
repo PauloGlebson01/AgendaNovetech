@@ -55,12 +55,9 @@
         <div class="dashboard">
             <aside class="sidebar">
                 <ul>
-                    <!-- Menu Dashboard (APENAS ADMIN) -->
                     <li id="menuDashboard" data-section="dashboard">
                         <i class="fas fa-chart-pie"></i> Dashboard
                     </li>
-                    
-                    <!-- Menu Solicitações (APENAS ADMIN) -->
                     <li id="menuSolicitacoes" data-section="solicitacoes">
                         <i class="fas fa-user-plus"></i> 
                         Solicitações
@@ -77,39 +74,27 @@
                             text-align: center;
                         ">0</span>
                     </li>
-
-                    <!-- Menu Reservas (TODOS) -->
                     <li id="menuReservas" data-section="reservas">
                         <i class="fas fa-door-open"></i> Reservas de Salas
                     </li>
-
-                    <!-- Menu Gerenciar Agenda (TODOS) -->
                     <li id="menuAgenda" data-section="agenda">
                         <i class="fas fa-calendar-plus"></i> Gerenciar Agenda
                     </li>
-
-                    <!-- Menu Colaboradores (APENAS ADMIN) -->
                     <li id="menuColaboradores" data-section="colaboradores">
                         <i class="fas fa-users"></i> Colaboradores
                     </li>
-
-                    <!-- Menu Ver Agenda (TODOS) -->
                     <li id="menuVerAgenda" data-section="listar">
                         <i class="fas fa-list"></i> Ver Agenda
                     </li>
-
-                    <!-- Menu Configurações (APENAS ADMIN) -->
                     <li id="menuConfig" data-section="config">
                         <i class="fas fa-sliders-h"></i> Configurações
                     </li>
                 </ul>
             </aside>
             <main class="main-content">
-                <!-- Seção: Dashboard (APENAS ADMIN) -->
+                <!-- Seção: Dashboard -->
                 <section id="dashboardSection" class="section active">
                     <h2><i class="fas fa-chart-pie"></i> Dashboard</h2>
-
-                    <!-- Filtros de Período -->
                     <div style="margin-bottom: 20px; background: white; padding: 16px 24px; border-radius: 12px; border: 1px solid #eef2ff;">
                         <div style="display: flex; flex-direction: column; gap: 10px;">
                             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
@@ -121,54 +106,21 @@
                                 </span>
                             </div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                                <button class="periodo-btn active" data-periodo="todos" onclick="filtrarPorPeriodo('todos')">
-                                    📅 Todos
-                                </button>
-                                <button class="periodo-btn" data-periodo="hoje" onclick="filtrarPorPeriodo('hoje')">
-                                    🔥 Hoje
-                                </button>
-                                <button class="periodo-btn" data-periodo="semana" onclick="filtrarPorPeriodo('semana')">
-                                    📆 Semana
-                                </button>
-                                <button class="periodo-btn" data-periodo="mes" onclick="filtrarPorPeriodo('mes')">
-                                    📆 Mês
-                                </button>
+                                <button class="periodo-btn active" data-periodo="todos" onclick="filtrarPorPeriodo('todos')">📅 Todos</button>
+                                <button class="periodo-btn" data-periodo="hoje" onclick="filtrarPorPeriodo('hoje')">🔥 Hoje</button>
+                                <button class="periodo-btn" data-periodo="semana" onclick="filtrarPorPeriodo('semana')">📆 Semana</button>
+                                <button class="periodo-btn" data-periodo="mes" onclick="filtrarPorPeriodo('mes')">📆 Mês</button>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Cards de Estatísticas -->
                     <div class="dashboard-stats">
-                        <div class="stat-card">
-                            <div class="stat-icon blue"><i class="fas fa-calendar-alt"></i></div>
-                            <div class="stat-number" id="statTotal">0</div>
-                            <div class="stat-label">Total de Eventos</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon green"><i class="fas fa-calendar-day"></i></div>
-                            <div class="stat-number" id="statHoje">0</div>
-                            <div class="stat-label">Eventos Hoje</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon purple"><i class="fas fa-calendar-plus"></i></div>
-                            <div class="stat-number" id="statFuturos">0</div>
-                            <div class="stat-label">Eventos Futuros</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon yellow"><i class="fas fa-calendar-check"></i></div>
-                            <div class="stat-number" id="statPassados">0</div>
-                            <div class="stat-label">Eventos Passados</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon orange"><i class="fas fa-tags"></i></div>
-                            <div class="stat-number" id="statTipos">0</div>
-                            <div class="stat-label">Tipos de Eventos</div>
-                        </div>
+                        <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-calendar-alt"></i></div><div class="stat-number" id="statTotal">0</div><div class="stat-label">Total de Eventos</div></div>
+                        <div class="stat-card"><div class="stat-icon green"><i class="fas fa-calendar-day"></i></div><div class="stat-number" id="statHoje">0</div><div class="stat-label">Eventos Hoje</div></div>
+                        <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-calendar-plus"></i></div><div class="stat-number" id="statFuturos">0</div><div class="stat-label">Eventos Futuros</div></div>
+                        <div class="stat-card"><div class="stat-icon yellow"><i class="fas fa-calendar-check"></i></div><div class="stat-number" id="statPassados">0</div><div class="stat-label">Eventos Passados</div></div>
+                        <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-tags"></i></div><div class="stat-number" id="statTipos">0</div><div class="stat-label">Tipos de Eventos</div></div>
                     </div>
-
-                    <!-- Seção de Férias e Próximos Eventos -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                        <!-- Colaboradores em Férias -->
                         <div class="proximos-eventos">
                             <h3 style="display: flex; justify-content: space-between; align-items: center;">
                                 <span><i class="fas fa-umbrella-beach" style="color: #f59e0b;"></i> Profissionais em Férias</span>
@@ -183,8 +135,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Próximos Eventos -->
                         <div class="proximos-eventos">
                             <h3><i class="fas fa-clock"></i> Próximos Eventos</h3>
                             <div id="proximosEventosLista">
@@ -195,8 +145,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Gráfico de Tipos -->
                     <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
                         <div class="proximos-eventos">
                             <h3><i class="fas fa-chart-pie"></i> Distribuição por Tipo</h3>
@@ -210,17 +158,15 @@
                     </div>
                 </section>
 
-                <!-- Seção: Solicitações de Cadastro (APENAS ADMIN) -->
+                <!-- Seção: Solicitações -->
                 <section id="solicitacoesSection" class="section">
                     <h2><i class="fas fa-user-plus"></i> Solicitações de Cadastro</h2>
-                    
                     <div style="margin-bottom: 20px; padding: 16px 20px; background: #fef3c7; border-radius: 12px; border: 1px solid #fcd34d;">
                         <i class="fas fa-info-circle" style="color: #d97706;"></i>
                         <span style="color: #92400e; font-size: 14px;">
                             Aqui estão os usuários que solicitaram acesso ao sistema. Aprove ou rejeite cada solicitação.
                         </span>
                     </div>
-                    
                     <div id="listaSolicitacoes" class="cards-grid">
                         <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
                             <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #2563eb;"></i>
@@ -233,7 +179,6 @@
                 <section id="reservasSection" class="section">
                     <h2><i class="fas fa-door-open"></i> Reservas de Salas</h2>
                     
-                    <!-- Filtros e Status -->
                     <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: white; padding: 16px 20px; border-radius: 12px; border: 1px solid #eef2ff;">
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; flex: 1;">
                             <input type="date" id="filtroReservaData" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
@@ -262,31 +207,13 @@
                         </button>
                     </div>
 
-                    <!-- Cards de Estatísticas de Reservas -->
                     <div class="dashboard-stats" style="margin-bottom: 20px;">
-                        <div class="stat-card">
-                            <div class="stat-icon blue"><i class="fas fa-calendar-day"></i></div>
-                            <div class="stat-number" id="reservaTotalHoje">0</div>
-                            <div class="stat-label">Reservas Hoje</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
-                            <div class="stat-number" id="reservaConfirmadas">0</div>
-                            <div class="stat-label">Confirmadas</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon yellow"><i class="fas fa-clock"></i></div>
-                            <div class="stat-number" id="reservaPendentes">0</div>
-                            <div class="stat-label">Pendentes</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon purple"><i class="fas fa-door-open"></i></div>
-                            <div class="stat-number" id="reservaTotalSalas">0</div>
-                            <div class="stat-label">Salas Disponíveis</div>
-                        </div>
+                        <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-calendar-day"></i></div><div class="stat-number" id="reservaTotalHoje">0</div><div class="stat-label">Reservas Hoje</div></div>
+                        <div class="stat-card"><div class="stat-icon green"><i class="fas fa-check-circle"></i></div><div class="stat-number" id="reservaConfirmadas">0</div><div class="stat-label">Confirmadas</div></div>
+                        <div class="stat-card"><div class="stat-icon yellow"><i class="fas fa-clock"></i></div><div class="stat-number" id="reservaPendentes">0</div><div class="stat-label">Pendentes</div></div>
+                        <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-door-open"></i></div><div class="stat-number" id="reservaTotalSalas">0</div><div class="stat-label">Salas Disponíveis</div></div>
                     </div>
 
-                    <!-- Lista de Reservas -->
                     <div id="listaReservas" class="cards-grid">
                         <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
                             <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #2563eb;"></i>
@@ -365,11 +292,9 @@
                     </div>
                 </section>
 
-                <!-- Seção: Colaboradores (APENAS ADMIN) -->
+                <!-- Seção: Colaboradores -->
                 <section id="colaboradoresSection" class="section">
                     <h2><i class="fas fa-users"></i> Gerenciar Colaboradores</h2>
-
-                    <!-- Formulário de Cadastro -->
                     <div class="form-card" style="max-width: 100%; margin-bottom: 30px;">
                         <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-user-plus" style="color: #2563eb;"></i> Cadastrar Novo Colaborador
@@ -402,8 +327,6 @@
                             <i class="fas fa-save"></i> Cadastrar Colaborador
                         </button>
                     </div>
-
-                    <!-- Lista de Colaboradores -->
                     <h3 style="margin: 24px 0 16px; display: flex; align-items: center; gap: 10px;">
                         <i class="fas fa-list" style="color: #2563eb;"></i> Colaboradores Cadastrados
                     </h3>
@@ -414,7 +337,6 @@
                 <section id="listarSection" class="section">
                     <h2><i class="fas fa-list"></i> Agenda de Eventos</h2>
                     <div style="margin: 20px 0;">
-                        <!-- Botões de Navegação de Data -->
                         <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
                             <button class="btn-sm" style="background: #e2e8f0; color: #475569;" onclick="navegarData(-1)">
                                 <i class="fas fa-chevron-left"></i> Dia Anterior
@@ -429,8 +351,6 @@
                                 <i class="fas fa-clock"></i> Exibindo eventos do dia
                             </span>
                         </div>
-                        
-                        <!-- Filtros existentes -->
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                             <input type="date" id="filtroData" style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
                             <select id="filtroStatus" style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; min-width: 160px;">
@@ -450,59 +370,28 @@
                                 <i class="fas fa-external-link-alt"></i> Ver Página Pública
                             </button>
                         </div>
-                        
-                        <!-- Filtros rápidos por status -->
                         <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-                            <button class="btn-sm btn-designado" onclick="filtrarPorStatus('designado')">
-                                📋 Designados
-                            </button>
-                            <button class="btn-sm btn-em_andamento" onclick="filtrarPorStatus('em_andamento')">
-                                🔄 Em Andamento
-                            </button>
-                            <button class="btn-sm btn-realizado" onclick="filtrarPorStatus('realizado')">
-                                ✅ Realizados
-                            </button>
-                            <button class="btn-sm btn-cancelado" onclick="filtrarPorStatus('cancelado')">
-                                ❌ Cancelados
-                            </button>
-                            <button class="btn-sm" style="background: #f1f5f9; color: #475569;" onclick="limparFiltros()">
-                                <i class="fas fa-undo"></i> Todos
-                            </button>
+                            <button class="btn-sm btn-designado" onclick="filtrarPorStatus('designado')">📋 Designados</button>
+                            <button class="btn-sm btn-em_andamento" onclick="filtrarPorStatus('em_andamento')">🔄 Em Andamento</button>
+                            <button class="btn-sm btn-realizado" onclick="filtrarPorStatus('realizado')">✅ Realizados</button>
+                            <button class="btn-sm btn-cancelado" onclick="filtrarPorStatus('cancelado')">❌ Cancelados</button>
+                            <button class="btn-sm" style="background: #f1f5f9; color: #475569;" onclick="limparFiltros()"><i class="fas fa-undo"></i> Todos</button>
                         </div>
                     </div>
-
-                    <!-- Contador de Status -->
                     <div id="statusCounter" class="status-counter">
-                        <div class="counter-item">
-                            <span>📋 Designados:</span>
-                            <span class="count designado" id="countDesignado">0</span>
-                        </div>
-                        <div class="counter-item">
-                            <span>🔄 Em Andamento:</span>
-                            <span class="count em_andamento" id="countEmAndamento">0</span>
-                        </div>
-                        <div class="counter-item">
-                            <span>✅ Realizados:</span>
-                            <span class="count realizado" id="countRealizado">0</span>
-                        </div>
-                        <div class="counter-item">
-                            <span>❌ Cancelados:</span>
-                            <span class="count cancelado" id="countCancelado">0</span>
-                        </div>
-                        <div class="counter-item" style="margin-left: auto; font-weight: 600;">
-                            <span>Total:</span>
-                            <span style="color: #0f172a;" id="countTotal">0</span>
-                        </div>
+                        <div class="counter-item"><span>📋 Designados:</span><span class="count designado" id="countDesignado">0</span></div>
+                        <div class="counter-item"><span>🔄 Em Andamento:</span><span class="count em_andamento" id="countEmAndamento">0</span></div>
+                        <div class="counter-item"><span>✅ Realizados:</span><span class="count realizado" id="countRealizado">0</span></div>
+                        <div class="counter-item"><span>❌ Cancelados:</span><span class="count cancelado" id="countCancelado">0</span></div>
+                        <div class="counter-item" style="margin-left: auto; font-weight: 600;"><span>Total:</span><span style="color: #0f172a;" id="countTotal">0</span></div>
                     </div>
-
                     <div id="listaEventosAdmin" class="cards-grid"></div>
                 </section>
 
-                <!-- Seção: Configurações (APENAS ADMIN) -->
+                <!-- Seção: Configurações -->
                 <section id="configSection" class="section">
                     <h2><i class="fas fa-sliders-h"></i> Configurações da Agenda</h2>
                     
-                    <!-- Configurações Gerais -->
                     <div class="form-card" style="margin-bottom: 30px;">
                         <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-calendar-week" style="color: #2563eb;"></i> Configurações Gerais
@@ -538,7 +427,6 @@
                         </button>
                     </div>
 
-                    <!-- Configurações de Limite de Demanda -->
                     <div class="form-card" style="margin-bottom: 30px;">
                         <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-chart-line" style="color: #8b5cf6;"></i> Controle de Demanda
@@ -546,7 +434,6 @@
                         <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
                             Configure os limites de eventos por colaborador para receber alertas de alta demanda.
                         </p>
-
                         <div class="form-group" style="margin-bottom: 20px;">
                             <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px;">
                                 <input type="checkbox" id="configDemandaAtivo" style="width: 20px; height: 20px; accent-color: #8b5cf6;">
@@ -556,7 +443,6 @@
                                 Quando ativado, o sistema exibirá alertas ao adicionar eventos que ultrapassem os limites definidos.
                             </p>
                         </div>
-
                         <div class="form-row">
                             <div class="form-group">
                                 <label><i class="fas fa-calendar-day"></i> Limite Diário</label>
@@ -569,7 +455,6 @@
                                 <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Máximo de eventos nos últimos 7 dias</p>
                             </div>
                         </div>
-
                         <div class="form-row">
                             <div class="form-group">
                                 <label><i class="fas fa-calendar-alt"></i> Limite Mensal</label>
@@ -582,7 +467,6 @@
                                 <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Horas máximas ocupadas por dia</p>
                             </div>
                         </div>
-
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
                             <button class="btn-primary" onclick="salvarConfiguracoesDemanda()" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
                                 <i class="fas fa-save"></i> Salvar Configurações de Demanda
@@ -591,7 +475,6 @@
                                 <i class="fas fa-undo"></i> Restaurar Padrões
                             </button>
                         </div>
-
                         <div style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
                             <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #0f172a;">
                                 <i class="fas fa-info-circle" style="color: #8b5cf6;"></i> Limites Atuais
@@ -606,7 +489,6 @@
                         </div>
                     </div>
 
-                    <!-- Configuração de Limite de Administradores -->
                     <div class="form-card" style="margin-bottom: 30px;">
                         <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-user-shield" style="color: #8b5cf6;"></i> Limite de Administradores
@@ -614,7 +496,6 @@
                         <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
                             Defina o número máximo de administradores que podem ser cadastrados no sistema.
                         </p>
-
                         <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
                             <div style="flex: 1; min-width: 200px;">
                                 <label style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 14px; color: #1e293b;">
@@ -628,7 +509,6 @@
                                 <i class="fas fa-save"></i> Salvar Limite
                             </button>
                         </div>
-
                         <div style="margin-top: 16px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
                             <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #0f172a;">
                                 <i class="fas fa-info-circle" style="color: #8b5cf6;"></i> Status Atual
@@ -642,7 +522,6 @@
                         </div>
                     </div>
 
-                    <!-- Gestão de Horários Disponíveis -->
                     <div class="form-card">
                         <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-clock" style="color: #10b981;"></i> Gestão de Horários Disponíveis
@@ -650,7 +529,6 @@
                         <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
                             Configure os horários disponíveis para agendamento de reuniões e treinamentos. Os clientes poderão visualizar os slots disponíveis na agenda pública.
                         </p>
-
                         <div class="form-group" style="margin-bottom: 20px;">
                             <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px;">
                                 <input type="checkbox" id="configHorariosAtivo" style="width: 20px; height: 20px; accent-color: #10b981;">
@@ -660,7 +538,6 @@
                                 Quando ativado, os horários disponíveis serão exibidos na agenda pública para solicitação.
                             </p>
                         </div>
-
                         <div class="form-group">
                             <label><i class="fas fa-calendar-week"></i> Dias disponíveis para agendamento</label>
                             <div class="dias-check" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px;">
@@ -674,7 +551,6 @@
                             </div>
                             <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Selecione os dias em que os agendamentos são permitidos.</p>
                         </div>
-
                         <div class="form-row">
                             <div class="form-group">
                                 <label><i class="fas fa-hourglass-start"></i> Horário de Início</label>
@@ -687,7 +563,6 @@
                                 <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Horário de fim do expediente</p>
                             </div>
                         </div>
-
                         <div class="form-row">
                             <div class="form-group">
                                 <label><i class="fas fa-clock"></i> Intervalo entre slots (minutos)</label>
@@ -700,7 +575,6 @@
                                 <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Duração padrão de cada agendamento</p>
                             </div>
                         </div>
-
                         <div class="form-group">
                             <label><i class="fas fa-envelope"></i> E-mail para solicitações</label>
                             <input type="email" id="configEmailSuporte" value="suporte@novetech.com.br" placeholder="email@empresa.com">
@@ -708,8 +582,6 @@
                                 E-mail que receberá as solicitações de agendamento. <strong>Este e-mail será usado no botão de solicitação.</strong>
                             </p>
                         </div>
-
-                        <!-- Gerenciar Horários Bloqueados -->
                         <div style="margin-top: 20px; padding: 16px; background: #fef3c7; border-radius: 12px; border: 1px solid #fcd34d;">
                             <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #92400e; display: flex; align-items: center; gap: 8px;">
                                 <i class="fas fa-lock" style="color: #d97706;"></i>
@@ -718,7 +590,6 @@
                             <p style="font-size: 13px; color: #78350f; margin-bottom: 12px;">
                                 Bloqueie horários específicos para que não apareçam como disponíveis na agenda pública.
                             </p>
-                            
                             <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                                 <input type="date" id="bloqueioData" onchange="atualizarSelectBloqueioHorarios()" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
                                 <select id="bloqueioHorario" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; min-width: 180px;">
@@ -731,14 +602,12 @@
                                     <i class="fas fa-undo"></i> Limpar Bloqueios do Dia
                                 </button>
                             </div>
-                            
                             <div id="listaBloqueios" style="margin-top: 12px; max-height: 200px; overflow-y: auto;">
                                 <div style="text-align: center; color: #94a3b8; font-size: 13px; padding: 8px;">
                                     Nenhum horário bloqueado.
                                 </div>
                             </div>
                         </div>
-
                         <div style="margin: 16px 0; padding: 12px 16px; background: #f0f7ff; border-radius: 10px; border-left: 4px solid #2563eb;">
                             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                 <i class="fas fa-link" style="color: #2563eb;"></i>
@@ -751,7 +620,6 @@
                                 </button>
                             </div>
                         </div>
-
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
                             <button class="btn-primary" onclick="salvarConfiguracoesHorarios()" style="background: linear-gradient(135deg, #10b981, #059669);">
                                 <i class="fas fa-save"></i> Salvar Configurações de Horários
@@ -763,7 +631,6 @@
                                 <i class="fas fa-eye"></i> Visualizar Horários
                             </button>
                         </div>
-
                         <div style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
                             <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #0f172a;">
                                 <i class="fas fa-info-circle" style="color: #10b981;"></i> Configurações Atuais
@@ -813,10 +680,8 @@
             <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
                 Atualize as informações do colaborador.
             </p>
-
             <form id="editColaboradorForm" onsubmit="return false;">
                 <input type="hidden" id="editColabId">
-
                 <div class="form-row">
                     <div class="form-group">
                         <label><i class="fas fa-user"></i> Nome Completo <span class="required">*</span></label>
@@ -827,7 +692,6 @@
                         <input type="email" id="editColabEmail" placeholder="email@empresa.com" required>
                     </div>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label><i class="fas fa-phone"></i> Telefone</label>
@@ -838,12 +702,10 @@
                         <input type="text" id="editColabCargo" placeholder="Ex: Instrutor, Consultor, etc">
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label><i class="fas fa-info-circle"></i> Observações</label>
                     <textarea id="editColabObservacoes" rows="2" placeholder="Informações adicionais sobre o colaborador..."></textarea>
                 </div>
-
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                         <input type="checkbox" id="editColabAtivo" style="width: 18px; height: 18px; accent-color: #2563eb;">
@@ -853,7 +715,6 @@
                         Desmarque para desativar o colaborador sem excluí-lo.
                     </p>
                 </div>
-
                 <div class="modal-actions">
                     <button onclick="fecharModalEditarColaborador()" class="modal-btn-cancelar" type="button">
                         <i class="fas fa-times"></i> Cancelar
@@ -876,17 +737,14 @@
             <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
                 Selecione o profissional e o período de férias.
             </p>
-
             <form id="formFerias" onsubmit="return false;">
                 <input type="hidden" id="feriasId">
-
                 <div class="form-group">
                     <label><i class="fas fa-user"></i> Profissional <span class="required">*</span></label>
                     <select id="feriasColaborador" required>
                         <option value="">Selecione um colaborador...</option>
                     </select>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label><i class="fas fa-calendar-day"></i> Data Início <span class="required">*</span></label>
@@ -897,12 +755,10 @@
                         <input type="date" id="feriasDataFim" required>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label><i class="fas fa-info-circle"></i> Observações</label>
                     <textarea id="feriasObservacoes" rows="2" placeholder="Observações sobre as férias..."></textarea>
                 </div>
-
                 <div class="modal-actions">
                     <button onclick="fecharModalFerias()" class="modal-btn-cancelar" type="button">
                         <i class="fas fa-times"></i> Cancelar
@@ -925,10 +781,8 @@
             <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
                 Preencha os dados para reservar uma sala.
             </p>
-
             <form id="formReserva" onsubmit="return false;">
                 <input type="hidden" id="reservaId">
-
                 <div class="form-row">
                     <div class="form-group">
                         <label><i class="fas fa-door-open"></i> Sala <span class="required">*</span></label>
@@ -943,7 +797,6 @@
                         <input type="number" id="reservaCapacidade" placeholder="Nº de pessoas" min="1" value="4">
                     </div>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
@@ -954,7 +807,6 @@
                         <input type="time" id="reservaHorario" required>
                     </div>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label><i class="fas fa-hourglass-half"></i> Duração (min) <span class="required">*</span></label>
@@ -967,7 +819,17 @@
                         </select>
                     </div>
                 </div>
-
+                <!-- NOVOS CAMPOS: Ticket e Município -->
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label><i class="fas fa-ticket-alt"></i> Número do Ticket</label>
+                        <input type="text" id="reservaTicket" placeholder="Ex: #12345, NX-2024-001">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-city"></i> Município</label>
+                        <input type="text" id="reservaMunicipio" placeholder="Ex: João Pessoa, Campina Grande">
+                    </div>
+                </div>
                 <div class="form-group">
                     <label><i class="fas fa-tag"></i> Tipo de Reserva <span class="required">*</span></label>
                     <select id="reservaTipo" required>
@@ -983,17 +845,14 @@
                         <i class="fas fa-info-circle"></i> Defina o tipo de evento que ocorrerá na sala reservada.
                     </p>
                 </div>
-
                 <div class="form-group">
                     <label><i class="fas fa-comment"></i> Título / Motivo <span class="required">*</span></label>
                     <input type="text" id="reservaTitulo" placeholder="Ex: Reunião de equipe, Treinamento..." required>
                 </div>
-
                 <div class="form-group">
                     <label><i class="fas fa-info-circle"></i> Descrição / Observações</label>
                     <textarea id="reservaDescricao" rows="2" placeholder="Detalhes adicionais sobre a reserva..."></textarea>
                 </div>
-
                 <div class="form-group">
                     <label><i class="fas fa-tag"></i> Status</label>
                     <select id="reservaStatus">
@@ -1004,7 +863,6 @@
                         <option value="cancelada">❌ Cancelada</option>
                     </select>
                 </div>
-
                 <div class="modal-actions">
                     <button onclick="fecharModalReserva()" class="modal-btn-cancelar" type="button">
                         <i class="fas fa-times"></i> Cancelar
@@ -1020,6 +878,324 @@
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
     <script src="admin-approval.js"></script>
+    
+    <script>
+        // Sobrescreve a função abrirModalReserva para incluir os novos campos (Ticket e Município)
+        // e ajusta o salvarReserva para salvar esses campos no Firestore.
+        // Também atualiza a função atualizarListaReservas para exibir os campos nos cards.
+        
+        // Salva referência às funções originais
+        const _originalAbrirModalReserva = window.abrirModalReserva;
+        const _originalSalvarReserva = window.salvarReserva;
+
+        // Nova função abrirModalReserva com suporte aos campos ticket e municipio
+        window.abrirModalReserva = function(reservaId = null) {
+            reservaEmEdicao = reservaId;
+            const modal = document.getElementById('modalReserva');
+            const titulo = document.getElementById('modalReservaTitulo');
+
+            // Preencher select de colaboradores
+            if (typeof atualizarSelectReservaResponsavel === 'function') {
+                atualizarSelectReservaResponsavel();
+            }
+
+            if (reservaId) {
+                titulo.textContent = '✏️ Editar Reserva de Sala';
+                const reserva = reservasCache.find(r => r.id === reservaId);
+                if (reserva) {
+                    document.getElementById('reservaId').value = reserva.id;
+                    document.getElementById('reservaSala').value = reserva.sala || '';
+                    document.getElementById('reservaCapacidade').value = reserva.capacidade || (SALAS_CAPACIDADE ? SALAS_CAPACIDADE[reserva.sala] : 4) || 4;
+                    document.getElementById('reservaData').value = reserva.data || '';
+                    document.getElementById('reservaHorario').value = reserva.horario || '';
+                    document.getElementById('reservaDuracao').value = reserva.duracao || 60;
+                    document.getElementById('reservaResponsavel').value = reserva.responsavelId || '';
+                    document.getElementById('reservaTitulo').value = reserva.titulo || '';
+                    document.getElementById('reservaDescricao').value = reserva.descricao || '';
+                    document.getElementById('reservaStatus').value = reserva.status || 'pendente';
+                    document.getElementById('reservaTipo').value = reserva.tipo || 'reuniao';
+                    // Novos campos
+                    document.getElementById('reservaTicket').value = reserva.ticket || '';
+                    document.getElementById('reservaMunicipio').value = reserva.municipio || '';
+                }
+            } else {
+                titulo.textContent = '📋 Nova Reserva de Sala';
+                document.getElementById('reservaId').value = '';
+                document.getElementById('reservaSala').value = '';
+                document.getElementById('reservaCapacidade').value = 4;
+                document.getElementById('reservaData').value = '';
+                document.getElementById('reservaHorario').value = '';
+                document.getElementById('reservaDuracao').value = 60;
+                document.getElementById('reservaResponsavel').value = '';
+                document.getElementById('reservaTitulo').value = '';
+                document.getElementById('reservaDescricao').value = '';
+                document.getElementById('reservaStatus').value = 'pendente';
+                document.getElementById('reservaTipo').value = 'reuniao';
+                document.getElementById('reservaTicket').value = '';
+                document.getElementById('reservaMunicipio').value = '';
+            }
+
+            // Atualizar capacidade conforme sala
+            document.getElementById('reservaSala').onchange = function() {
+                const sala = this.value;
+                if (sala && SALAS_CAPACIDADE && SALAS_CAPACIDADE[sala]) {
+                    document.getElementById('reservaCapacidade').value = SALAS_CAPACIDADE[sala];
+                }
+            };
+
+            modal.style.display = 'flex';
+        };
+
+        // Nova função salvarReserva com ticket e municipio
+        window.salvarReserva = async function() {
+            const id = document.getElementById('reservaId').value;
+            const sala = document.getElementById('reservaSala').value;
+            const capacidade = parseInt(document.getElementById('reservaCapacidade').value) || 4;
+            const data = document.getElementById('reservaData').value;
+            const horario = document.getElementById('reservaHorario').value;
+            const duracao = parseInt(document.getElementById('reservaDuracao').value) || 60;
+            const responsavelId = document.getElementById('reservaResponsavel').value;
+            const titulo = document.getElementById('reservaTitulo').value.trim();
+            const descricao = document.getElementById('reservaDescricao').value.trim();
+            const status = document.getElementById('reservaStatus').value;
+            const tipo = document.getElementById('reservaTipo').value;
+            // Novos campos
+            const ticket = document.getElementById('reservaTicket').value.trim();
+            const municipio = document.getElementById('reservaMunicipio').value.trim();
+
+            if (!sala || !data || !horario || !responsavelId || !titulo) {
+                alert('❌ Preencha todos os campos obrigatórios: Sala, Data, Horário, Responsável e Título.');
+                return;
+            }
+
+            // Buscar colaborador
+            let colaborador = null;
+            if (typeof colaboradoresCache !== 'undefined') {
+                colaborador = colaboradoresCache.find(c => c.id === responsavelId);
+            }
+            if (!colaborador) {
+                alert('❌ Colaborador não encontrado!');
+                return;
+            }
+            if (colaborador.ativo === false) {
+                alert('❌ Este colaborador está inativo. Selecione um colaborador ativo.');
+                return;
+            }
+
+            try {
+                const reservaTeste = { id: id || 'novo', sala, data, horario, duracao, status };
+                if (typeof verificarConflitoReserva === 'function' && verificarConflitoReserva(reservaTeste)) {
+                    if (!confirm('⚠️ Esta reserva conflita com outra reserva existente na mesma sala e horário. Deseja continuar mesmo assim?')) {
+                        return;
+                    }
+                }
+            } catch(e) { console.error(e); }
+
+            try {
+                const dados = {
+                    sala, 
+                    capacidade: capacidade || (SALAS_CAPACIDADE ? SALAS_CAPACIDADE[sala] : 4) || 4,
+                    data, 
+                    horario, 
+                    duracao,
+                    responsavelId, 
+                    responsavelNome: colaborador.nome,
+                    responsavelEmail: colaborador.email,
+                    responsavelCargo: colaborador.cargo || '',
+                    titulo, 
+                    descricao: descricao || '',
+                    status: status || 'pendente',
+                    tipo: tipo || 'reuniao',
+                    ticket: ticket || '',
+                    municipio: municipio || '',
+                    atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                    atualizadoPor: currentUser ? currentUser.uid : 'sistema',
+                    atualizadoPorNome: currentUser ? currentUser.nome : 'sistema'
+                };
+
+                if (id) {
+                    await db.collection('reservasSalas').doc(id).update(dados);
+                    alert('✅ Reserva atualizada com sucesso!');
+                } else {
+                    dados.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+                    dados.criadoPor = currentUser ? currentUser.uid : 'sistema';
+                    dados.criadoPorNome = currentUser ? currentUser.nome : 'sistema';
+                    await db.collection('reservasSalas').add(dados);
+                    alert('✅ Reserva criada com sucesso!');
+                }
+
+                fecharModalReserva();
+
+            } catch (error) {
+                console.error("Erro ao salvar reserva:", error);
+                alert('❌ Erro ao salvar: ' + error.message);
+            }
+        };
+
+        // Atualiza a função editarReserva para usar a nova abrirModalReserva
+        window.editarReserva = function(id) {
+            window.abrirModalReserva(id);
+        };
+
+        // Sobrescreve a função atualizarListaReservas para exibir Ticket e Município nos cards
+        const _originalAtualizarListaReservas = window.atualizarListaReservas;
+        
+        window.atualizarListaReservas = function() {
+            const container = document.getElementById('listaReservas');
+            if (!container) {
+                console.warn("⚠️ Container 'listaReservas' não encontrado");
+                return;
+            }
+
+            console.log(`📊 Atualizando lista com ${reservasCache.length} reservas no cache`);
+
+            let reservasFiltradas = [...reservasCache];
+
+            if (filtroReservaDataAtual) {
+                reservasFiltradas = reservasFiltradas.filter(r => r.data === filtroReservaDataAtual);
+            }
+            if (filtroReservaSalaAtual) {
+                reservasFiltradas = reservasFiltradas.filter(r => r.sala === filtroReservaSalaAtual);
+            }
+            if (filtroReservaStatusAtual) {
+                reservasFiltradas = reservasFiltradas.filter(r => r.status === filtroReservaStatusAtual);
+            }
+
+            if (!filtroReservaDataAtual && !filtroReservaSalaAtual && !filtroReservaStatusAtual) {
+                const hoje = new Date();
+                const dataHoje = hoje.toISOString().split('T')[0];
+                reservasFiltradas = reservasFiltradas.filter(r => {
+                    if (!r.data) return false;
+                    return r.data === dataHoje && r.status !== 'cancelada';
+                });
+            }
+
+            reservasFiltradas.sort((a, b) => {
+                if (a.data < b.data) return -1;
+                if (a.data > b.data) return 1;
+                return (a.horario || '').localeCompare(b.horario || '');
+            });
+
+            if (reservasFiltradas.length === 0) {
+                container.innerHTML = `
+                    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+                        <i class="fas fa-door-open" style="font-size: 48px; color: #cbd5e1;"></i>
+                        <h3 style="margin-top: 12px; color: #475569;">Nenhuma reserva para hoje</h3>
+                        <p style="color: #94a3b8;">Use o filtro de data para visualizar reservas de outras datas.</p>
+                        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
+                            <button onclick="abrirModalReserva()" class="btn-primary" style="width: auto; padding: 12px 40px; min-width: 200px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                                <i class="fas fa-plus"></i> Nova Reserva
+                            </button>
+                            <button onclick="document.getElementById('filtroReservaData').focus()" class="btn-secondary" style="width: auto; padding: 12px 24px;">
+                                <i class="fas fa-calendar-day"></i> Filtrar por Data
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+            reservasFiltradas.forEach(r => {
+                const dataStr = formatarDataParaExibicao(r.data);
+                const horaStr = r.horario || '--:--';
+                const statusLabel = RESERVA_STATUS_LABELS[r.status] || r.status;
+                const statusColor = RESERVA_STATUS_COLORS[r.status] || '#f1f5f9';
+                const statusTextColor = RESERVA_STATUS_TEXT_COLORS[r.status] || '#1e293b';
+
+                const salaLabel = SALAS_LABELS[r.sala] || r.sala;
+                const capacidade = r.capacidade || SALAS_CAPACIDADE[r.sala] || 'N/A';
+
+                const hoje = new Date();
+                hoje.setHours(0, 0, 0, 0);
+                const dataReserva = new Date(r.data + 'T00:00:00');
+                const isPassado = dataReserva < hoje;
+
+                const temConflito = verificarConflitoReserva(r);
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.id = `card-reserva-${r.id}`;
+                card.style.borderLeft = `4px solid ${isPassado && r.status !== 'cancelada' ? '#94a3b8' : '#2563eb'}`;
+
+                // Construir informações de Ticket e Município
+                let infoExtra = '';
+                if (r.ticket) {
+                    infoExtra += `
+                        <span style="display: inline-block; font-size: 12px; background: #f1f5f9; color: #475569; padding: 2px 10px; border-radius: 12px; margin-right: 6px;">
+                            <i class="fas fa-ticket-alt"></i> ${r.ticket}
+                        </span>
+                    `;
+                }
+                if (r.municipio) {
+                    infoExtra += `
+                        <span style="display: inline-block; font-size: 12px; background: #e0e7ff; color: #4338ca; padding: 2px 10px; border-radius: 12px;">
+                            <i class="fas fa-city"></i> ${r.municipio}
+                        </span>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <span class="status-badge" style="background: ${statusColor}; color: ${statusTextColor}; font-weight: 600;">
+                                ${statusLabel}
+                            </span>
+                            ${temConflito ? `<span class="status-badge" style="background: #fee2e2; color: #dc2626; font-weight: 600;">⚠️ Conflito</span>` : ''}
+                            ${isPassado && r.status !== 'cancelada' ? `<span class="status-badge" style="background: #e2e8f0; color: #64748b; font-weight: 600;">📅 Passado</span>` : ''}
+                        </div>
+                        <span class="status-badge" style="background: #f1f5f9; color: #475569;">
+                            ${salaLabel}
+                        </span>
+                    </div>
+
+                    ${infoExtra ? `<div style="margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 4px;">${infoExtra}</div>` : ''}
+
+                    <div style="margin: 8px 0; display: flex; gap: 16px; font-size: 14px; color: #64748b; flex-wrap: wrap;">
+                        <span><i class="fas fa-calendar-day" style="color: #2563eb;"></i> ${dataStr}</span>
+                        <span><i class="fas fa-clock" style="color: #2563eb;"></i> ${horaStr}</span>
+                        <span><i class="fas fa-hourglass-half" style="color: #2563eb;"></i> ${r.duracao || 60} min</span>
+                        <span><i class="fas fa-users" style="color: #2563eb;"></i> ${capacidade} pessoas</span>
+                    </div>
+
+                    <h3 style="margin: 6px 0; font-size: 18px;">${r.titulo}</h3>
+
+                    <div style="margin: 6px 0; padding: 8px 12px; background: #f0f7ff; border-radius: 8px; border-left: 3px solid #2563eb;">
+                        <p style="font-size: 14px; font-weight: 500; color: #1e293b;">
+                            <i class="fas fa-user-tie" style="color: #2563eb;"></i> 
+                            ${r.responsavelNome || 'Não definido'}
+                        </p>
+                        ${r.responsavelEmail ? `<p style="font-size: 12px; color: #64748b; margin-top: 2px;"><i class="fas fa-envelope"></i> ${r.responsavelEmail}</p>` : ''}
+                    </div>
+
+                    ${r.descricao ? `<p style="color: #475569; font-size: 14px; margin: 4px 0;"><i class="fas fa-info-circle" style="color: #64748b;"></i> ${r.descricao}</p>` : ''}
+
+                    <div class="card-actions">
+                        ${r.status !== 'cancelada' && !isPassado ? `
+                            ${r.status === 'pendente' ? `<button class="btn-sm btn-aprovar" onclick="alterarStatusReserva('${r.id}', 'confirmada')"><i class="fas fa-check"></i> Confirmar</button>` : ''}
+                            ${r.status === 'confirmada' ? `<button class="btn-sm btn-em_andamento" onclick="alterarStatusReserva('${r.id}', 'em_andamento')"><i class="fas fa-play"></i> Iniciar</button>` : ''}
+                            ${r.status === 'em_andamento' ? `<button class="btn-sm btn-realizado" onclick="alterarStatusReserva('${r.id}', 'concluida')"><i class="fas fa-check"></i> Concluir</button>` : ''}
+                            <button class="btn-sm btn-cancelado" onclick="alterarStatusReserva('${r.id}', 'cancelada')"><i class="fas fa-times"></i> Cancelar</button>
+                        ` : ''}
+                        <button class="btn-edit" onclick="editarReserva('${r.id}')">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn-sm btn-rejeitar" onclick="excluirReserva('${r.id}')">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        };
+
+        // Atualiza também a função editarReserva para usar a nova abrirModalReserva
+        window.editarReserva = function(id) {
+            window.abrirModalReserva(id);
+        };
+
+        console.log('✅ Campos "Número do Ticket" e "Município" adicionados ao formulário e cards de reservas.');
+    </script>
 </body>
 
 </html>
