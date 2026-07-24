@@ -595,7 +595,7 @@ async function criarContaAdmin() {
           'Ou use o console (F12) e digite: criarAdminInicial()');
 }
 
-// ==================== CRIAÇÃO DE ADMIN (COM LIMITE CONFIGURÁVEL) ====================
+// ==================== CRIAÇÃO DE ADMIN (COM LIMITE CONFIGURÁVEL E CRIAÇÃO EM COLABORADORES) ====================
 async function criarAdminInicial() {
     try {
         const limiteInfo = await verificarLimiteAdmin();
@@ -655,6 +655,34 @@ async function criarAdminInicial() {
             aprovadoEm: firebase.firestore.FieldValue.serverTimestamp(),
             aprovadoPor: 'sistema'
         });
+
+        // 🔥 CRIAR COLABORADOR NA COLEÇÃO COLABORADORES
+        try {
+            const colaboradorRef = db.collection('colaboradores').doc(uid);
+            const colaboradorDoc = await colaboradorRef.get();
+            
+            if (!colaboradorDoc.exists) {
+                await colaboradorRef.set({
+                    uid: uid,
+                    nome: nome,
+                    email: email,
+                    telefone: '',
+                    cargo: '',
+                    ativo: true,
+                    tipo: 'admin',
+                    criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                    criadoPor: 'sistema',
+                    criadoPorNome: 'sistema',
+                    aprovadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                    aprovadoPor: 'sistema',
+                    aprovadoPorNome: 'sistema'
+                });
+                console.log(`✅ Administrador criado também como colaborador: ${uid} - ${nome}`);
+            }
+        } catch (err) {
+            console.error('❌ Erro ao criar colaborador para admin:', err);
+            // Não interrompe o fluxo principal
+        }
 
         const novaInfo = await verificarLimiteAdmin();
         alert(`✅ Administrador criado com sucesso!\n\n📧 Email: ${email}\n🔑 Senha: ${senha}\n👤 Nome: ${nome}\n\n${novaInfo.mensagem}`);

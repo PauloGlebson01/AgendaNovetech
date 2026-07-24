@@ -832,7 +832,7 @@ async function carregarSolicitacoesPendentes() {
     }
 }
 
-// ==================== APROVAR SOLICITAÇÃO (CORRIGIDA) ====================
+// ==================== APROVAR SOLICITAÇÃO (COM CRIAÇÃO EM COLABORADORES) ====================
 
 async function aprovarSolicitacao(solicitacaoId) {
     if (!confirm('Deseja aprovar esta solicitação? O usuário terá acesso ao sistema.')) {
@@ -907,8 +907,50 @@ async function aprovarSolicitacao(solicitacaoId) {
             console.log(`✅ Usuário atualizado com sucesso para ${tipoUsuario}: ${userUid}`);
         }
 
+        // 🔥 3. CRIAR COLABORADOR NA COLEÇÃO COLABORADORES (SE NÃO EXISTIR)
+        try {
+            const colaboradorRef = db.collection('colaboradores').doc(userUid);
+            const colaboradorDoc = await colaboradorRef.get();
+            
+            if (!colaboradorDoc.exists) {
+                await colaboradorRef.set({
+                    uid: userUid,
+                    nome: data.nome,
+                    email: data.email,
+                    telefone: data.telefone || '',
+                    cargo: data.cargo || '',
+                    ativo: true,
+                    tipo: tipoUsuario,
+                    criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                    criadoPor: currentUser.uid,
+                    criadoPorNome: currentUser.nome,
+                    aprovadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                    aprovadoPor: currentUser.uid,
+                    aprovadoPorNome: currentUser.nome
+                });
+                console.log(`✅ Colaborador criado com sucesso: ${userUid} - ${data.nome}`);
+            } else {
+                // Se já existir, apenas atualiza os dados
+                await colaboradorRef.update({
+                    nome: data.nome,
+                    email: data.email,
+                    telefone: data.telefone || '',
+                    cargo: data.cargo || '',
+                    ativo: true,
+                    tipo: tipoUsuario,
+                    atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                    atualizadoPor: currentUser.uid,
+                    atualizadoPorNome: currentUser.nome
+                });
+                console.log(`✅ Colaborador atualizado com sucesso: ${userUid} - ${data.nome}`);
+            }
+        } catch (err) {
+            console.error('❌ Erro ao criar/atualizar colaborador:', err);
+            // Não interrompe o fluxo principal, apenas loga o erro
+        }
+
         const tipoLabel = tipoUsuario === 'admin' ? 'Administrador' : 'Colaborador';
-        mostrarNotificacao(`✅ Usuário "${data.nome}" aprovado como ${tipoLabel}!`, 'success');
+        mostrarNotificacao(`✅ Usuário "${data.nome}" aprovado como ${tipoLabel} e adicionado à lista de colaboradores!`, 'success');
         await carregarSolicitacoesPendentes();
 
     } catch (error) {
