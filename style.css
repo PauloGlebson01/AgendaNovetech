@@ -2176,6 +2176,117 @@ input:-ms-input-placeholder {
     color: #059669;
 }
 
+/* ==================== FILTRO DE PERÍODO RESERVAS ==================== */
+.filtro-periodo-reservas {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.filtro-periodo-reservas label {
+    font-size: 13px;
+    color: #475569;
+    font-weight: 500;
+}
+
+.filtro-periodo-reservas input[type="date"] {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    font-family: inherit;
+    background: #fafbfc;
+    width: 160px;
+    transition: all 0.2s;
+}
+
+.filtro-periodo-reservas input[type="date"]:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .filtro-periodo-reservas {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+    
+    .filtro-periodo-reservas input[type="date"] {
+        width: 100%;
+    }
+}
+
+/* ==================== PERÍODO DE RESERVAS ==================== */
+#reservaDataPeriodo {
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 12px;
+    animation: fadeIn 0.3s ease;
+}
+
+#reservaDataPeriodo .form-row {
+    margin-bottom: 0;
+}
+
+#reservaDataPeriodo .form-group {
+    margin-bottom: 0;
+}
+
+/* Badge de período nos cards */
+.status-badge.periodo-badge {
+    background: #ede9fe;
+    color: #7c3aed;
+    font-weight: 600;
+}
+
+/* Aviso de período no modal */
+.periodo-aviso {
+    padding: 8px 12px;
+    background: #f0f7ff;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #1e293b;
+    margin-bottom: 12px;
+    border-left: 3px solid #2563eb;
+}
+
+.periodo-aviso i {
+    color: #2563eb;
+    margin-right: 8px;
+}
+
+/* Estilo para o select de tipo de reserva */
+#reservaTipoPeriodo {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    font-family: inherit;
+    font-size: 14px;
+    background: #fafbfc;
+    width: 100%;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+#reservaTipoPeriodo:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+
+/* Responsividade do período */
+@media (max-width: 768px) {
+    #reservaDataPeriodo .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
+
 .status-counter .counter-item .count.designado { color: #1d4ed8; }
 .status-counter .counter-item .count.em_andamento { color: #d97706; }
 .status-counter .counter-item .count.realizado { color: #059669; }

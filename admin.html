@@ -181,7 +181,16 @@
                     
                     <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: white; padding: 16px 20px; border-radius: 12px; border: 1px solid #eef2ff;">
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; flex: 1;">
-                            <input type="date" id="filtroReservaData" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <label style="font-size: 13px; color: #475569; font-weight: 500;">
+                                    <i class="fas fa-calendar-alt"></i> De:
+                                </label>
+                                <input type="date" id="filtroReservaDataInicio" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
+                                <label style="font-size: 13px; color: #475569; font-weight: 500; margin-left: 4px;">
+                                    Até:
+                                </label>
+                                <input type="date" id="filtroReservaDataFim" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
+                            </div>
                             <select id="filtroReservaSala" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
                                 <option value="">Todas as salas</option>
                                 <option value="sala_01">Sala 01</option>
@@ -201,6 +210,9 @@
                             <button class="btn-sm btn-cancelar" onclick="limparFiltrosReservas()">
                                 <i class="fas fa-undo"></i> Limpar
                             </button>
+                            <button class="btn-sm" style="background: #2563eb; color: white;" onclick="filtrarReservasHoje()">
+                                <i class="fas fa-calendar-day"></i> Hoje
+                            </button>
                         </div>
                         <button class="btn-primary" onclick="abrirModalReserva()" style="width: auto; padding: 10px 24px; white-space: nowrap;">
                             <i class="fas fa-plus"></i> Nova Reserva
@@ -208,7 +220,7 @@
                     </div>
 
                     <div class="dashboard-stats" style="margin-bottom: 20px;">
-                        <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-calendar-day"></i></div><div class="stat-number" id="reservaTotalHoje">0</div><div class="stat-label">Reservas Hoje</div></div>
+                        <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-calendar-day"></i></div><div class="stat-number" id="reservaTotalHoje">0</div><div class="stat-label">Reservas no Período</div></div>
                         <div class="stat-card"><div class="stat-icon green"><i class="fas fa-check-circle"></i></div><div class="stat-number" id="reservaConfirmadas">0</div><div class="stat-label">Confirmadas</div></div>
                         <div class="stat-card"><div class="stat-icon yellow"><i class="fas fa-clock"></i></div><div class="stat-number" id="reservaPendentes">0</div><div class="stat-label">Pendentes</div></div>
                         <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-door-open"></i></div><div class="stat-number" id="reservaTotalSalas">0</div><div class="stat-label">Salas Disponíveis</div></div>
@@ -771,7 +783,7 @@
         </div>
     </div>
 
-    <!-- Modal de Reserva de Sala -->
+    <!-- Modal de Reserva de Sala (COM PERÍODO) -->
     <div id="modalReserva" class="modal">
         <div class="modal-content" style="max-width: 650px;">
             <h3 style="display: flex; align-items: center; gap: 10px;">
@@ -779,10 +791,47 @@
                 <span id="modalReservaTitulo">Nova Reserva de Sala</span>
             </h3>
             <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
-                Preencha os dados para reservar uma sala.
+                Preencha os dados para reservar uma sala. Você pode reservar para um único dia ou para um período.
             </p>
             <form id="formReserva" onsubmit="return false;">
                 <input type="hidden" id="reservaId">
+                
+                <!-- TIPO DE RESERVA: Única ou Período -->
+                <div class="form-group">
+                    <label><i class="fas fa-calendar-alt"></i> Tipo de Reserva <span class="required">*</span></label>
+                    <select id="reservaTipoPeriodo" required onchange="togglePeriodoReserva()">
+                        <option value="unica">📅 Data Única</option>
+                        <option value="periodo">📆 Período (várias datas)</option>
+                    </select>
+                    <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                        <i class="fas fa-info-circle"></i> Selecione "Período" para reservar a sala em múltiplas datas consecutivas.
+                    </p>
+                </div>
+
+                <!-- DATA ÚNICA -->
+                <div id="reservaDataUnica" class="form-group">
+                    <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
+                    <input type="date" id="reservaData" required>
+                </div>
+
+                <!-- PERÍODO (Data Início e Data Fim) -->
+                <div id="reservaDataPeriodo" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-day"></i> Data Início <span class="required">*</span></label>
+                            <input type="date" id="reservaDataInicio">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-day"></i> Data Fim <span class="required">*</span></label>
+                            <input type="date" id="reservaDataFim">
+                        </div>
+                    </div>
+                    <div style="padding: 8px 12px; background: #f0f7ff; border-radius: 8px; font-size: 13px; color: #1e293b; margin-bottom: 12px;">
+                        <i class="fas fa-info-circle" style="color: #2563eb;"></i>
+                        A reserva será criada para <strong>todas as datas</strong> entre a data inicial e a data final.
+                    </div>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label><i class="fas fa-door-open"></i> Sala <span class="required">*</span></label>
@@ -799,35 +848,28 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
-                        <input type="date" id="reservaData" required>
-                    </div>
-                    <div class="form-group">
                         <label><i class="fas fa-clock"></i> Horário <span class="required">*</span></label>
                         <input type="time" id="reservaHorario" required>
                     </div>
-                </div>
-                <div class="form-row">
                     <div class="form-group">
                         <label><i class="fas fa-hourglass-half"></i> Duração (min) <span class="required">*</span></label>
                         <input type="number" id="reservaDuracao" value="60" min="15" step="15" required>
                     </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-user-tie"></i> Responsável <span class="required">*</span></label>
-                        <select id="reservaResponsavel" required>
-                            <option value="">Selecione um colaborador...</option>
-                        </select>
-                    </div>
                 </div>
-                <!-- NOVOS CAMPOS: Ticket e Município -->
+                <div class="form-group">
+                    <label><i class="fas fa-user-tie"></i> Responsável <span class="required">*</span></label>
+                    <select id="reservaResponsavel" required>
+                        <option value="">Selecione um colaborador...</option>
+                    </select>
+                </div>
                 <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div class="form-group">
                         <label><i class="fas fa-ticket-alt"></i> Número do Ticket</label>
-                        <input type="text" id="reservaTicket" placeholder="Ex: #12345, NX-2024-001">
+                        <input type="text" id="reservaTicket" placeholder="Ex: #12345">
                     </div>
                     <div class="form-group">
                         <label><i class="fas fa-city"></i> Município</label>
-                        <input type="text" id="reservaMunicipio" placeholder="Ex: João Pessoa, Campina Grande">
+                        <input type="text" id="reservaMunicipio" placeholder="Ex: João Pessoa">
                     </div>
                 </div>
                 <div class="form-group">
@@ -880,321 +922,26 @@
     <script src="admin-approval.js"></script>
     
     <script>
-        // Sobrescreve a função abrirModalReserva para incluir os novos campos (Ticket e Município)
-        // e ajusta o salvarReserva para salvar esses campos no Firestore.
-        // Também atualiza a função atualizarListaReservas para exibir os campos nos cards.
+        console.log('✅ Página admin.html carregada com sucesso!');
+        console.log('✅ Aguardando carregamento do script.js...');
         
-        // Salva referência às funções originais
-        const _originalAbrirModalReserva = window.abrirModalReserva;
-        const _originalSalvarReserva = window.salvarReserva;
-
-        // Nova função abrirModalReserva com suporte aos campos ticket e municipio
-        window.abrirModalReserva = function(reservaId = null) {
-            reservaEmEdicao = reservaId;
-            const modal = document.getElementById('modalReserva');
-            const titulo = document.getElementById('modalReservaTitulo');
-
-            // Preencher select de colaboradores
-            if (typeof atualizarSelectReservaResponsavel === 'function') {
-                atualizarSelectReservaResponsavel();
-            }
-
-            if (reservaId) {
-                titulo.textContent = '✏️ Editar Reserva de Sala';
-                const reserva = reservasCache.find(r => r.id === reservaId);
-                if (reserva) {
-                    document.getElementById('reservaId').value = reserva.id;
-                    document.getElementById('reservaSala').value = reserva.sala || '';
-                    document.getElementById('reservaCapacidade').value = reserva.capacidade || (SALAS_CAPACIDADE ? SALAS_CAPACIDADE[reserva.sala] : 4) || 4;
-                    document.getElementById('reservaData').value = reserva.data || '';
-                    document.getElementById('reservaHorario').value = reserva.horario || '';
-                    document.getElementById('reservaDuracao').value = reserva.duracao || 60;
-                    document.getElementById('reservaResponsavel').value = reserva.responsavelId || '';
-                    document.getElementById('reservaTitulo').value = reserva.titulo || '';
-                    document.getElementById('reservaDescricao').value = reserva.descricao || '';
-                    document.getElementById('reservaStatus').value = reserva.status || 'pendente';
-                    document.getElementById('reservaTipo').value = reserva.tipo || 'reuniao';
-                    // Novos campos
-                    document.getElementById('reservaTicket').value = reserva.ticket || '';
-                    document.getElementById('reservaMunicipio').value = reserva.municipio || '';
-                }
+        // Verificar se as funções de reservas estão disponíveis após o carregamento
+        setTimeout(function() {
+            console.log('🔍 Verificando funções de reservas após carregamento...');
+            console.log('  - editarReserva:', typeof window.editarReserva);
+            console.log('  - excluirReserva:', typeof window.excluirReserva);
+            console.log('  - alterarStatusReserva:', typeof window.alterarStatusReserva);
+            console.log('  - salvarReserva:', typeof window.salvarReserva);
+            console.log('  - abrirModalReserva:', typeof window.abrirModalReserva);
+            console.log('  - fecharModalReserva:', typeof window.fecharModalReserva);
+            console.log('  - togglePeriodoReserva:', typeof window.togglePeriodoReserva);
+            
+            if (typeof window.editarReserva === 'undefined') {
+                console.warn('⚠️ Funções de reservas não encontradas! Verifique o script.js');
             } else {
-                titulo.textContent = '📋 Nova Reserva de Sala';
-                document.getElementById('reservaId').value = '';
-                document.getElementById('reservaSala').value = '';
-                document.getElementById('reservaCapacidade').value = 4;
-                document.getElementById('reservaData').value = '';
-                document.getElementById('reservaHorario').value = '';
-                document.getElementById('reservaDuracao').value = 60;
-                document.getElementById('reservaResponsavel').value = '';
-                document.getElementById('reservaTitulo').value = '';
-                document.getElementById('reservaDescricao').value = '';
-                document.getElementById('reservaStatus').value = 'pendente';
-                document.getElementById('reservaTipo').value = 'reuniao';
-                document.getElementById('reservaTicket').value = '';
-                document.getElementById('reservaMunicipio').value = '';
+                console.log('✅ Todas as funções de reservas estão disponíveis!');
             }
-
-            // Atualizar capacidade conforme sala
-            document.getElementById('reservaSala').onchange = function() {
-                const sala = this.value;
-                if (sala && SALAS_CAPACIDADE && SALAS_CAPACIDADE[sala]) {
-                    document.getElementById('reservaCapacidade').value = SALAS_CAPACIDADE[sala];
-                }
-            };
-
-            modal.style.display = 'flex';
-        };
-
-        // Nova função salvarReserva com ticket e municipio
-        window.salvarReserva = async function() {
-            const id = document.getElementById('reservaId').value;
-            const sala = document.getElementById('reservaSala').value;
-            const capacidade = parseInt(document.getElementById('reservaCapacidade').value) || 4;
-            const data = document.getElementById('reservaData').value;
-            const horario = document.getElementById('reservaHorario').value;
-            const duracao = parseInt(document.getElementById('reservaDuracao').value) || 60;
-            const responsavelId = document.getElementById('reservaResponsavel').value;
-            const titulo = document.getElementById('reservaTitulo').value.trim();
-            const descricao = document.getElementById('reservaDescricao').value.trim();
-            const status = document.getElementById('reservaStatus').value;
-            const tipo = document.getElementById('reservaTipo').value;
-            // Novos campos
-            const ticket = document.getElementById('reservaTicket').value.trim();
-            const municipio = document.getElementById('reservaMunicipio').value.trim();
-
-            if (!sala || !data || !horario || !responsavelId || !titulo) {
-                alert('❌ Preencha todos os campos obrigatórios: Sala, Data, Horário, Responsável e Título.');
-                return;
-            }
-
-            // Buscar colaborador
-            let colaborador = null;
-            if (typeof colaboradoresCache !== 'undefined') {
-                colaborador = colaboradoresCache.find(c => c.id === responsavelId);
-            }
-            if (!colaborador) {
-                alert('❌ Colaborador não encontrado!');
-                return;
-            }
-            if (colaborador.ativo === false) {
-                alert('❌ Este colaborador está inativo. Selecione um colaborador ativo.');
-                return;
-            }
-
-            try {
-                const reservaTeste = { id: id || 'novo', sala, data, horario, duracao, status };
-                if (typeof verificarConflitoReserva === 'function' && verificarConflitoReserva(reservaTeste)) {
-                    if (!confirm('⚠️ Esta reserva conflita com outra reserva existente na mesma sala e horário. Deseja continuar mesmo assim?')) {
-                        return;
-                    }
-                }
-            } catch(e) { console.error(e); }
-
-            try {
-                const dados = {
-                    sala, 
-                    capacidade: capacidade || (SALAS_CAPACIDADE ? SALAS_CAPACIDADE[sala] : 4) || 4,
-                    data, 
-                    horario, 
-                    duracao,
-                    responsavelId, 
-                    responsavelNome: colaborador.nome,
-                    responsavelEmail: colaborador.email,
-                    responsavelCargo: colaborador.cargo || '',
-                    titulo, 
-                    descricao: descricao || '',
-                    status: status || 'pendente',
-                    tipo: tipo || 'reuniao',
-                    ticket: ticket || '',
-                    municipio: municipio || '',
-                    atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-                    atualizadoPor: currentUser ? currentUser.uid : 'sistema',
-                    atualizadoPorNome: currentUser ? currentUser.nome : 'sistema'
-                };
-
-                if (id) {
-                    await db.collection('reservasSalas').doc(id).update(dados);
-                    alert('✅ Reserva atualizada com sucesso!');
-                } else {
-                    dados.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
-                    dados.criadoPor = currentUser ? currentUser.uid : 'sistema';
-                    dados.criadoPorNome = currentUser ? currentUser.nome : 'sistema';
-                    await db.collection('reservasSalas').add(dados);
-                    alert('✅ Reserva criada com sucesso!');
-                }
-
-                fecharModalReserva();
-
-            } catch (error) {
-                console.error("Erro ao salvar reserva:", error);
-                alert('❌ Erro ao salvar: ' + error.message);
-            }
-        };
-
-        // Atualiza a função editarReserva para usar a nova abrirModalReserva
-        window.editarReserva = function(id) {
-            window.abrirModalReserva(id);
-        };
-
-        // Sobrescreve a função atualizarListaReservas para exibir Ticket e Município nos cards
-        const _originalAtualizarListaReservas = window.atualizarListaReservas;
-        
-        window.atualizarListaReservas = function() {
-            const container = document.getElementById('listaReservas');
-            if (!container) {
-                console.warn("⚠️ Container 'listaReservas' não encontrado");
-                return;
-            }
-
-            console.log(`📊 Atualizando lista com ${reservasCache.length} reservas no cache`);
-
-            let reservasFiltradas = [...reservasCache];
-
-            if (filtroReservaDataAtual) {
-                reservasFiltradas = reservasFiltradas.filter(r => r.data === filtroReservaDataAtual);
-            }
-            if (filtroReservaSalaAtual) {
-                reservasFiltradas = reservasFiltradas.filter(r => r.sala === filtroReservaSalaAtual);
-            }
-            if (filtroReservaStatusAtual) {
-                reservasFiltradas = reservasFiltradas.filter(r => r.status === filtroReservaStatusAtual);
-            }
-
-            if (!filtroReservaDataAtual && !filtroReservaSalaAtual && !filtroReservaStatusAtual) {
-                const hoje = new Date();
-                const dataHoje = hoje.toISOString().split('T')[0];
-                reservasFiltradas = reservasFiltradas.filter(r => {
-                    if (!r.data) return false;
-                    return r.data === dataHoje && r.status !== 'cancelada';
-                });
-            }
-
-            reservasFiltradas.sort((a, b) => {
-                if (a.data < b.data) return -1;
-                if (a.data > b.data) return 1;
-                return (a.horario || '').localeCompare(b.horario || '');
-            });
-
-            if (reservasFiltradas.length === 0) {
-                container.innerHTML = `
-                    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
-                        <i class="fas fa-door-open" style="font-size: 48px; color: #cbd5e1;"></i>
-                        <h3 style="margin-top: 12px; color: #475569;">Nenhuma reserva para hoje</h3>
-                        <p style="color: #94a3b8;">Use o filtro de data para visualizar reservas de outras datas.</p>
-                        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
-                            <button onclick="abrirModalReserva()" class="btn-primary" style="width: auto; padding: 12px 40px; min-width: 200px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                                <i class="fas fa-plus"></i> Nova Reserva
-                            </button>
-                            <button onclick="document.getElementById('filtroReservaData').focus()" class="btn-secondary" style="width: auto; padding: 12px 24px;">
-                                <i class="fas fa-calendar-day"></i> Filtrar por Data
-                            </button>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = '';
-            reservasFiltradas.forEach(r => {
-                const dataStr = formatarDataParaExibicao(r.data);
-                const horaStr = r.horario || '--:--';
-                const statusLabel = RESERVA_STATUS_LABELS[r.status] || r.status;
-                const statusColor = RESERVA_STATUS_COLORS[r.status] || '#f1f5f9';
-                const statusTextColor = RESERVA_STATUS_TEXT_COLORS[r.status] || '#1e293b';
-
-                const salaLabel = SALAS_LABELS[r.sala] || r.sala;
-                const capacidade = r.capacidade || SALAS_CAPACIDADE[r.sala] || 'N/A';
-
-                const hoje = new Date();
-                hoje.setHours(0, 0, 0, 0);
-                const dataReserva = new Date(r.data + 'T00:00:00');
-                const isPassado = dataReserva < hoje;
-
-                const temConflito = verificarConflitoReserva(r);
-
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.id = `card-reserva-${r.id}`;
-                card.style.borderLeft = `4px solid ${isPassado && r.status !== 'cancelada' ? '#94a3b8' : '#2563eb'}`;
-
-                // Construir informações de Ticket e Município
-                let infoExtra = '';
-                if (r.ticket) {
-                    infoExtra += `
-                        <span style="display: inline-block; font-size: 12px; background: #f1f5f9; color: #475569; padding: 2px 10px; border-radius: 12px; margin-right: 6px;">
-                            <i class="fas fa-ticket-alt"></i> ${r.ticket}
-                        </span>
-                    `;
-                }
-                if (r.municipio) {
-                    infoExtra += `
-                        <span style="display: inline-block; font-size: 12px; background: #e0e7ff; color: #4338ca; padding: 2px 10px; border-radius: 12px;">
-                            <i class="fas fa-city"></i> ${r.municipio}
-                        </span>
-                    `;
-                }
-
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <span class="status-badge" style="background: ${statusColor}; color: ${statusTextColor}; font-weight: 600;">
-                                ${statusLabel}
-                            </span>
-                            ${temConflito ? `<span class="status-badge" style="background: #fee2e2; color: #dc2626; font-weight: 600;">⚠️ Conflito</span>` : ''}
-                            ${isPassado && r.status !== 'cancelada' ? `<span class="status-badge" style="background: #e2e8f0; color: #64748b; font-weight: 600;">📅 Passado</span>` : ''}
-                        </div>
-                        <span class="status-badge" style="background: #f1f5f9; color: #475569;">
-                            ${salaLabel}
-                        </span>
-                    </div>
-
-                    ${infoExtra ? `<div style="margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 4px;">${infoExtra}</div>` : ''}
-
-                    <div style="margin: 8px 0; display: flex; gap: 16px; font-size: 14px; color: #64748b; flex-wrap: wrap;">
-                        <span><i class="fas fa-calendar-day" style="color: #2563eb;"></i> ${dataStr}</span>
-                        <span><i class="fas fa-clock" style="color: #2563eb;"></i> ${horaStr}</span>
-                        <span><i class="fas fa-hourglass-half" style="color: #2563eb;"></i> ${r.duracao || 60} min</span>
-                        <span><i class="fas fa-users" style="color: #2563eb;"></i> ${capacidade} pessoas</span>
-                    </div>
-
-                    <h3 style="margin: 6px 0; font-size: 18px;">${r.titulo}</h3>
-
-                    <div style="margin: 6px 0; padding: 8px 12px; background: #f0f7ff; border-radius: 8px; border-left: 3px solid #2563eb;">
-                        <p style="font-size: 14px; font-weight: 500; color: #1e293b;">
-                            <i class="fas fa-user-tie" style="color: #2563eb;"></i> 
-                            ${r.responsavelNome || 'Não definido'}
-                        </p>
-                        ${r.responsavelEmail ? `<p style="font-size: 12px; color: #64748b; margin-top: 2px;"><i class="fas fa-envelope"></i> ${r.responsavelEmail}</p>` : ''}
-                    </div>
-
-                    ${r.descricao ? `<p style="color: #475569; font-size: 14px; margin: 4px 0;"><i class="fas fa-info-circle" style="color: #64748b;"></i> ${r.descricao}</p>` : ''}
-
-                    <div class="card-actions">
-                        ${r.status !== 'cancelada' && !isPassado ? `
-                            ${r.status === 'pendente' ? `<button class="btn-sm btn-aprovar" onclick="alterarStatusReserva('${r.id}', 'confirmada')"><i class="fas fa-check"></i> Confirmar</button>` : ''}
-                            ${r.status === 'confirmada' ? `<button class="btn-sm btn-em_andamento" onclick="alterarStatusReserva('${r.id}', 'em_andamento')"><i class="fas fa-play"></i> Iniciar</button>` : ''}
-                            ${r.status === 'em_andamento' ? `<button class="btn-sm btn-realizado" onclick="alterarStatusReserva('${r.id}', 'concluida')"><i class="fas fa-check"></i> Concluir</button>` : ''}
-                            <button class="btn-sm btn-cancelado" onclick="alterarStatusReserva('${r.id}', 'cancelada')"><i class="fas fa-times"></i> Cancelar</button>
-                        ` : ''}
-                        <button class="btn-edit" onclick="editarReserva('${r.id}')">
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                        <button class="btn-sm btn-rejeitar" onclick="excluirReserva('${r.id}')">
-                            <i class="fas fa-trash"></i> Excluir
-                        </button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        };
-
-        // Atualiza também a função editarReserva para usar a nova abrirModalReserva
-        window.editarReserva = function(id) {
-            window.abrirModalReserva(id);
-        };
-
-        console.log('✅ Campos "Número do Ticket" e "Município" adicionados ao formulário e cards de reservas.');
+        }, 2000);
     </script>
 </body>
 

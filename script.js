@@ -64,7 +64,8 @@ let feriasCache = [];
 let reservasCache = [];
 let unsubscribeReservas = null;
 let reservaEmEdicao = null;
-let filtroReservaDataAtual = '';
+let filtroReservaDataInicio = '';
+let filtroReservaDataFim = '';
 let filtroReservaSalaAtual = '';
 let filtroReservaStatusAtual = '';
 
@@ -3899,11 +3900,11 @@ function editarEvento(id) {
                 <div class="form-row">
                     <div class="form-group">
                         <label><i class="fas fa-ticket-alt"></i> Número do Ticket</label>
-                        <input type="text" id="edit-ticket-${id}" value="${evento.ticket || ''}" placeholder="Ex: #12345, NX-2024-001">
+                        <input type="text" id="edit-ticket-${id}" value="${evento.ticket || ''}" placeholder="Ex: #12345">
                     </div>
                     <div class="form-group">
                         <label><i class="fas fa-city"></i> Município</label>
-                        <input type="text" id="edit-municipio-${id}" value="${evento.municipio || ''}" placeholder="Ex: João Pessoa, Campina Grande">
+                        <input type="text" id="edit-municipio-${id}" value="${evento.municipio || ''}" placeholder="Ex: João Pessoa">
                     </div>
                 </div>
                 <div class="form-group">
@@ -4214,9 +4215,7 @@ function sidebarClickHandler() {
             renderizarDashboard();
         }
         if (sectionId === 'reservasSection') {
-            // Forçar atualização quando a seção for ativada
             if (unsubscribeReservas) {
-                // Reiniciar o listener para garantir dados atualizados
                 iniciarListenerReservas();
             }
             atualizarListaReservas();
@@ -4668,7 +4667,7 @@ function atualizarDataExibicao(data) {
     }
 }
 
-// ==================== RESERVAS DE SALAS ====================
+// ==================== RESERVAS DE SALAS - FUNÇÕES CORRIGIDAS ====================
 
 // ==================== INICIAR LISTENER DE RESERVAS ====================
 function iniciarListenerReservas() {
@@ -4678,7 +4677,6 @@ function iniciarListenerReservas() {
     }
 
     try {
-        // 🔥 Buscar TODAS as reservas para manter o cache atualizado
         unsubscribeReservas = db.collection('reservasSalas')
             .orderBy('data', 'asc')
             .onSnapshot((snapshot) => {
@@ -4694,7 +4692,6 @@ function iniciarListenerReservas() {
                 });
                 console.log(`📋 ${reservasCache.length} reservas carregadas no cache`);
                 
-                // Atualizar a lista com o filtro padrão (HOJE)
                 atualizarListaReservas();
                 atualizarStatsReservas();
             }, (error) => {
@@ -4708,45 +4705,511 @@ function iniciarListenerReservas() {
     }
 }
 
-// ==================== ATUALIZAR LISTA DE RESERVAS ====================
-function atualizarListaReservas() {
-    const container = document.getElementById('listaReservas');
-    if (!container) {
-        console.warn("⚠️ Container 'listaReservas' não encontrado");
+// ==================== FUNÇÃO PARA ALTERNAR TIPO DE RESERVA ====================
+function togglePeriodoReserva() {
+    const tipo = document.getElementById('reservaTipoPeriodo').value;
+    
+    const dataUnica = document.getElementById('reservaDataUnica');
+    const dataPeriodo = document.getElementById('reservaDataPeriodo');
+    
+    if (tipo === 'unica') {
+        dataUnica.style.display = 'block';
+        dataPeriodo.style.display = 'none';
+        document.getElementById('reservaData').required = true;
+        document.getElementById('reservaDataInicio').required = false;
+        document.getElementById('reservaDataFim').required = false;
+    } else {
+        dataUnica.style.display = 'none';
+        dataPeriodo.style.display = 'block';
+        document.getElementById('reservaData').required = false;
+        document.getElementById('reservaDataInicio').required = true;
+        document.getElementById('reservaDataFim').required = true;
+    }
+}
+
+// ==================== FUNÇÃO GERAR DATAS DO PERÍODO ====================
+function gerarDatasPeriodo(dataInicio, dataFim) {
+    const datas = [];
+    const inicio = new Date(dataInicio + 'T00:00:00');
+    const fim = new Date(dataFim + 'T00:00:00');
+    
+    if (inicio > fim) {
+        alert('⚠️ A data inicial não pode ser maior que a data final.');
+        return [];
+    }
+    
+    const diffEmDias = Math.floor((fim - inicio) / (1000 * 60 * 60 * 24));
+    
+    if (diffEmDias > 30) {
+        if (!confirm(`⚠️ Você está criando reservas para ${diffEmDias + 1} dias consecutivos.\n\nDeseja continuar?`)) {
+            return [];
+        }
+    }
+    
+    let dataAtual = new Date(inicio);
+    while (dataAtual <= fim) {
+        const ano = dataAtual.getFullYear();
+        const mes = String(dataAtual.getMonth() + 1).padStart(2, '0');
+        const dia = String(dataAtual.getDate()).padStart(2, '0');
+        datas.push(`${ano}-${mes}-${dia}`);
+        dataAtual.setDate(dataAtual.getDate() + 1);
+    }
+    
+    return datas;
+}
+
+// ==================== FUNÇÃO SALVAR RESERVA ====================
+async function salvarReserva() {
+    console.log('💾 salvarReserva chamada');
+    
+    const id = document.getElementById('reservaId').value;
+    const sala = document.getElementById('reservaSala').value;
+    const capacidade = parseInt(document.getElementById('reservaCapacidade').value) || 4;
+    const horario = document.getElementById('reservaHorario').value;
+    const duracao = parseInt(document.getElementById('reservaDuracao').value) || 60;
+    const responsavelId = document.getElementById('reservaResponsavel').value;
+    const titulo = document.getElementById('reservaTitulo').value.trim();
+    const descricao = document.getElementById('reservaDescricao').value.trim();
+    const status = document.getElementById('reservaStatus').value;
+    const tipo = document.getElementById('reservaTipo').value;
+    const ticket = document.getElementById('reservaTicket').value.trim();
+    const municipio = document.getElementById('reservaMunicipio').value.trim();
+    const tipoPeriodo = document.getElementById('reservaTipoPeriodo').value;
+
+    // Validar campos obrigatórios
+    if (!sala || !horario || !responsavelId || !titulo) {
+        alert('❌ Preencha todos os campos obrigatórios: Sala, Horário, Responsável e Título.');
         return;
     }
 
-    console.log(`📊 Atualizando lista com ${reservasCache.length} reservas no cache`);
+    // Validar data(s)
+    let datasReserva = [];
+    if (tipoPeriodo === 'unica') {
+        const data = document.getElementById('reservaData').value;
+        if (!data) {
+            alert('❌ Selecione uma data para a reserva.');
+            return;
+        }
+        datasReserva = [data];
+    } else {
+        const dataInicio = document.getElementById('reservaDataInicio').value;
+        const dataFim = document.getElementById('reservaDataFim').value;
+        if (!dataInicio || !dataFim) {
+            alert('❌ Selecione a data inicial e final do período.');
+            return;
+        }
+        datasReserva = gerarDatasPeriodo(dataInicio, dataFim);
+        if (datasReserva.length === 0) {
+            return;
+        }
+    }
+
+    // Buscar colaborador
+    const colaborador = colaboradoresCache.find(c => c.id === responsavelId);
+    if (!colaborador) {
+        alert('❌ Colaborador não encontrado!');
+        return;
+    }
+    if (colaborador.ativo === false) {
+        alert('❌ Este colaborador está inativo. Selecione um colaborador ativo.');
+        return;
+    }
+
+    // Verificar conflitos para cada data
+    let conflitosEncontrados = [];
+    for (const data of datasReserva) {
+        const reservaTeste = {
+            id: id || 'novo',
+            sala: sala,
+            data: data,
+            horario: horario,
+            duracao: duracao,
+            status: status
+        };
+        if (verificarConflitoReserva(reservaTeste)) {
+            conflitosEncontrados.push(formatarDataParaExibicaoSimples(data));
+        }
+    }
+
+    if (conflitosEncontrados.length > 0) {
+        const msg = `⚠️ Conflito(s) de horário encontrado(s) nas seguintes datas:\n\n${conflitosEncontrados.join('\n')}\n\nDeseja continuar mesmo assim?`;
+        if (!confirm(msg)) {
+            return;
+        }
+    }
+
+    try {
+        const dadosBase = {
+            sala: sala,
+            capacidade: capacidade || SALAS_CAPACIDADE[sala] || 4,
+            horario: horario,
+            duracao: duracao,
+            responsavelId: responsavelId,
+            responsavelNome: colaborador.nome,
+            responsavelEmail: colaborador.email,
+            responsavelCargo: colaborador.cargo || '',
+            titulo: titulo,
+            descricao: descricao || '',
+            status: status || 'pendente',
+            tipo: tipo || 'reuniao',
+            ticket: ticket || '',
+            municipio: municipio || '',
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            atualizadoPor: currentUser.uid,
+            atualizadoPorNome: currentUser.nome,
+            reservaPeriodo: tipoPeriodo === 'periodo',
+            reservaGrupoId: tipoPeriodo === 'periodo' ? Date.now().toString() : null
+        };
+
+        let reservasCriadas = 0;
+
+        if (id && tipoPeriodo === 'unica') {
+            await db.collection('reservasSalas').doc(id).update(dadosBase);
+            reservasCriadas = 1;
+        } else {
+            const batch = db.batch();
+            for (const data of datasReserva) {
+                const dados = {
+                    ...dadosBase,
+                    data: data,
+                    criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                    criadoPor: currentUser.uid,
+                    criadoPorNome: currentUser.nome
+                };
+                const docRef = db.collection('reservasSalas').doc();
+                batch.set(docRef, dados);
+                reservasCriadas++;
+            }
+            await batch.commit();
+        }
+
+        const msg = reservasCriadas > 1 
+            ? `✅ ${reservasCriadas} reservas criadas com sucesso para o período selecionado!` 
+            : '✅ Reserva criada com sucesso!';
+        alert(msg);
+
+        fecharModalReserva();
+
+    } catch (error) {
+        console.error("Erro ao salvar reserva:", error);
+        alert('❌ Erro ao salvar: ' + error.message);
+    }
+}
+
+// ==================== FUNÇÃO ABRIR MODAL RESERVA ====================
+function abrirModalReserva(reservaId = null) {
+    console.log('🔧 abrirModalReserva chamada com id:', reservaId);
+    
+    reservaEmEdicao = reservaId;
+    
+    const modal = document.getElementById('modalReserva');
+    const titulo = document.getElementById('modalReservaTitulo');
+    
+    document.getElementById('reservaId').value = '';
+    document.getElementById('reservaSala').value = '';
+    document.getElementById('reservaCapacidade').value = 4;
+    document.getElementById('reservaData').value = '';
+    document.getElementById('reservaDataInicio').value = '';
+    document.getElementById('reservaDataFim').value = '';
+    document.getElementById('reservaHorario').value = '';
+    document.getElementById('reservaDuracao').value = 60;
+    document.getElementById('reservaResponsavel').value = '';
+    document.getElementById('reservaTitulo').value = '';
+    document.getElementById('reservaDescricao').value = '';
+    document.getElementById('reservaStatus').value = 'pendente';
+    document.getElementById('reservaTipo').value = 'reuniao';
+    document.getElementById('reservaTicket').value = '';
+    document.getElementById('reservaMunicipio').value = '';
+    document.getElementById('reservaTipoPeriodo').value = 'unica';
+    togglePeriodoReserva();
+    
+    if (reservaId) {
+        titulo.textContent = '✏️ Editar Reserva de Sala';
+        const reserva = reservasCache.find(r => r.id === reservaId);
+        if (reserva) {
+            document.getElementById('reservaId').value = reserva.id;
+            document.getElementById('reservaSala').value = reserva.sala || '';
+            document.getElementById('reservaCapacidade').value = reserva.capacidade || SALAS_CAPACIDADE[reserva.sala] || 4;
+            document.getElementById('reservaData').value = reserva.data || '';
+            document.getElementById('reservaHorario').value = reserva.horario || '';
+            document.getElementById('reservaDuracao').value = reserva.duracao || 60;
+            document.getElementById('reservaResponsavel').value = reserva.responsavelId || '';
+            document.getElementById('reservaTitulo').value = reserva.titulo || '';
+            document.getElementById('reservaDescricao').value = reserva.descricao || '';
+            document.getElementById('reservaStatus').value = reserva.status || 'pendente';
+            document.getElementById('reservaTipo').value = reserva.tipo || 'reuniao';
+            document.getElementById('reservaTicket').value = reserva.ticket || '';
+            document.getElementById('reservaMunicipio').value = reserva.municipio || '';
+            
+            if (reserva.reservaPeriodo) {
+                document.getElementById('reservaTipoPeriodo').value = 'periodo';
+                togglePeriodoReserva();
+                document.getElementById('reservaDataInicio').value = reserva.data || '';
+                document.getElementById('reservaDataFim').value = reserva.data || '';
+            }
+        } else {
+            alert('⚠️ Reserva não encontrada!');
+            return;
+        }
+    } else {
+        titulo.textContent = '📋 Nova Reserva de Sala';
+    }
+    
+    if (typeof atualizarSelectReservaResponsavel === 'function') {
+        atualizarSelectReservaResponsavel();
+    }
+    
+    document.getElementById('reservaSala').onchange = function() {
+        const sala = this.value;
+        if (sala && SALAS_CAPACIDADE[sala]) {
+            document.getElementById('reservaCapacidade').value = SALAS_CAPACIDADE[sala];
+        }
+    };
+    
+    modal.style.display = 'flex';
+}
+
+// ==================== FUNÇÃO FECHAR MODAL RESERVA ====================
+function fecharModalReserva() {
+    const modal = document.getElementById('modalReserva');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    reservaEmEdicao = null;
+}
+
+// ==================== FUNÇÃO EDITAR RESERVA ====================
+function editarReserva(id) {
+    console.log('✏️ editarReserva chamada com id:', id);
+    if (!id) {
+        console.error('❌ ID da reserva não fornecido');
+        alert('Erro: ID da reserva não encontrado.');
+        return;
+    }
+    abrirModalReserva(id);
+}
+
+// ==================== FUNÇÃO EXCLUIR RESERVA ====================
+function excluirReserva(id) {
+    console.log('🗑️ excluirReserva chamada com id:', id);
+    if (!id) {
+        console.error('❌ ID da reserva não fornecido');
+        alert('Erro: ID da reserva não encontrado.');
+        return;
+    }
+    
+    const reserva = reservasCache.find(r => r.id === id);
+    if (!reserva) {
+        alert('❌ Reserva não encontrada!');
+        return;
+    }
+    
+    if (reserva.reservaPeriodo && reserva.reservaGrupoId) {
+        const reservasDoGrupo = reservasCache.filter(r => 
+            r.reservaGrupoId === reserva.reservaGrupoId && 
+            r.reservaPeriodo === true
+        );
+        
+        if (reservasDoGrupo.length > 1) {
+            const msg = `Esta reserva faz parte de um grupo de ${reservasDoGrupo.length} reservas em período.\n\n` +
+                       `Deseja excluir apenas esta data ou todas as reservas do período?\n\n` +
+                       `📅 Data atual: ${formatarDataParaExibicaoSimples(reserva.data)}\n` +
+                       `📆 Período: ${formatarDataParaExibicaoSimples(reservasDoGrupo[0].data)} até ${formatarDataParaExibicaoSimples(reservasDoGrupo[reservasDoGrupo.length - 1].data)}`;
+            
+            const escolha = confirm(msg + '\n\nClique em OK para excluir TODAS as reservas do período.\nClique em Cancelar para excluir apenas esta data.');
+            
+            if (escolha) {
+                if (confirm(`Deseja excluir TODAS as ${reservasDoGrupo.length} reservas do período?`)) {
+                    try {
+                        const batch = db.batch();
+                        reservasDoGrupo.forEach(r => {
+                            const ref = db.collection('reservasSalas').doc(r.id);
+                            batch.delete(ref);
+                        });
+                        batch.commit();
+                        alert(`✅ ${reservasDoGrupo.length} reservas do período excluídas com sucesso!`);
+                        return;
+                    } catch (error) {
+                        console.error("Erro ao excluir reservas do período:", error);
+                        alert('❌ Erro ao excluir: ' + error.message);
+                        return;
+                    }
+                }
+                return;
+            }
+        }
+    }
+    
+    if (!confirm(`Deseja excluir a reserva "${reserva.titulo}" da sala ${SALAS_LABELS[reserva.sala] || reserva.sala} no dia ${formatarDataParaExibicaoSimples(reserva.data)}?`)) {
+        return;
+    }
+    
+    try {
+        db.collection('reservasSalas').doc(id).delete();
+        alert('✅ Reserva excluída com sucesso!');
+    } catch (error) {
+        console.error("Erro ao excluir reserva:", error);
+        alert('❌ Erro ao excluir: ' + error.message);
+    }
+}
+
+// ==================== FUNÇÃO ALTERAR STATUS RESERVA ====================
+async function alterarStatusReserva(id, novoStatus) {
+    console.log('🔄 alterarStatusReserva chamada com id:', id, 'status:', novoStatus);
+    if (!id) {
+        console.error('❌ ID da reserva não fornecido');
+        alert('Erro: ID da reserva não encontrado.');
+        return;
+    }
+    
+    const statusLabels = {
+        'pendente': '🟡 Pendente',
+        'confirmada': '🟢 Confirmada',
+        'em_andamento': '🔄 Em Andamento',
+        'concluida': '✅ Concluída',
+        'cancelada': '❌ Cancelada'
+    };
+
+    if (!confirm(`Deseja alterar o status da reserva para "${statusLabels[novoStatus]}"?`)) {
+        return;
+    }
+
+    try {
+        await db.collection('reservasSalas').doc(id).update({
+            status: novoStatus,
+            statusAtualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            statusAtualizadoPor: currentUser.uid,
+            statusAtualizadoPorNome: currentUser.nome
+        });
+        alert(`✅ Status alterado para "${statusLabels[novoStatus]}" com sucesso!`);
+    } catch (error) {
+        console.error("Erro ao alterar status:", error);
+        alert('❌ Erro ao alterar status: ' + error.message);
+    }
+}
+
+// ==================== FUNÇÃO VERIFICAR CONFLITO RESERVA ====================
+function verificarConflitoReserva(reserva) {
+    if (!reserva || !reserva.horario) {
+        return false;
+    }
+    
+    return reservasCache.some(r => {
+        if (r.id === reserva.id) return false;
+        if (r.status === 'cancelada') return false;
+        if (r.sala !== reserva.sala) return false;
+        if (r.data !== reserva.data) return false;
+        
+        if (!r.horario || !reserva.horario) return false;
+        
+        const rInicio = r.horario.split(':').map(Number);
+        const reservaInicio = reserva.horario.split(':').map(Number);
+        
+        const rStart = rInicio[0] * 60 + rInicio[1];
+        const rEnd = rStart + (r.duracao || 60);
+        const reservaStart = reservaInicio[0] * 60 + reservaInicio[1];
+        const reservaEnd = reservaStart + (reserva.duracao || 60);
+        
+        return (reservaStart < rEnd && reservaEnd > rStart);
+    });
+}
+
+// ==================== FUNÇÕES DE FILTRO DE RESERVAS ====================
+function filtrarReservas() {
+    filtroReservaDataInicio = document.getElementById('filtroReservaDataInicio').value || '';
+    filtroReservaDataFim = document.getElementById('filtroReservaDataFim').value || '';
+    filtroReservaSalaAtual = document.getElementById('filtroReservaSala').value || '';
+    filtroReservaStatusAtual = document.getElementById('filtroReservaStatus').value || '';
+    
+    if (filtroReservaDataInicio && filtroReservaDataFim && filtroReservaDataInicio > filtroReservaDataFim) {
+        alert('⚠️ A data inicial não pode ser maior que a data final.');
+        return;
+    }
+    
+    atualizarListaReservas();
+    atualizarStatsReservas();
+}
+
+function filtrarReservasHoje() {
+    const hoje = new Date();
+    const dataHoje = hoje.toISOString().split('T')[0];
+    
+    document.getElementById('filtroReservaDataInicio').value = dataHoje;
+    document.getElementById('filtroReservaDataFim').value = dataHoje;
+    document.getElementById('filtroReservaSala').value = '';
+    document.getElementById('filtroReservaStatus').value = '';
+    
+    filtroReservaDataInicio = dataHoje;
+    filtroReservaDataFim = dataHoje;
+    filtroReservaSalaAtual = '';
+    filtroReservaStatusAtual = '';
+    
+    atualizarListaReservas();
+    atualizarStatsReservas();
+}
+
+function limparFiltrosReservas() {
+    document.getElementById('filtroReservaDataInicio').value = '';
+    document.getElementById('filtroReservaDataFim').value = '';
+    document.getElementById('filtroReservaSala').value = '';
+    document.getElementById('filtroReservaStatus').value = '';
+    
+    filtroReservaDataInicio = '';
+    filtroReservaDataFim = '';
+    filtroReservaSalaAtual = '';
+    filtroReservaStatusAtual = '';
+    
+    const hoje = new Date();
+    const dataHoje = hoje.toISOString().split('T')[0];
+    document.getElementById('filtroReservaDataInicio').value = dataHoje;
+    document.getElementById('filtroReservaDataFim').value = dataHoje;
+    filtroReservaDataInicio = dataHoje;
+    filtroReservaDataFim = dataHoje;
+    
+    atualizarListaReservas();
+    atualizarStatsReservas();
+}
+
+// ==================== ATUALIZAR LISTA DE RESERVAS ====================
+function atualizarListaReservas() {
+    const container = document.getElementById('listaReservas');
+    if (!container) return;
 
     let reservasFiltradas = [...reservasCache];
 
-    // Aplicar filtros manuais (se houver)
-    if (filtroReservaDataAtual) {
-        reservasFiltradas = reservasFiltradas.filter(r => r.data === filtroReservaDataAtual);
-        console.log(`📅 Filtro por data: ${filtroReservaDataAtual} -> ${reservasFiltradas.length} reservas`);
+    if (filtroReservaDataInicio && filtroReservaDataFim) {
+        reservasFiltradas = reservasFiltradas.filter(r => {
+            if (!r.data) return false;
+            return r.data >= filtroReservaDataInicio && r.data <= filtroReservaDataFim;
+        });
+    } else if (filtroReservaDataInicio) {
+        reservasFiltradas = reservasFiltradas.filter(r => {
+            if (!r.data) return false;
+            return r.data >= filtroReservaDataInicio;
+        });
+    } else if (filtroReservaDataFim) {
+        reservasFiltradas = reservasFiltradas.filter(r => {
+            if (!r.data) return false;
+            return r.data <= filtroReservaDataFim;
+        });
     }
+
     if (filtroReservaSalaAtual) {
         reservasFiltradas = reservasFiltradas.filter(r => r.sala === filtroReservaSalaAtual);
-        console.log(`🏢 Filtro por sala: ${filtroReservaSalaAtual} -> ${reservasFiltradas.length} reservas`);
     }
     if (filtroReservaStatusAtual) {
         reservasFiltradas = reservasFiltradas.filter(r => r.status === filtroReservaStatusAtual);
-        console.log(`📌 Filtro por status: ${filtroReservaStatusAtual} -> ${reservasFiltradas.length} reservas`);
     }
 
-    // 🔥 PADRÃO: Se não houver filtros, mostrar APENAS reservas de HOJE
-    if (!filtroReservaDataAtual && !filtroReservaSalaAtual && !filtroReservaStatusAtual) {
+    if (!filtroReservaDataInicio && !filtroReservaDataFim && !filtroReservaSalaAtual && !filtroReservaStatusAtual) {
         const hoje = new Date();
         const dataHoje = hoje.toISOString().split('T')[0];
-        
         reservasFiltradas = reservasFiltradas.filter(r => {
             if (!r.data) return false;
             return r.data === dataHoje && r.status !== 'cancelada';
         });
-        console.log(`📆 Padrão: Mostrando apenas reservas de HOJE (${dataHoje}) -> ${reservasFiltradas.length} reservas`);
     }
 
-    // Ordenar por data e horário
     reservasFiltradas.sort((a, b) => {
         if (a.data < b.data) return -1;
         if (a.data > b.data) return 1;
@@ -4754,23 +5217,37 @@ function atualizarListaReservas() {
     });
 
     if (reservasFiltradas.length === 0) {
+        let mensagem = 'Nenhuma reserva encontrada para o período selecionado.';
+        if (!filtroReservaDataInicio && !filtroReservaDataFim && !filtroReservaSalaAtual && !filtroReservaStatusAtual) {
+            mensagem = 'Nenhuma reserva para hoje.';
+        }
         container.innerHTML = `
             <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
                 <i class="fas fa-door-open" style="font-size: 48px; color: #cbd5e1;"></i>
-                <h3 style="margin-top: 12px; color: #475569;">Nenhuma reserva para hoje</h3>
-                <p style="color: #94a3b8;">Use o filtro de data para visualizar reservas de outras datas.</p>
+                <h3 style="margin-top: 12px; color: #475569;">${mensagem}</h3>
+                <p style="color: #94a3b8;">Use os filtros de período para visualizar reservas em um intervalo de datas.</p>
                 <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
-                    <button onclick="abrirModalReserva()" class="btn-primary" style="width: auto; padding: 12px 40px; min-width: 200px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                    <button onclick="abrirModalReserva()" class="btn-primary" style="width: auto; padding: 12px 40px;">
                         <i class="fas fa-plus"></i> Nova Reserva
                     </button>
-                    <button onclick="document.getElementById('filtroReservaData').focus()" class="btn-secondary" style="width: auto; padding: 12px 24px;">
-                        <i class="fas fa-calendar-day"></i> Filtrar por Data
+                    <button onclick="filtrarReservasHoje()" class="btn-secondary" style="width: auto; padding: 12px 24px;">
+                        <i class="fas fa-calendar-day"></i> Ver Hoje
                     </button>
                 </div>
             </div>
         `;
         return;
     }
+
+    const grupos = {};
+    reservasFiltradas.forEach(r => {
+        if (r.reservaPeriodo && r.reservaGrupoId) {
+            if (!grupos[r.reservaGrupoId]) {
+                grupos[r.reservaGrupoId] = [];
+            }
+            grupos[r.reservaGrupoId].push(r);
+        }
+    });
 
     container.innerHTML = '';
     reservasFiltradas.forEach(r => {
@@ -4790,6 +5267,35 @@ function atualizarListaReservas() {
 
         const temConflito = verificarConflitoReserva(r);
 
+        let infoPeriodo = '';
+        if (r.reservaPeriodo && r.reservaGrupoId && grupos[r.reservaGrupoId]) {
+            const grupo = grupos[r.reservaGrupoId];
+            if (grupo.length > 1) {
+                const datasOrdenadas = grupo.map(g => g.data).sort();
+                infoPeriodo = `
+                    <span class="status-badge" style="background: #ede9fe; color: #7c3aed; font-weight: 600;">
+                        📆 Período (${datasOrdenadas.length} dias)
+                    </span>
+                `;
+            }
+        }
+
+        let infoExtra = '';
+        if (r.ticket) {
+            infoExtra += `
+                <span style="display: inline-block; font-size: 12px; background: #f1f5f9; color: #475569; padding: 2px 10px; border-radius: 12px; margin-right: 6px;">
+                    <i class="fas fa-ticket-alt"></i> ${r.ticket}
+                </span>
+            `;
+        }
+        if (r.municipio) {
+            infoExtra += `
+                <span style="display: inline-block; font-size: 12px; background: #e0e7ff; color: #4338ca; padding: 2px 10px; border-radius: 12px;">
+                    <i class="fas fa-city"></i> ${r.municipio}
+                </span>
+            `;
+        }
+
         const card = document.createElement('div');
         card.className = 'card';
         card.id = `card-reserva-${r.id}`;
@@ -4801,17 +5307,16 @@ function atualizarListaReservas() {
                     <span class="status-badge" style="background: ${statusColor}; color: ${statusTextColor}; font-weight: 600;">
                         ${statusLabel}
                     </span>
-                    ${temConflito ? `<span class="status-badge" style="background: #fee2e2; color: #dc2626; font-weight: 600;">
-                        ⚠️ Conflito
-                    </span>` : ''}
-                    ${isPassado && r.status !== 'cancelada' ? `<span class="status-badge" style="background: #e2e8f0; color: #64748b; font-weight: 600;">
-                        📅 Passado
-                    </span>` : ''}
+                    ${temConflito ? `<span class="status-badge" style="background: #fee2e2; color: #dc2626; font-weight: 600;">⚠️ Conflito</span>` : ''}
+                    ${isPassado && r.status !== 'cancelada' ? `<span class="status-badge" style="background: #e2e8f0; color: #64748b; font-weight: 600;">📅 Passado</span>` : ''}
+                    ${infoPeriodo}
                 </div>
                 <span class="status-badge" style="background: #f1f5f9; color: #475569;">
                     ${salaLabel}
                 </span>
             </div>
+
+            ${infoExtra ? `<div style="margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 4px;">${infoExtra}</div>` : ''}
 
             <div style="margin: 8px 0; display: flex; gap: 16px; font-size: 14px; color: #64748b; flex-wrap: wrap;">
                 <span><i class="fas fa-calendar-day" style="color: #2563eb;"></i> ${dataStr}</span>
@@ -4851,262 +5356,52 @@ function atualizarListaReservas() {
     });
 }
 
-// ==================== FUNÇÃO VERIFICAR CONFLITO RESERVA ====================
-function verificarConflitoReserva(reserva) {
-    if (!reserva || !reserva.horario) {
-        return false;
-    }
-    
-    return reservasCache.some(r => {
-        if (r.id === reserva.id) return false;
-        if (r.status === 'cancelada') return false;
-        if (r.sala !== reserva.sala) return false;
-        if (r.data !== reserva.data) return false;
-        
-        if (!r.horario || !reserva.horario) return false;
-        
-        const rInicio = r.horario.split(':').map(Number);
-        const reservaInicio = reserva.horario.split(':').map(Number);
-        
-        const rStart = rInicio[0] * 60 + rInicio[1];
-        const rEnd = rStart + (r.duracao || 60);
-        const reservaStart = reservaInicio[0] * 60 + reservaInicio[1];
-        const reservaEnd = reservaStart + (reserva.duracao || 60);
-        
-        return (reservaStart < rEnd && reservaEnd > rStart);
-    });
-}
-
 // ==================== ATUALIZAR STATS RESERVAS ====================
 function atualizarStatsReservas() {
-    const hoje = new Date();
-    const hojeStr = hoje.toISOString().split('T')[0];
+    let reservasFiltradas = [...reservasCache];
+
+    if (filtroReservaDataInicio && filtroReservaDataFim) {
+        reservasFiltradas = reservasFiltradas.filter(r => {
+            if (!r.data) return false;
+            return r.data >= filtroReservaDataInicio && r.data <= filtroReservaDataFim;
+        });
+    } else if (filtroReservaDataInicio) {
+        reservasFiltradas = reservasFiltradas.filter(r => {
+            if (!r.data) return false;
+            return r.data >= filtroReservaDataInicio;
+        });
+    } else if (filtroReservaDataFim) {
+        reservasFiltradas = reservasFiltradas.filter(r => {
+            if (!r.data) return false;
+            return r.data <= filtroReservaDataFim;
+        });
+    }
+
+    if (filtroReservaSalaAtual) {
+        reservasFiltradas = reservasFiltradas.filter(r => r.sala === filtroReservaSalaAtual);
+    }
+    if (filtroReservaStatusAtual) {
+        reservasFiltradas = reservasFiltradas.filter(r => r.status === filtroReservaStatusAtual);
+    }
+
+    if (!filtroReservaDataInicio && !filtroReservaDataFim && !filtroReservaSalaAtual && !filtroReservaStatusAtual) {
+        const hoje = new Date();
+        const hojeStr = hoje.toISOString().split('T')[0];
+        reservasFiltradas = reservasFiltradas.filter(r => r.data === hojeStr && r.status !== 'cancelada');
+    }
+
+    const confirmadas = reservasFiltradas.filter(r => r.status === 'confirmada' || r.status === 'em_andamento');
+    const pendentes = reservasFiltradas.filter(r => r.status === 'pendente');
     
-    const reservasHoje = reservasCache.filter(r => r.data === hojeStr && r.status !== 'cancelada');
-    const confirmadas = reservasCache.filter(r => r.status === 'confirmada' || r.status === 'em_andamento');
-    const pendentes = reservasCache.filter(r => r.status === 'pendente');
-    
-    const reservasHojeAtivas = reservasCache.filter(r => r.data === hojeStr && r.status !== 'cancelada');
-    const salasOcupadas = new Set(reservasHojeAtivas.map(r => r.sala));
+    const reservasAtivas = reservasFiltradas.filter(r => r.status !== 'cancelada');
+    const salasOcupadas = new Set(reservasAtivas.map(r => r.sala));
     const totalSalas = Object.keys(SALAS_LABELS).length;
     const salasDisponiveis = Math.max(0, totalSalas - salasOcupadas.size);
 
-    document.getElementById('reservaTotalHoje').textContent = reservasHoje.length;
+    document.getElementById('reservaTotalHoje').textContent = reservasFiltradas.filter(r => r.status !== 'cancelada').length;
     document.getElementById('reservaConfirmadas').textContent = confirmadas.length;
     document.getElementById('reservaPendentes').textContent = pendentes.length;
     document.getElementById('reservaTotalSalas').textContent = `${salasDisponiveis}/${totalSalas}`;
-    
-    console.log(`📊 Stats: Hoje=${reservasHoje.length}, Confirmadas=${confirmadas.length}, Pendentes=${pendentes.length}, Salas=${salasDisponiveis}/${totalSalas}`);
-}
-
-function abrirModalReserva(reservaId = null) {
-    reservaEmEdicao = reservaId;
-    
-    const modal = document.getElementById('modalReserva');
-    const titulo = document.getElementById('modalReservaTitulo');
-    
-    if (reservaId) {
-        titulo.textContent = '✏️ Editar Reserva de Sala';
-        const reserva = reservasCache.find(r => r.id === reservaId);
-        if (reserva) {
-            document.getElementById('reservaId').value = reserva.id;
-            document.getElementById('reservaSala').value = reserva.sala || '';
-            document.getElementById('reservaCapacidade').value = reserva.capacidade || SALAS_CAPACIDADE[reserva.sala] || 4;
-            document.getElementById('reservaData').value = reserva.data || '';
-            document.getElementById('reservaHorario').value = reserva.horario || '';
-            document.getElementById('reservaDuracao').value = reserva.duracao || 60;
-            document.getElementById('reservaResponsavel').value = reserva.responsavelId || '';
-            document.getElementById('reservaTitulo').value = reserva.titulo || '';
-            document.getElementById('reservaDescricao').value = reserva.descricao || '';
-            document.getElementById('reservaStatus').value = reserva.status || 'pendente';
-            document.getElementById('reservaTipo').value = reserva.tipo || 'reuniao';
-        }
-    } else {
-        titulo.textContent = '📋 Nova Reserva de Sala';
-        document.getElementById('reservaId').value = '';
-        document.getElementById('reservaSala').value = '';
-        document.getElementById('reservaCapacidade').value = 4;
-        document.getElementById('reservaData').value = '';
-        document.getElementById('reservaHorario').value = '';
-        document.getElementById('reservaDuracao').value = 60;
-        document.getElementById('reservaResponsavel').value = '';
-        document.getElementById('reservaTitulo').value = '';
-        document.getElementById('reservaDescricao').value = '';
-        document.getElementById('reservaStatus').value = 'pendente';
-        document.getElementById('reservaTipo').value = 'reuniao';
-    }
-    
-    atualizarSelectReservaResponsavel();
-    
-    document.getElementById('reservaSala').onchange = function() {
-        const sala = this.value;
-        if (sala && SALAS_CAPACIDADE[sala]) {
-            document.getElementById('reservaCapacidade').value = SALAS_CAPACIDADE[sala];
-        }
-    };
-    
-    modal.style.display = 'flex';
-}
-
-function fecharModalReserva() {
-    const modal = document.getElementById('modalReserva');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-    reservaEmEdicao = null;
-}
-
-// ==================== FUNÇÃO SALVAR RESERVA ====================
-async function salvarReserva() {
-    const id = document.getElementById('reservaId').value;
-    const sala = document.getElementById('reservaSala').value;
-    const capacidade = parseInt(document.getElementById('reservaCapacidade').value) || 4;
-    const data = document.getElementById('reservaData').value;
-    const horario = document.getElementById('reservaHorario').value;
-    const duracao = parseInt(document.getElementById('reservaDuracao').value) || 60;
-    const responsavelId = document.getElementById('reservaResponsavel').value;
-    const titulo = document.getElementById('reservaTitulo').value.trim();
-    const descricao = document.getElementById('reservaDescricao').value.trim();
-    const status = document.getElementById('reservaStatus').value;
-    const tipo = document.getElementById('reservaTipo').value;
-
-    if (!sala || !data || !horario || !responsavelId || !titulo) {
-        alert('❌ Preencha todos os campos obrigatórios: Sala, Data, Horário, Responsável e Título.');
-        return;
-    }
-
-    const colaborador = colaboradoresCache.find(c => c.id === responsavelId);
-    if (!colaborador) {
-        alert('❌ Colaborador não encontrado!');
-        return;
-    }
-
-    if (colaborador.ativo === false) {
-        alert('❌ Este colaborador está inativo. Selecione um colaborador ativo.');
-        return;
-    }
-
-    try {
-        const reservaTeste = {
-            id: id || 'novo',
-            sala: sala,
-            data: data,
-            horario: horario,
-            duracao: duracao,
-            status: status
-        };
-
-        if (verificarConflitoReserva(reservaTeste)) {
-            if (!confirm('⚠️ Esta reserva conflita com outra reserva existente na mesma sala e horário. Deseja continuar mesmo assim?')) {
-                return;
-            }
-        }
-    } catch (error) {
-        console.error('Erro ao verificar conflitos:', error);
-    }
-
-    try {
-        const dados = {
-            sala: sala,
-            capacidade: capacidade || SALAS_CAPACIDADE[sala] || 4,
-            data: data,
-            horario: horario,
-            duracao: duracao,
-            responsavelId: responsavelId,
-            responsavelNome: colaborador.nome,
-            responsavelEmail: colaborador.email,
-            responsavelCargo: colaborador.cargo || '',
-            titulo: titulo,
-            descricao: descricao || '',
-            status: status || 'pendente',
-            tipo: tipo || 'reuniao',
-            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-            atualizadoPor: currentUser.uid,
-            atualizadoPorNome: currentUser.nome
-        };
-
-        if (id) {
-            await db.collection('reservasSalas').doc(id).update(dados);
-            alert('✅ Reserva atualizada com sucesso!');
-        } else {
-            dados.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
-            dados.criadoPor = currentUser.uid;
-            dados.criadoPorNome = currentUser.nome;
-            await db.collection('reservasSalas').add(dados);
-            alert('✅ Reserva criada com sucesso!');
-        }
-        
-        fecharModalReserva();
-
-    } catch (error) {
-        console.error("Erro ao salvar reserva:", error);
-        alert('❌ Erro ao salvar: ' + error.message);
-    }
-}
-
-function editarReserva(id) {
-    abrirModalReserva(id);
-}
-
-function excluirReserva(id) {
-    const reserva = reservasCache.find(r => r.id === id);
-    if (!reserva) return;
-    
-    if (!confirm(`Deseja excluir a reserva "${reserva.titulo}" da sala ${SALAS_LABELS[reserva.sala] || reserva.sala}?`)) {
-        return;
-    }
-    
-    try {
-        db.collection('reservasSalas').doc(id).delete();
-        alert('✅ Reserva excluída com sucesso!');
-    } catch (error) {
-        console.error("Erro ao excluir reserva:", error);
-        alert('❌ Erro ao excluir: ' + error.message);
-    }
-}
-
-async function alterarStatusReserva(id, novoStatus) {
-    const statusLabels = {
-        'pendente': '🟡 Pendente',
-        'confirmada': '🟢 Confirmada',
-        'em_andamento': '🔄 Em Andamento',
-        'concluida': '✅ Concluída',
-        'cancelada': '❌ Cancelada'
-    };
-
-    if (!confirm(`Deseja alterar o status da reserva para "${statusLabels[novoStatus]}"?`)) {
-        return;
-    }
-
-    try {
-        await db.collection('reservasSalas').doc(id).update({
-            status: novoStatus,
-            statusAtualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-            statusAtualizadoPor: currentUser.uid,
-            statusAtualizadoPorNome: currentUser.nome
-        });
-        alert(`✅ Status alterado para "${statusLabels[novoStatus]}" com sucesso!`);
-    } catch (error) {
-        console.error("Erro ao alterar status:", error);
-        alert('❌ Erro ao alterar status: ' + error.message);
-    }
-}
-
-function filtrarReservas() {
-    filtroReservaDataAtual = document.getElementById('filtroReservaData').value || '';
-    filtroReservaSalaAtual = document.getElementById('filtroReservaSala').value || '';
-    filtroReservaStatusAtual = document.getElementById('filtroReservaStatus').value || '';
-    atualizarListaReservas();
-}
-
-function limparFiltrosReservas() {
-    document.getElementById('filtroReservaData').value = '';
-    document.getElementById('filtroReservaSala').value = '';
-    document.getElementById('filtroReservaStatus').value = '';
-    filtroReservaDataAtual = '';
-    filtroReservaSalaAtual = '';
-    filtroReservaStatusAtual = '';
-    atualizarListaReservas();
 }
 
 // ==================== FUNÇÕES PARA LIMITE DE ADMINISTRADORES ====================
@@ -5274,13 +5569,17 @@ window.salvarFerias = salvarFerias;
 window.excluirFerias = excluirFerias;
 window.colaboradorEstaDeFerias = colaboradorEstaDeFerias;
 
+window.togglePeriodoReserva = togglePeriodoReserva;
+window.gerarDatasPeriodo = gerarDatasPeriodo;
+window.salvarReserva = salvarReserva;
 window.abrirModalReserva = abrirModalReserva;
 window.fecharModalReserva = fecharModalReserva;
-window.salvarReserva = salvarReserva;
 window.editarReserva = editarReserva;
 window.excluirReserva = excluirReserva;
 window.alterarStatusReserva = alterarStatusReserva;
+window.verificarConflitoReserva = verificarConflitoReserva;
 window.filtrarReservas = filtrarReservas;
+window.filtrarReservasHoje = filtrarReservasHoje;
 window.limparFiltrosReservas = limparFiltrosReservas;
 window.iniciarListenerReservas = iniciarListenerReservas;
 
@@ -5323,7 +5622,6 @@ window.carregarConfigLimiteAdmin = carregarConfigLimiteAdmin;
 window.salvarLimiteAdmin = salvarLimiteAdmin;
 window.debugMenu = debugMenu;
 
-// Funções de navegação de data
 window.buscarEventosPorData = buscarEventosPorData;
 window.navegarData = navegarData;
 window.irParaHoje = irParaHoje;
@@ -5373,3 +5671,12 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("📄 Página carregada, aguardando autenticação...");
     setTimeout(iniciarObservadorMenu, 500);
 });
+
+console.log('✅ Todas as funções de reservas foram exportadas com sucesso!');
+console.log('  - editarReserva:', typeof window.editarReserva);
+console.log('  - excluirReserva:', typeof window.excluirReserva);
+console.log('  - alterarStatusReserva:', typeof window.alterarStatusReserva);
+console.log('  - salvarReserva:', typeof window.salvarReserva);
+console.log('  - abrirModalReserva:', typeof window.abrirModalReserva);
+console.log('  - fecharModalReserva:', typeof window.fecharModalReserva);
+console.log('  - togglePeriodoReserva:', typeof window.togglePeriodoReserva);
