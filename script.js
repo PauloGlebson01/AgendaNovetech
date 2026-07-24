@@ -57,6 +57,8 @@ let unsubscribeFerias = null;
 let unsubscribeBloqueios = null;
 let filtroStatusAtual = '';
 let filtroDataAtual = '';
+let filtroEventoDataInicio = '';
+let filtroEventoDataFim = '';
 let filtroPeriodo = 'todos';
 let feriasCache = [];
 
@@ -788,6 +790,7 @@ function iniciarListenersRealtime() {
         unsubscribeEventos();
     }
     
+    // Iniciar listener com filtro padrão (HOJE)
     const hoje = new Date();
     const dataHoje = hoje.toISOString().split('T')[0];
     const dataInicio = dataHoje + 'T00:00:00.000Z';
@@ -830,9 +833,12 @@ function iniciarListenersRealtime() {
             atualizarListaEventos(snapshotSimulado);
             atualizarContadorStatus(snapshotSimulado);
             
-            const filtroDataInput = document.getElementById('filtroData');
+            const filtroDataInput = document.getElementById('filtroEventoDataInicio');
             if (filtroDataInput && !filtroDataInput.value) {
                 filtroDataInput.value = dataHoje;
+                document.getElementById('filtroEventoDataFim').value = dataHoje;
+                filtroEventoDataInicio = dataHoje;
+                filtroEventoDataFim = dataHoje;
             }
             
             atualizarDataExibicao(dataHoje);
@@ -1331,7 +1337,7 @@ function atualizarListaEventos(snapshot) {
         container.innerHTML = `
             <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
                 <i class="fas fa-calendar-day" style="font-size: 48px; color: #cbd5e1;"></i>
-                <h3 style="margin-top: 12px; color: #475569;">Nenhum evento encontrado para esta data</h3>
+                <h3 style="margin-top: 12px; color: #475569;">Nenhum evento encontrado para este período</h3>
                 <p style="color: #94a3b8;">Use os filtros para navegar para outras datas ou ver todos os eventos.</p>
                 <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
                     <button class="btn-sm" style="background: #2563eb; color: white;" onclick="irParaHoje()">
@@ -1356,6 +1362,16 @@ function atualizarListaEventos(snapshot) {
         const statusColor = STATUS_COLORS[status] || '#f1f5f9';
         const statusTextColor = STATUS_TEXT_COLORS[status] || '#1e293b';
         const statusIcon = STATUS_ICONS[status] || 'fa-circle';
+
+        // Verificar se faz parte de um período
+        let infoPeriodo = '';
+        if (e.eventoPeriodo && e.eventoGrupoId) {
+            infoPeriodo = `
+                <span class="status-badge" style="background: #ede9fe; color: #7c3aed; font-weight: 600;">
+                    📆 Período
+                </span>
+            `;
+        }
 
         let botoesStatus = '';
         if (status === 'designado') {
@@ -1415,9 +1431,12 @@ function atualizarListaEventos(snapshot) {
         contentDiv.className = 'card-content';
         contentDiv.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                <span class="status-badge" style="background: ${TIPO_COLORS[e.tipo] || '#f1f5f9'}; color: #1e293b;">
-                    ${TIPO_LABELS[e.tipo] || e.tipo}
-                </span>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <span class="status-badge" style="background: ${TIPO_COLORS[e.tipo] || '#f1f5f9'}; color: #1e293b;">
+                        ${TIPO_LABELS[e.tipo] || e.tipo}
+                    </span>
+                    ${infoPeriodo}
+                </div>
                 <span class="status-badge" style="background: ${statusColor}; color: ${statusTextColor}; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
                     <i class="fas ${statusIcon}"></i>
                     ${statusLabel}
@@ -1504,18 +1523,20 @@ function filtrarPorStatus(status) {
     aplicarFiltrosCompletos();
 }
 
-// ==================== APLICAR FILTROS COMPLETOS ====================
+// ==================== APLICAR FILTROS COMPLETOS (COM PERÍODO) ====================
 function aplicarFiltrosCompletos() {
-    const dataFiltro = document.getElementById('filtroData').value;
-    const statusFiltro = document.getElementById('filtroStatus').value;
+    const dataInicio = document.getElementById('filtroEventoDataInicio')?.value || filtroEventoDataInicio;
+    const dataFim = document.getElementById('filtroEventoDataFim')?.value || filtroEventoDataFim;
+    const statusFiltro = document.getElementById('filtroStatus')?.value || filtroStatusAtual;
     
-    filtroDataAtual = dataFiltro;
+    filtroEventoDataInicio = dataInicio;
+    filtroEventoDataFim = dataFim;
     filtroStatusAtual = statusFiltro;
 
-    let dataConsulta = dataFiltro;
-    if (!dataConsulta) {
-        const hoje = new Date();
-        dataConsulta = hoje.toISOString().split('T')[0];
+    // Validação: se a data inicial for maior que a data final
+    if (dataInicio && dataFim && dataInicio > dataFim) {
+        alert('⚠️ A data inicial não pode ser maior que a data final.');
+        return;
     }
 
     const container = document.getElementById('listaEventosAdmin');
@@ -1525,13 +1546,28 @@ function aplicarFiltrosCompletos() {
         unsubscribeEventos();
     }
 
-    const dataInicio = dataConsulta + 'T00:00:00.000Z';
-    const dataFim = dataConsulta + 'T23:59:59.999Z';
-    
-    let query = db.collection('eventosAgenda')
-        .where('data', '>=', dataInicio)
-        .where('data', '<=', dataFim)
-        .orderBy('data', 'asc');
+    // Construir a query base
+    let query = db.collection('eventosAgenda').orderBy('data', 'asc');
+
+    // Aplicar filtro de período
+    if (dataInicio && dataFim) {
+        const inicio = dataInicio + 'T00:00:00.000Z';
+        const fim = dataFim + 'T23:59:59.999Z';
+        query = query.where('data', '>=', inicio).where('data', '<=', fim);
+    } else if (dataInicio) {
+        const inicio = dataInicio + 'T00:00:00.000Z';
+        query = query.where('data', '>=', inicio);
+    } else if (dataFim) {
+        const fim = dataFim + 'T23:59:59.999Z';
+        query = query.where('data', '<=', fim);
+    } else {
+        // Padrão: mostrar apenas HOJE
+        const hoje = new Date();
+        const dataHoje = hoje.toISOString().split('T')[0];
+        const inicio = dataHoje + 'T00:00:00.000Z';
+        const fim = dataHoje + 'T23:59:59.999Z';
+        query = query.where('data', '>=', inicio).where('data', '<=', fim);
+    }
 
     unsubscribeEventos = query.onSnapshot((snapshot) => {
         let eventos = [];
@@ -1539,6 +1575,7 @@ function aplicarFiltrosCompletos() {
             eventos.push({ id: doc.id, ...doc.data() });
         });
         
+        // Aplicar filtro de status (client-side)
         if (statusFiltro) {
             eventos = eventos.filter(e => e.status === statusFiltro);
         }
@@ -1569,12 +1606,18 @@ function aplicarFiltrosCompletos() {
         atualizarListaEventos(snapshotSimulado);
         atualizarContadorStatus(snapshotSimulado);
         
-        const filtroDataInput = document.getElementById('filtroData');
-        if (filtroDataInput && !filtroDataInput.value) {
-            filtroDataInput.value = dataConsulta;
+        // Atualizar a exibição da data
+        if (dataInicio && dataFim) {
+            atualizarDataExibicaoPeriodo(dataInicio, dataFim);
+        } else if (dataInicio) {
+            atualizarDataExibicaoPeriodo(dataInicio, '...');
+        } else if (dataFim) {
+            atualizarDataExibicaoPeriodo('...', dataFim);
+        } else {
+            const hoje = new Date();
+            const dataHoje = hoje.toISOString().split('T')[0];
+            atualizarDataExibicao(dataHoje);
         }
-        
-        atualizarDataExibicao(dataConsulta);
         
     }, (error) => {
         console.error("Erro ao filtrar:", error);
@@ -1590,49 +1633,166 @@ function aplicarFiltrosCompletos() {
     });
 }
 
-// ==================== ALTERAR STATUS DO EVENTO ====================
-async function alterarStatus(eventoId, novoStatus) {
-    const statusLabels = {
-        'designado': '📋 Designado',
-        'em_andamento': '🔄 Em Andamento',
-        'realizado': '✅ Realizado',
-        'cancelado': '❌ Cancelado'
-    };
-
-    if (!confirm(`Deseja alterar o status deste evento para "${statusLabels[novoStatus]}"?`)) {
-        return;
-    }
-
-    try {
-        await db.collection('eventosAgenda').doc(eventoId).update({
-            status: novoStatus,
-            statusAtualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-            statusAtualizadoPor: currentUser.uid,
-            statusAtualizadoPorNome: currentUser.nome
-        });
-
-        alert(`✅ Status alterado para "${statusLabels[novoStatus]}" com sucesso!`);
-
-    } catch (error) {
-        console.error("Erro ao alterar status:", error);
-        alert('❌ Erro ao alterar status: ' + error.message);
+// ==================== ATUALIZAR DATA DE EXIBIÇÃO PARA PERÍODO ====================
+function atualizarDataExibicaoPeriodo(dataInicio, dataFim) {
+    const el = document.getElementById('dataExibicao');
+    if (el) {
+        const hoje = new Date();
+        const hojeStr = hoje.toISOString().split('T')[0];
+        
+        let label = '📅 ';
+        if (dataInicio === '...' && dataFim !== '...') {
+            label += `Até ${formatarDataParaExibicaoSimples(dataFim)}`;
+        } else if (dataFim === '...' && dataInicio !== '...') {
+            label += `A partir de ${formatarDataParaExibicaoSimples(dataInicio)}`;
+        } else if (dataInicio === dataFim) {
+            label += formatarDataParaExibicaoSimples(dataInicio);
+            if (dataInicio === hojeStr) {
+                label = '🔥 HOJE - ' + label;
+            }
+        } else {
+            label += `${formatarDataParaExibicaoSimples(dataInicio)} até ${formatarDataParaExibicaoSimples(dataFim)}`;
+        }
+        
+        el.textContent = label;
+        el.style.color = '#2563eb';
+        el.style.fontWeight = '600';
     }
 }
 
-// ==================== FILTROS ====================
+// ==================== FUNÇÕES DE FILTRO DE EVENTOS ====================
+function filtrarEventos() {
+    const dataInicio = document.getElementById('filtroEventoDataInicio').value || '';
+    const dataFim = document.getElementById('filtroEventoDataFim').value || '';
+    const statusFiltro = document.getElementById('filtroStatus').value || '';
+    
+    filtroEventoDataInicio = dataInicio;
+    filtroEventoDataFim = dataFim;
+    filtroStatusAtual = statusFiltro;
+    
+    if (dataInicio && dataFim && dataInicio > dataFim) {
+        alert('⚠️ A data inicial não pode ser maior que a data final.');
+        return;
+    }
+    
+    aplicarFiltrosCompletos();
+}
+
+function filtrarEventosHoje() {
+    const hoje = new Date();
+    const dataHoje = hoje.toISOString().split('T')[0];
+    
+    document.getElementById('filtroEventoDataInicio').value = dataHoje;
+    document.getElementById('filtroEventoDataFim').value = dataHoje;
+    document.getElementById('filtroStatus').value = '';
+    
+    filtroEventoDataInicio = dataHoje;
+    filtroEventoDataFim = dataHoje;
+    filtroStatusAtual = '';
+    
+    aplicarFiltrosCompletos();
+}
+
+function limparFiltrosEventos() {
+    document.getElementById('filtroEventoDataInicio').value = '';
+    document.getElementById('filtroEventoDataFim').value = '';
+    document.getElementById('filtroStatus').value = '';
+    
+    filtroEventoDataInicio = '';
+    filtroEventoDataFim = '';
+    filtroStatusAtual = '';
+    
+    // Voltar para HOJE (padrão)
+    const hoje = new Date();
+    const dataHoje = hoje.toISOString().split('T')[0];
+    document.getElementById('filtroEventoDataInicio').value = dataHoje;
+    document.getElementById('filtroEventoDataFim').value = dataHoje;
+    filtroEventoDataInicio = dataHoje;
+    filtroEventoDataFim = dataHoje;
+    
+    aplicarFiltrosCompletos();
+}
+
+// ==================== FUNÇÕES DE NAVEGAÇÃO DE DATA ====================
+function buscarEventosPorData(data) {
+    if (!data) {
+        const hoje = new Date();
+        data = hoje.toISOString().split('T')[0];
+    }
+    
+    document.getElementById('filtroEventoDataInicio').value = data;
+    document.getElementById('filtroEventoDataFim').value = data;
+    filtroEventoDataInicio = data;
+    filtroEventoDataFim = data;
+    aplicarFiltrosCompletos();
+}
+
+function navegarData(direcao) {
+    const dataInicio = document.getElementById('filtroEventoDataInicio').value;
+    let dataAtual = dataInicio || new Date().toISOString().split('T')[0];
+    
+    const dataObj = new Date(dataAtual + 'T00:00:00');
+    dataObj.setDate(dataObj.getDate() + direcao);
+    
+    const novaData = dataObj.toISOString().split('T')[0];
+    document.getElementById('filtroEventoDataInicio').value = novaData;
+    document.getElementById('filtroEventoDataFim').value = novaData;
+    filtroEventoDataInicio = novaData;
+    filtroEventoDataFim = novaData;
+    buscarEventosPorData(novaData);
+}
+
+function irParaHoje() {
+    const hoje = new Date();
+    const dataHoje = hoje.toISOString().split('T')[0];
+    document.getElementById('filtroEventoDataInicio').value = dataHoje;
+    document.getElementById('filtroEventoDataFim').value = dataHoje;
+    filtroEventoDataInicio = dataHoje;
+    filtroEventoDataFim = dataHoje;
+    buscarEventosPorData(dataHoje);
+}
+
+function atualizarDataExibicao(data) {
+    const el = document.getElementById('dataExibicao');
+    if (el) {
+        const hoje = new Date();
+        const hojeStr = hoje.toISOString().split('T')[0];
+        const dataObj = new Date(data + 'T00:00:00');
+        
+        let label = '📅 ' + dataObj.toLocaleDateString('pt-BR', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+        });
+        
+        if (data === hojeStr) {
+            label = '🔥 HOJE - ' + label;
+        }
+        
+        el.textContent = label;
+        el.style.color = data === hojeStr ? '#2563eb' : '#64748b';
+        el.style.fontWeight = data === hojeStr ? '600' : '400';
+    }
+}
+
 function filtrarAgenda() {
     aplicarFiltrosCompletos();
 }
 
 function limparFiltros() {
-    document.getElementById('filtroData').value = '';
+    document.getElementById('filtroEventoDataInicio').value = '';
+    document.getElementById('filtroEventoDataFim').value = '';
     document.getElementById('filtroStatus').value = '';
-    filtroDataAtual = '';
+    filtroEventoDataInicio = '';
+    filtroEventoDataFim = '';
     filtroStatusAtual = '';
     
     const hoje = new Date();
     const dataHoje = hoje.toISOString().split('T')[0];
-    document.getElementById('filtroData').value = dataHoje;
+    document.getElementById('filtroEventoDataInicio').value = dataHoje;
+    document.getElementById('filtroEventoDataFim').value = dataHoje;
+    filtroEventoDataInicio = dataHoje;
+    filtroEventoDataFim = dataHoje;
     aplicarFiltrosCompletos();
 }
 
@@ -3706,12 +3866,65 @@ async function exibirRelatorioDemanda(colaboradorId) {
     }
 }
 
-// ==================== ADICIONAR EVENTO (CORRIGIDO) ====================
-async function adicionarEvento() {
-    const data = document.getElementById('eventoData').value;
+// ==================== FUNÇÃO PARA ALTERNAR TIPO DE EVENTO ====================
+function togglePeriodoEvento() {
+    const tipo = document.getElementById('eventoTipoPeriodo').value;
+    
+    const dataUnica = document.getElementById('eventoDataUnica');
+    const dataPeriodo = document.getElementById('eventoDataPeriodo');
+    
+    if (tipo === 'unica') {
+        dataUnica.style.display = 'block';
+        dataPeriodo.style.display = 'none';
+        document.getElementById('eventoData').required = true;
+        document.getElementById('eventoDataInicio').required = false;
+        document.getElementById('eventoDataFim').required = false;
+    } else {
+        dataUnica.style.display = 'none';
+        dataPeriodo.style.display = 'block';
+        document.getElementById('eventoData').required = false;
+        document.getElementById('eventoDataInicio').required = true;
+        document.getElementById('eventoDataFim').required = true;
+    }
+}
+
+// ==================== FUNÇÃO GERAR DATAS DO PERÍODO PARA EVENTOS ====================
+function gerarDatasPeriodoEvento(dataInicio, dataFim) {
+    const datas = [];
+    const inicio = new Date(dataInicio + 'T00:00:00');
+    const fim = new Date(dataFim + 'T00:00:00');
+    
+    if (inicio > fim) {
+        alert('⚠️ A data inicial não pode ser maior que a data final.');
+        return [];
+    }
+    
+    const diffEmDias = Math.floor((fim - inicio) / (1000 * 60 * 60 * 24));
+    
+    if (diffEmDias > 30) {
+        if (!confirm(`⚠️ Você está criando eventos para ${diffEmDias + 1} dias consecutivos.\n\nDeseja continuar?`)) {
+            return [];
+        }
+    }
+    
+    let dataAtual = new Date(inicio);
+    while (dataAtual <= fim) {
+        const ano = dataAtual.getFullYear();
+        const mes = String(dataAtual.getMonth() + 1).padStart(2, '0');
+        const dia = String(dataAtual.getDate()).padStart(2, '0');
+        datas.push(`${ano}-${mes}-${dia}`);
+        dataAtual.setDate(dataAtual.getDate() + 1);
+    }
+    
+    return datas;
+}
+
+// ==================== ADICIONAR EVENTO (COM PERÍODO) ====================
+async function adicionarEventoPeriodo() {
+    const tipoPeriodo = document.getElementById('eventoTipoPeriodo').value;
     const horario = document.getElementById('eventoHorario').value;
     const tipo = document.getElementById('eventoTipo').value;
-    const titulo = document.getElementById('eventoTitulo').value;
+    const titulo = document.getElementById('eventoTitulo').value.trim();
     const ticket = document.getElementById('eventoTicket').value.trim();
     const municipio = document.getElementById('eventoMunicipio').value.trim();
     const responsavelId = document.getElementById('eventoResponsavel').value;
@@ -3720,8 +3933,9 @@ async function adicionarEvento() {
     const descricao = document.getElementById('eventoDescricao').value;
     const local = document.getElementById('eventoLocal').value;
 
-    if (!data || !horario || !tipo || !titulo) {
-        alert('Preencha os campos obrigatórios: Data, Horário, Tipo e Título.');
+    // Validar campos obrigatórios
+    if (!horario || !tipo || !titulo) {
+        alert('Preencha os campos obrigatórios: Horário, Tipo e Título.');
         return;
     }
 
@@ -3730,45 +3944,29 @@ async function adicionarEvento() {
         return;
     }
 
-    const conflitos = await verificarTodosConflitos(data, horario, duracao);
-    
-    if (conflitos.temConflito) {
-        let mensagem = '⚠️ Foram encontrados conflitos:\n\n';
-        
-        if (conflitos.bloqueios.length > 0) {
-            mensagem += '🔒 BLOQUEIOS:\n';
-            conflitos.bloqueios.forEach(b => {
-                const duracaoBloq = b.duracao || 60;
-                const fimBloq = addMinutes(b.horario, duracaoBloq);
-                mensagem += `   - ${b.horario} às ${fimBloq} (${duracaoBloq}min) ${b.motivo ? `- ${b.motivo}` : ''}\n`;
-            });
-            mensagem += '\n';
+    // Validar data(s)
+    let datasEvento = [];
+    if (tipoPeriodo === 'unica') {
+        const data = document.getElementById('eventoData').value;
+        if (!data) {
+            alert('❌ Selecione uma data para o evento.');
+            return;
         }
-        
-        if (conflitos.eventos.length > 0) {
-            mensagem += '📋 EVENTOS EXISTENTES:\n';
-            conflitos.eventos.forEach(e => {
-                const eData = new Date(e.data);
-                const eHora = String(eData.getHours()).padStart(2, '0') + ':' + String(eData.getMinutes()).padStart(2, '0');
-                const eFim = addMinutes(eHora, e.duracao || 60);
-                mensagem += `   - ${eHora} às ${eFim} - ${e.titulo} (${e.responsavelNome || 'Sem responsável'})\n`;
-            });
-            mensagem += '\n';
+        datasEvento = [data];
+    } else {
+        const dataInicio = document.getElementById('eventoDataInicio').value;
+        const dataFim = document.getElementById('eventoDataFim').value;
+        if (!dataInicio || !dataFim) {
+            alert('❌ Selecione a data inicial e final do período.');
+            return;
         }
-        
-        mensagem += 'Deseja continuar mesmo assim?';
-        
-        if (!confirm(mensagem)) {
+        datasEvento = gerarDatasPeriodoEvento(dataInicio, dataFim);
+        if (datasEvento.length === 0) {
             return;
         }
     }
 
-    if (colaboradorEstaDeFerias(responsavelId)) {
-        if (!confirm('⚠️ Este colaborador está em férias. Deseja continuar mesmo assim?')) {
-            return;
-        }
-    }
-
+    // Buscar colaborador
     const colaborador = colaboradoresCache.find(c => c.id === responsavelId);
     if (!colaborador) {
         alert('Colaborador selecionado não encontrado.');
@@ -3780,49 +3978,102 @@ async function adicionarEvento() {
         return;
     }
 
-    const podeContinuar = await verificarDemandaAntesDeSalvar(
-        responsavelId,
-        colaborador.nome,
-        data,
-        duracao
-    );
+    // Verificar conflitos e demanda para cada data
+    let conflitosEncontrados = [];
+    let datasComAltaDemanda = [];
+    
+    for (const data of datasEvento) {
+        // Verificar conflitos
+        const conflitos = await verificarTodosConflitos(data, horario, duracao);
+        if (conflitos.temConflito) {
+            conflitosEncontrados.push(formatarDataParaExibicaoSimples(data));
+        }
+        
+        // Verificar demanda
+        if (colaboradorEstaDeFerias(responsavelId)) {
+            if (!confirm(`⚠️ O colaborador "${colaborador.nome}" está em férias na data ${formatarDataParaExibicaoSimples(data)}. Deseja continuar?`)) {
+                return;
+            }
+        }
+        
+        const demanda = await verificarDemandaColaborador(responsavelId, data, duracao);
+        if (demanda.nivelDemanda === 'critica' || demanda.nivelDemanda === 'alta') {
+            datasComAltaDemanda.push(formatarDataParaExibicaoSimples(data));
+        }
+    }
 
-    if (!podeContinuar) {
-        return;
+    if (conflitosEncontrados.length > 0) {
+        const msg = `⚠️ Conflito(s) de horário encontrado(s) nas seguintes datas:\n\n${conflitosEncontrados.join('\n')}\n\nDeseja continuar mesmo assim?`;
+        if (!confirm(msg)) {
+            return;
+        }
+    }
+
+    // Verificar demanda alta
+    if (datasComAltaDemanda.length > 0) {
+        const podeContinuar = await verificarDemandaAntesDeSalvar(
+            responsavelId,
+            colaborador.nome,
+            datasEvento[0],
+            duracao
+        );
+        if (!podeContinuar) {
+            return;
+        }
     }
 
     try {
-        const [ano, mes, dia] = data.split('-').map(Number);
-        const [hora, minuto] = horario.split(':').map(Number);
-        
-        const dataEvento = new Date(Date.UTC(ano, mes - 1, dia, hora, minuto, 0));
-        const dataISO = dataEvento.toISOString();
+        let eventosCriados = 0;
+        const batch = db.batch();
 
-        await db.collection('eventosAgenda').add({
-            data: dataISO,
-            tipo: tipo,
-            titulo: titulo,
-            ticket: ticket || '',
-            municipio: municipio || '',
-            responsavelId: responsavelId,
-            responsavelNome: colaborador.nome,
-            responsavelEmail: colaborador.email,
-            responsavelCargo: colaborador.cargo || '',
-            participantes: parseInt(participantes) || 1,
-            duracao: duracao,
-            descricao: descricao || '',
-            local: local || '',
-            status: 'designado',
-            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-            criadoPor: currentUser.uid,
-            criadoPorNome: currentUser.nome
-        });
+        for (const data of datasEvento) {
+            const [ano, mes, dia] = data.split('-').map(Number);
+            const [hora, minuto] = horario.split(':').map(Number);
+            
+            const dataEvento = new Date(Date.UTC(ano, mes - 1, dia, hora, minuto, 0));
+            const dataISO = dataEvento.toISOString();
 
-        await bloquearHorariosAutomaticamente(data, horario, duracao, titulo);
+            const dados = {
+                data: dataISO,
+                tipo: tipo,
+                titulo: titulo,
+                ticket: ticket || '',
+                municipio: municipio || '',
+                responsavelId: responsavelId,
+                responsavelNome: colaborador.nome,
+                responsavelEmail: colaborador.email,
+                responsavelCargo: colaborador.cargo || '',
+                participantes: parseInt(participantes) || 1,
+                duracao: duracao,
+                descricao: descricao || '',
+                local: local || '',
+                status: 'designado',
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                criadoPor: currentUser.uid,
+                criadoPorNome: currentUser.nome,
+                eventoPeriodo: tipoPeriodo === 'periodo',
+                eventoGrupoId: tipoPeriodo === 'periodo' ? Date.now().toString() : null
+            };
 
-        alert('✅ Evento adicionado à agenda com sucesso! Os horários foram bloqueados automaticamente.');
+            const docRef = db.collection('eventosAgenda').doc();
+            batch.set(docRef, dados);
+            eventosCriados++;
 
+            // Bloquear horários automaticamente
+            await bloquearHorariosAutomaticamente(data, horario, duracao, titulo);
+        }
+
+        await batch.commit();
+
+        const msg = eventosCriados > 1 
+            ? `✅ ${eventosCriados} eventos criados com sucesso para o período selecionado! Os horários foram bloqueados automaticamente.` 
+            : '✅ Evento adicionado à agenda com sucesso! Os horários foram bloqueados automaticamente.';
+        alert(msg);
+
+        // Limpar formulário
         document.getElementById('eventoData').value = '';
+        document.getElementById('eventoDataInicio').value = '';
+        document.getElementById('eventoDataFim').value = '';
         document.getElementById('eventoHorario').value = '';
         document.getElementById('eventoTitulo').value = '';
         document.getElementById('eventoTicket').value = '';
@@ -3838,6 +4089,18 @@ async function adicionarEvento() {
         alert('Erro ao adicionar: ' + error.message);
     }
 }
+
+// ==================== FUNÇÕES DE VERIFICAÇÃO DE DEMANDA ====================
+// (Já existentes no código, mantidas)
+
+// ==================== ADICIONAR EVENTO (ORIGINAL - MANTIDO PARA COMPATIBILIDADE) ====================
+async function adicionarEvento() {
+    // Redirecionar para a nova função com período
+    await adicionarEventoPeriodo();
+}
+
+// ==================== FUNÇÕES DE VERIFICAÇÃO DE DEMANDA ====================
+// (Já existentes no código, mantidas)
 
 // ==================== EDIÇÃO DE EVENTOS ====================
 function editarEvento(id) {
@@ -4229,7 +4492,10 @@ function sidebarClickHandler() {
         if (sectionId === 'listarSection') {
             const hoje = new Date();
             const dataHoje = hoje.toISOString().split('T')[0];
-            document.getElementById('filtroData').value = dataHoje;
+            document.getElementById('filtroEventoDataInicio').value = dataHoje;
+            document.getElementById('filtroEventoDataFim').value = dataHoje;
+            filtroEventoDataInicio = dataHoje;
+            filtroEventoDataFim = dataHoje;
             aplicarFiltrosCompletos();
         }
         
@@ -4616,31 +4882,35 @@ function buscarEventosPorData(data) {
         data = hoje.toISOString().split('T')[0];
     }
     
-    document.getElementById('filtroData').value = data;
+    document.getElementById('filtroEventoDataInicio').value = data;
+    document.getElementById('filtroEventoDataFim').value = data;
+    filtroEventoDataInicio = data;
+    filtroEventoDataFim = data;
     aplicarFiltrosCompletos();
 }
 
 function navegarData(direcao) {
-    const filtroData = document.getElementById('filtroData');
-    let dataAtual = filtroData.value;
-    
-    if (!dataAtual) {
-        const hoje = new Date();
-        dataAtual = hoje.toISOString().split('T')[0];
-    }
+    const dataInicio = document.getElementById('filtroEventoDataInicio').value;
+    let dataAtual = dataInicio || new Date().toISOString().split('T')[0];
     
     const dataObj = new Date(dataAtual + 'T00:00:00');
     dataObj.setDate(dataObj.getDate() + direcao);
     
     const novaData = dataObj.toISOString().split('T')[0];
-    filtroData.value = novaData;
+    document.getElementById('filtroEventoDataInicio').value = novaData;
+    document.getElementById('filtroEventoDataFim').value = novaData;
+    filtroEventoDataInicio = novaData;
+    filtroEventoDataFim = novaData;
     buscarEventosPorData(novaData);
 }
 
 function irParaHoje() {
     const hoje = new Date();
     const dataHoje = hoje.toISOString().split('T')[0];
-    document.getElementById('filtroData').value = dataHoje;
+    document.getElementById('filtroEventoDataInicio').value = dataHoje;
+    document.getElementById('filtroEventoDataFim').value = dataHoje;
+    filtroEventoDataInicio = dataHoje;
+    filtroEventoDataFim = dataHoje;
     buscarEventosPorData(dataHoje);
 }
 
@@ -4776,13 +5046,11 @@ async function salvarReserva() {
     const municipio = document.getElementById('reservaMunicipio').value.trim();
     const tipoPeriodo = document.getElementById('reservaTipoPeriodo').value;
 
-    // Validar campos obrigatórios
     if (!sala || !horario || !responsavelId || !titulo) {
         alert('❌ Preencha todos os campos obrigatórios: Sala, Horário, Responsável e Título.');
         return;
     }
 
-    // Validar data(s)
     let datasReserva = [];
     if (tipoPeriodo === 'unica') {
         const data = document.getElementById('reservaData').value;
@@ -4804,7 +5072,6 @@ async function salvarReserva() {
         }
     }
 
-    // Buscar colaborador
     const colaborador = colaboradoresCache.find(c => c.id === responsavelId);
     if (!colaborador) {
         alert('❌ Colaborador não encontrado!');
@@ -4815,7 +5082,6 @@ async function salvarReserva() {
         return;
     }
 
-    // Verificar conflitos para cada data
     let conflitosEncontrados = [];
     for (const data of datasReserva) {
         const reservaTeste = {
@@ -5540,6 +5806,7 @@ window.trocarAba = trocarAba;
 window.criarContaAdmin = criarContaAdmin;
 window.corrigirDatasEventos = corrigirDatasEventos;
 window.adicionarEvento = adicionarEvento;
+window.adicionarEventoPeriodo = adicionarEventoPeriodo;
 window.editarEvento = editarEvento;
 window.salvarEdicao = salvarEdicao;
 window.fecharEdicao = fecharEdicao;
@@ -5582,6 +5849,9 @@ window.filtrarReservas = filtrarReservas;
 window.filtrarReservasHoje = filtrarReservasHoje;
 window.limparFiltrosReservas = limparFiltrosReservas;
 window.iniciarListenerReservas = iniciarListenerReservas;
+
+window.togglePeriodoEvento = togglePeriodoEvento;
+window.gerarDatasPeriodoEvento = gerarDatasPeriodoEvento;
 
 window.carregarConfiguracoesDemanda = carregarConfiguracoesDemanda;
 window.salvarConfiguracoesDemanda = salvarConfiguracoesDemanda;
@@ -5680,3 +5950,5 @@ console.log('  - salvarReserva:', typeof window.salvarReserva);
 console.log('  - abrirModalReserva:', typeof window.abrirModalReserva);
 console.log('  - fecharModalReserva:', typeof window.fecharModalReserva);
 console.log('  - togglePeriodoReserva:', typeof window.togglePeriodoReserva);
+console.log('  - togglePeriodoEvento:', typeof window.togglePeriodoEvento);
+console.log('  - adicionarEventoPeriodo:', typeof window.adicionarEventoPeriodo);

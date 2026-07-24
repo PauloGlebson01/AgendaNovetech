@@ -234,31 +234,63 @@
                     </div>
                 </section>
 
-                <!-- Seção: Gerenciar Agenda -->
+                <!-- Seção: Gerenciar Agenda (COM PERÍODO) -->
                 <section id="agendaSection" class="section">
                     <h2><i class="fas fa-calendar-plus"></i> Adicionar Evento na Agenda</h2>
                     <div class="form-card">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
-                                <input type="date" id="eventoData" required>
+                        <!-- TIPO DE EVENTO: Única ou Período -->
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-alt"></i> Tipo de Agendamento <span class="required">*</span></label>
+                            <select id="eventoTipoPeriodo" required onchange="togglePeriodoEvento()">
+                                <option value="unica">📅 Data Única</option>
+                                <option value="periodo">📆 Período (várias datas)</option>
+                            </select>
+                            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                <i class="fas fa-info-circle"></i> Selecione "Período" para criar eventos em múltiplas datas consecutivas.
+                            </p>
+                        </div>
+
+                        <!-- DATA ÚNICA -->
+                        <div id="eventoDataUnica" class="form-group">
+                            <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
+                            <input type="date" id="eventoData" required>
+                        </div>
+
+                        <!-- PERÍODO (Data Início e Data Fim) -->
+                        <div id="eventoDataPeriodo" style="display: none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-calendar-day"></i> Data Início <span class="required">*</span></label>
+                                    <input type="date" id="eventoDataInicio">
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-calendar-day"></i> Data Fim <span class="required">*</span></label>
+                                    <input type="date" id="eventoDataFim">
+                                </div>
                             </div>
+                            <div style="padding: 8px 12px; background: #f0f7ff; border-radius: 8px; font-size: 13px; color: #1e293b; margin-bottom: 12px;">
+                                <i class="fas fa-info-circle" style="color: #2563eb;"></i>
+                                O evento será criado para <strong>todas as datas</strong> entre a data inicial e a data final.
+                            </div>
+                        </div>
+
+                        <div class="form-row">
                             <div class="form-group">
                                 <label><i class="fas fa-clock"></i> Horário <span class="required">*</span></label>
                                 <input type="time" id="eventoHorario" required>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-tag"></i> Tipo <span class="required">*</span></label>
-                            <select id="eventoTipo" required>
-                                <option value="reuniao">📋 Reunião</option>
-                                <option value="reuniao_gestor">👔 Reunião com Gestor</option>
-                                <option value="treinamento">🎓 Treinamento</option>
-                                <option value="treinamento_interno">🏢 Treinamento Interno</option>
-                                <option value="suporte">🛠️ Suporte Técnico</option>
-                                <option value="demonstracao">📊 Demonstração</option>
-                                <option value="outro">📌 Outro</option>
-                            </select>
+                            <div class="form-group">
+                                <label><i class="fas fa-tag"></i> Tipo <span class="required">*</span></label>
+                                <select id="eventoTipo" required>
+                                    <option value="reuniao">📋 Reunião</option>
+                                    <option value="reuniao_gestor">👔 Reunião com Gestor</option>
+                                    <option value="treinamento">🎓 Treinamento</option>
+                                    <option value="treinamento_interno">🏢 Treinamento Interno</option>
+                                    <option value="suporte">🛠️ Suporte Técnico</option>
+                                    <option value="demonstracao">📊 Demonstração</option>
+                                    <option value="outro">📌 Outro</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-comment"></i> Título / Assunto <span class="required">*</span></label>
@@ -298,7 +330,7 @@
                             <label><i class="fas fa-map-marker-alt"></i> Local</label>
                             <input type="text" id="eventoLocal" placeholder="Sala, endereço ou link (ex: Zoom, Meet)">
                         </div>
-                        <button class="btn-primary" onclick="adicionarEvento()">
+                        <button class="btn-primary" onclick="adicionarEventoPeriodo()">
                             <i class="fas fa-save"></i> Adicionar à Agenda
                         </button>
                     </div>
@@ -363,8 +395,17 @@
                                 <i class="fas fa-clock"></i> Exibindo eventos do dia
                             </span>
                         </div>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                            <input type="date" id="filtroData" style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: white; padding: 16px 20px; border-radius: 12px; border: 1px solid #eef2ff;">
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <label style="font-size: 13px; color: #475569; font-weight: 500;">
+                                    <i class="fas fa-calendar-alt"></i> De:
+                                </label>
+                                <input type="date" id="filtroEventoDataInicio" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
+                                <label style="font-size: 13px; color: #475569; font-weight: 500; margin-left: 4px;">
+                                    Até:
+                                </label>
+                                <input type="date" id="filtroEventoDataFim" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
+                            </div>
                             <select id="filtroStatus" style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; min-width: 160px;">
                                 <option value="">Todos os status</option>
                                 <option value="designado">📋 Designado</option>
@@ -372,13 +413,16 @@
                                 <option value="realizado">✅ Realizado</option>
                                 <option value="cancelado">❌ Cancelado</option>
                             </select>
-                            <button class="btn-sm btn-info" onclick="filtrarAgenda()">
+                            <button class="btn-sm btn-info" onclick="filtrarEventos()">
                                 <i class="fas fa-filter"></i> Filtrar
                             </button>
-                            <button class="btn-sm btn-cancelar" onclick="limparFiltros()">
+                            <button class="btn-sm btn-cancelar" onclick="limparFiltrosEventos()">
                                 <i class="fas fa-undo"></i> Limpar
                             </button>
-                            <button class="btn-sm" style="background: #2563eb; color: white;" onclick="verAgendaPublica()">
+                            <button class="btn-sm" style="background: #2563eb; color: white;" onclick="filtrarEventosHoje()">
+                                <i class="fas fa-calendar-day"></i> Hoje
+                            </button>
+                            <button class="btn-sm" style="background: #10b981; color: white;" onclick="verAgendaPublica()">
                                 <i class="fas fa-external-link-alt"></i> Ver Página Pública
                             </button>
                         </div>
@@ -387,7 +431,7 @@
                             <button class="btn-sm btn-em_andamento" onclick="filtrarPorStatus('em_andamento')">🔄 Em Andamento</button>
                             <button class="btn-sm btn-realizado" onclick="filtrarPorStatus('realizado')">✅ Realizados</button>
                             <button class="btn-sm btn-cancelado" onclick="filtrarPorStatus('cancelado')">❌ Cancelados</button>
-                            <button class="btn-sm" style="background: #f1f5f9; color: #475569;" onclick="limparFiltros()"><i class="fas fa-undo"></i> Todos</button>
+                            <button class="btn-sm" style="background: #f1f5f9; color: #475569;" onclick="limparFiltrosEventos()"><i class="fas fa-undo"></i> Todos</button>
                         </div>
                     </div>
                     <div id="statusCounter" class="status-counter">
