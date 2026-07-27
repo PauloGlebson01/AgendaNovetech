@@ -2287,6 +2287,83 @@ input:-ms-input-placeholder {
     }
 }
 
+/* ==================== RESPONSÁVEIS MÚLTIPLOS ==================== */
+.responsavel-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #eef2ff;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    margin: 2px;
+    cursor: default;
+    transition: all 0.2s;
+}
+
+.responsavel-tag:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+.responsavel-tag .remove-btn {
+    background: none;
+    border: none;
+    color: #1d4ed8;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 2px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.responsavel-tag .remove-btn:hover {
+    opacity: 1;
+}
+
+.responsavel-tag.ferias {
+    background: #fef3c7;
+    color: #d97706;
+    border-color: #fcd34d;
+}
+
+.responsavel-tag.ferias .remove-btn {
+    color: #d97706;
+}
+
+#eventoResponsavelTags,
+#reservaResponsavelTags,
+.edit-responsavel-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 0;
+    min-height: 32px;
+    border: 1px dashed #e2e8f0;
+    border-radius: 8px;
+    padding: 4px 8px;
+    background: #fafbfc;
+}
+
+#eventoResponsavelTags:empty,
+#reservaResponsavelTags:empty,
+.edit-responsavel-tags:empty {
+    padding: 8px;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+#eventoResponsavelTags:empty::before,
+#reservaResponsavelTags:empty::before,
+.edit-responsavel-tags:empty::before {
+    content: 'Nenhum responsável selecionado';
+    color: #94a3b8;
+    font-size: 12px;
+}
+
 .status-counter .counter-item .count.designado { color: #1d4ed8; }
 .status-counter .counter-item .count.em_andamento { color: #d97706; }
 .status-counter .counter-item .count.realizado { color: #059669; }

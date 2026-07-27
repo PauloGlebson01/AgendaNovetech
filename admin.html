@@ -12,6 +12,69 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        /* ==================== RESPONSÁVEIS MÚLTIPLOS ==================== */
+        .responsavel-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: #eef2ff;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            margin: 2px;
+            cursor: default;
+            transition: all 0.2s;
+        }
+
+        .responsavel-tag:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+        }
+
+        .responsavel-tag.ferias {
+            background: #fef3c7;
+            color: #d97706;
+            border-color: #fcd34d;
+        }
+
+        .responsavel-tag.ferias .remove-btn {
+            color: #d97706;
+        }
+
+        #eventoResponsavelTags,
+        #reservaResponsavelTags,
+        .edit-responsavel-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 4px 8px;
+            min-height: 32px;
+            border: 1px dashed #e2e8f0;
+            border-radius: 8px;
+            background: #fafbfc;
+            align-items: center;
+        }
+
+        #eventoResponsavelTags:empty::before,
+        #reservaResponsavelTags:empty::before,
+        .edit-responsavel-tags:empty::before {
+            content: 'Nenhum responsável selecionado';
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .edit-responsavel-tags:empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+    </style>
 </head>
 
 <body>
@@ -238,7 +301,6 @@
                 <section id="agendaSection" class="section">
                     <h2><i class="fas fa-calendar-plus"></i> Adicionar Evento na Agenda</h2>
                     <div class="form-card">
-                        <!-- TIPO DE EVENTO: Única ou Período -->
                         <div class="form-group">
                             <label><i class="fas fa-calendar-alt"></i> Tipo de Agendamento <span class="required">*</span></label>
                             <select id="eventoTipoPeriodo" required onchange="togglePeriodoEvento()">
@@ -250,13 +312,11 @@
                             </p>
                         </div>
 
-                        <!-- DATA ÚNICA -->
                         <div id="eventoDataUnica" class="form-group">
                             <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
                             <input type="date" id="eventoData" required>
                         </div>
 
-                        <!-- PERÍODO (Data Início e Data Fim) -->
                         <div id="eventoDataPeriodo" style="display: none;">
                             <div class="form-row">
                                 <div class="form-group">
@@ -306,12 +366,20 @@
                                 <input type="text" id="eventoMunicipio" placeholder="Ex: João Pessoa">
                             </div>
                         </div>
+                        
+                        <!-- MULTIPLOS RESPONSÁVEIS -->
                         <div class="form-group">
-                            <label><i class="fas fa-user-tie"></i> Responsável (Colaborador) <span class="required">*</span></label>
-                            <select id="eventoResponsavel" required>
+                            <label><i class="fas fa-user-tie"></i> Responsável(is) <span class="required">*</span></label>
+                            <select id="eventoResponsavel" style="margin-bottom: 8px;">
                                 <option value="">Selecione um colaborador...</option>
                             </select>
+                            <div id="eventoResponsavelTags" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; min-height: 32px; border: 1px dashed #e2e8f0; border-radius: 8px; background: #fafbfc; align-items: center;"></div>
+                            <input type="hidden" id="eventoResponsavelHidden" value="[]">
+                            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                <i class="fas fa-info-circle"></i> Selecione um ou mais colaboradores para este evento.
+                            </p>
                         </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label><i class="fas fa-users"></i> Participantes</label>
@@ -840,7 +908,6 @@
             <form id="formReserva" onsubmit="return false;">
                 <input type="hidden" id="reservaId">
                 
-                <!-- TIPO DE RESERVA: Única ou Período -->
                 <div class="form-group">
                     <label><i class="fas fa-calendar-alt"></i> Tipo de Reserva <span class="required">*</span></label>
                     <select id="reservaTipoPeriodo" required onchange="togglePeriodoReserva()">
@@ -852,13 +919,11 @@
                     </p>
                 </div>
 
-                <!-- DATA ÚNICA -->
                 <div id="reservaDataUnica" class="form-group">
                     <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
                     <input type="date" id="reservaData" required>
                 </div>
 
-                <!-- PERÍODO (Data Início e Data Fim) -->
                 <div id="reservaDataPeriodo" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
@@ -900,12 +965,20 @@
                         <input type="number" id="reservaDuracao" value="60" min="15" step="15" required>
                     </div>
                 </div>
+                
+                <!-- MULTIPLOS RESPONSÁVEIS - RESERVAS -->
                 <div class="form-group">
-                    <label><i class="fas fa-user-tie"></i> Responsável <span class="required">*</span></label>
-                    <select id="reservaResponsavel" required>
+                    <label><i class="fas fa-user-tie"></i> Responsável(is) <span class="required">*</span></label>
+                    <select id="reservaResponsavel" style="margin-bottom: 8px;">
                         <option value="">Selecione um colaborador...</option>
                     </select>
+                    <div id="reservaResponsavelTags" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; min-height: 32px; border: 1px dashed #e2e8f0; border-radius: 8px; background: #fafbfc; align-items: center;"></div>
+                    <input type="hidden" id="reservaResponsavelHidden" value="[]">
+                    <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                        <i class="fas fa-info-circle"></i> Selecione um ou mais colaboradores para esta reserva.
+                    </p>
                 </div>
+
                 <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div class="form-group">
                         <label><i class="fas fa-ticket-alt"></i> Número do Ticket</label>
@@ -969,7 +1042,6 @@
         console.log('✅ Página admin.html carregada com sucesso!');
         console.log('✅ Aguardando carregamento do script.js...');
         
-        // Verificar se as funções de reservas estão disponíveis após o carregamento
         setTimeout(function() {
             console.log('🔍 Verificando funções de reservas após carregamento...');
             console.log('  - editarReserva:', typeof window.editarReserva);
@@ -979,6 +1051,7 @@
             console.log('  - abrirModalReserva:', typeof window.abrirModalReserva);
             console.log('  - fecharModalReserva:', typeof window.fecharModalReserva);
             console.log('  - togglePeriodoReserva:', typeof window.togglePeriodoReserva);
+            console.log('  - initMultiSelectResponsaveis:', typeof window.initMultiSelectResponsaveis);
             
             if (typeof window.editarReserva === 'undefined') {
                 console.warn('⚠️ Funções de reservas não encontradas! Verifique o script.js');

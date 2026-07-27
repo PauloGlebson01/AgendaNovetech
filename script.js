@@ -365,12 +365,10 @@ function atualizarBadgeUsuario(userData) {
     
     if (!badgeEl) return;
     
-    // Atualiza o nome
     if (adminNameEl) {
         adminNameEl.textContent = userData.nome || userData.email || 'Usuário';
     }
     
-    // Atualiza o badge
     if (userData.tipo === 'admin') {
         badgeEl.textContent = '👑 Administrador';
         badgeEl.style.background = '#dbeafe';
@@ -440,7 +438,6 @@ auth.onAuthStateChanged(async (user) => {
             if (path.includes('index.html') || path === '/' || path.endsWith('/')) {
                 window.location.href = 'admin.html';
             } else if (path.includes('admin.html')) {
-                // 🔥 Atualizar o badge ANTES de carregar o admin
                 atualizarBadgeUsuario(currentUser);
                 await carregarAdmin();
                 
@@ -595,7 +592,7 @@ async function criarContaAdmin() {
           'Ou use o console (F12) e digite: criarAdminInicial()');
 }
 
-// ==================== CRIAÇÃO DE ADMIN (COM LIMITE CONFIGURÁVEL E CRIAÇÃO EM COLABORADORES) ====================
+// ==================== CRIAÇÃO DE ADMIN ====================
 async function criarAdminInicial() {
     try {
         const limiteInfo = await verificarLimiteAdmin();
@@ -656,7 +653,6 @@ async function criarAdminInicial() {
             aprovadoPor: 'sistema'
         });
 
-        // 🔥 CRIAR COLABORADOR NA COLEÇÃO COLABORADORES
         try {
             const colaboradorRef = db.collection('colaboradores').doc(uid);
             const colaboradorDoc = await colaboradorRef.get();
@@ -681,7 +677,6 @@ async function criarAdminInicial() {
             }
         } catch (err) {
             console.error('❌ Erro ao criar colaborador para admin:', err);
-            // Não interrompe o fluxo principal
         }
 
         const novaInfo = await verificarLimiteAdmin();
@@ -713,19 +708,16 @@ async function carregarAdmin() {
     
     console.log("📋 Carregando admin para:", currentUser.nome, "Tipo:", currentUser.tipo);
     
-    // ==================== CORREÇÃO: EXIBIR NOME E TIPO CORRETAMENTE ====================
     const adminNameEl = document.getElementById('adminName');
     const badgeEl = document.getElementById('userTypeBadge');
     const userIconEl = document.getElementById('userIcon');
     
-    // Define o nome do usuário
     if (currentUser.nome) {
         adminNameEl.textContent = currentUser.nome;
     } else {
         adminNameEl.textContent = currentUser.email || 'Usuário';
     }
     
-    // Define o badge e ícone conforme o tipo
     if (currentUser.tipo === 'admin') {
         badgeEl.textContent = '👑 Administrador';
         badgeEl.style.background = '#dbeafe';
@@ -745,9 +737,7 @@ async function carregarAdmin() {
             userIconEl.style.color = '#059669';
         }
     }
-    // ==================== FIM DA CORREÇÃO ====================
     
-    // Forçar atualização do menu
     forcarAtualizacaoMenu(currentUser);
     
     setTimeout(() => { forcarAtualizacaoMenu(currentUser); }, 100);
@@ -775,12 +765,20 @@ async function carregarAdmin() {
         await carregarConfigLimiteAdmin();
         
         iniciarListenerBloqueios();
-        
         iniciarListenersRealtime();
         
         if (currentUser.tipo === 'admin') {
             iniciarDashboard();
         }
+        
+        // Aguardar colaboradores serem carregados antes de inicializar seletores múltiplos
+        await aguardarColaboradoresCarregados();
+        
+        // Inicializar seletores múltiplos
+        setTimeout(() => {
+            initMultiSelectResponsaveis('eventoResponsavel', 'eventoResponsavelTags', 'eventoResponsavelHidden');
+            initMultiSelectResponsaveis('reservaResponsavel', 'reservaResponsavelTags', 'reservaResponsavelHidden');
+        }, 300);
         
     } catch (error) {
         console.error("Erro ao carregar admin:", error);
@@ -791,6 +789,35 @@ async function carregarAdmin() {
     setTimeout(() => {
         reiniciarSidebar();
     }, 500);
+}
+
+// ==================== FUNÇÃO PARA AGUARDAR COLABORADORES CARREGADOS ====================
+function aguardarColaboradoresCarregados() {
+    return new Promise((resolve) => {
+        if (colaboradoresCache.length > 0) {
+            console.log(`✅ Colaboradores já carregados: ${colaboradoresCache.length}`);
+            resolve();
+            return;
+        }
+        
+        let tentativas = 0;
+        const maxTentativas = 20;
+        
+        const verificar = () => {
+            tentativas++;
+            if (colaboradoresCache.length > 0) {
+                console.log(`✅ Colaboradores carregados (${colaboradoresCache.length}) após ${tentativas} tentativas`);
+                resolve();
+            } else if (tentativas >= maxTentativas) {
+                console.warn("⚠️ Timeout aguardando colaboradores. Tentando inicializar mesmo assim.");
+                resolve();
+            } else {
+                setTimeout(verificar, 500);
+            }
+        };
+        
+        verificar();
+    });
 }
 
 // ==================== LISTENERS EM TEMPO REAL ====================
@@ -810,6 +837,12 @@ function iniciarListenersRealtime() {
             atualizarSelectColaboradores();
             atualizarListaColaboradores();
             atualizarSelectReservaResponsavel();
+            
+            // Reinicializar seletores múltiplos quando colaboradores forem atualizados
+            setTimeout(() => {
+                initMultiSelectResponsaveis('eventoResponsavel', 'eventoResponsavelTags', 'eventoResponsavelHidden');
+                initMultiSelectResponsaveis('reservaResponsavel', 'reservaResponsavelTags', 'reservaResponsavelHidden');
+            }, 200);
         }, (error) => {
             console.error("Erro no listener de colaboradores:", error);
         });
@@ -818,7 +851,6 @@ function iniciarListenersRealtime() {
         unsubscribeEventos();
     }
     
-    // Iniciar listener com filtro padrão (HOJE)
     const hoje = new Date();
     const dataHoje = hoje.toISOString().split('T')[0];
     const dataInicio = dataHoje + 'T00:00:00.000Z';
@@ -881,6 +913,7 @@ function iniciarListenersRealtime() {
 function atualizarSelectColaboradores() {
     const select = document.getElementById('eventoResponsavel');
     if (select) {
+        const currentValue = select.value;
         select.innerHTML = '<option value="">Selecione um colaborador...</option>';
         colaboradoresCache.filter(c => c.ativo !== false).forEach(c => {
             const option = document.createElement('option');
@@ -894,6 +927,9 @@ function atualizarSelectColaboradores() {
             }
             select.appendChild(option);
         });
+        if (currentValue) {
+            select.value = currentValue;
+        }
     }
 }
 
@@ -917,6 +953,270 @@ function atualizarSelectReservaResponsavel() {
             select.value = currentValue;
         }
     }
+}
+
+// ==================== MÚLTIPLOS RESPONSÁVEIS ====================
+
+function initMultiSelectResponsaveis(selectId, containerId, hiddenId) {
+    const select = document.getElementById(selectId);
+    const container = document.getElementById(containerId);
+    const hidden = document.getElementById(hiddenId);
+    
+    if (!select || !container || !hidden) {
+        console.warn(`⚠️ Elementos não encontrados: ${selectId}, ${containerId}, ${hiddenId}`);
+        return;
+    }
+    
+    // Verificar se há colaboradores disponíveis
+    if (colaboradoresCache.length === 0) {
+        console.warn(`⚠️ Nenhum colaborador disponível para ${selectId}`);
+        setTimeout(() => {
+            initMultiSelectResponsaveis(selectId, containerId, hiddenId);
+        }, 1000);
+        return;
+    }
+    
+    // Atualizar o select com colaboradores
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">Selecione um colaborador...</option>';
+    colaboradoresCache.filter(c => c.ativo !== false).forEach(c => {
+        const option = document.createElement('option');
+        option.value = c.id;
+        const emFerias = colaboradorEstaDeFerias(c.id);
+        option.textContent = `${c.nome} ${c.cargo ? ' - ' + c.cargo : ''}`;
+        if (emFerias) {
+            option.textContent += ' 🏖️ (Férias)';
+            option.style.color = '#f59e0b';
+            option.style.fontWeight = '500';
+        }
+        select.appendChild(option);
+    });
+    if (currentValue) {
+        select.value = currentValue;
+    }
+    
+    container.innerHTML = '';
+    
+    let valores = [];
+    try {
+        valores = JSON.parse(hidden.value) || [];
+    } catch (e) {
+        valores = [];
+    }
+    
+    valores.forEach(id => {
+        const option = select.querySelector(`option[value="${id}"]`);
+        if (option) {
+            const nome = option.textContent;
+            const emFerias = option.style.color === '#f59e0b';
+            adicionarTagResponsavel(container, id, nome, emFerias, selectId, containerId, hiddenId);
+        }
+    });
+    
+    select.onchange = function() {
+        const selectedValue = this.value;
+        if (selectedValue) {
+            const option = this.options[this.selectedIndex];
+            const nome = option.textContent;
+            const emFerias = option.style.color === '#f59e0b';
+            
+            let valoresAtuais = [];
+            try {
+                valoresAtuais = JSON.parse(hidden.value) || [];
+            } catch (e) {
+                valoresAtuais = [];
+            }
+            
+            if (!valoresAtuais.includes(selectedValue)) {
+                valoresAtuais.push(selectedValue);
+                hidden.value = JSON.stringify(valoresAtuais);
+                adicionarTagResponsavel(container, selectedValue, nome, emFerias, selectId, containerId, hiddenId);
+            }
+            this.value = '';
+        }
+    };
+}
+
+function adicionarTagResponsavel(container, id, nome, emFerias = false, selectId, containerId, hiddenId) {
+    const tag = document.createElement('div');
+    tag.className = `responsavel-tag ${emFerias ? 'ferias' : ''}`;
+    tag.style.cssText = `
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        background: ${emFerias ? '#fef3c7' : '#eef2ff'};
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        color: ${emFerias ? '#d97706' : '#1d4ed8'};
+        border: 1px solid ${emFerias ? '#fcd34d' : '#bfdbfe'};
+        margin: 2px;
+        cursor: default;
+        transition: all 0.2s;
+    `;
+    
+    const nomeLimpo = nome.split(' (')[0].trim();
+    
+    tag.innerHTML = `
+        <i class="fas ${emFerias ? 'fa-umbrella-beach' : 'fa-user'}" style="font-size: 10px; color: ${emFerias ? '#d97706' : '#1d4ed8'};"></i>
+        ${nomeLimpo}
+        ${emFerias ? '<span style="font-size: 10px; color: #d97706;">(Férias)</span>' : ''}
+        <button type="button" onclick="removerTagResponsavel('${id}', '${containerId}', '${hiddenId}')" style="
+            background: none;
+            border: none;
+            color: ${emFerias ? '#d97706' : '#1d4ed8'};
+            cursor: pointer;
+            font-size: 12px;
+            padding: 0 2px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(tag);
+    atualizarPlaceholder(container);
+}
+
+function removerTagResponsavel(id, containerId, hiddenId) {
+    const container = document.getElementById(containerId);
+    const hidden = document.getElementById(hiddenId);
+    
+    if (container) {
+        const tags = container.querySelectorAll('.responsavel-tag');
+        tags.forEach(tag => {
+            const btn = tag.querySelector('button');
+            if (btn && btn.onclick && btn.onclick.toString().includes(id)) {
+                tag.remove();
+            }
+        });
+        atualizarPlaceholder(container);
+    }
+    
+    if (hidden) {
+        try {
+            const valores = JSON.parse(hidden.value) || [];
+            const novosValores = valores.filter(v => v !== id);
+            hidden.value = JSON.stringify(novosValores);
+        } catch (e) {
+            console.error('Erro ao remover responsável:', e);
+        }
+    }
+}
+
+function atualizarPlaceholder(container) {
+    if (!container) return;
+    if (container.children.length === 0) {
+        container.style.display = 'flex';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'center';
+        container.style.color = '#94a3b8';
+        container.style.fontSize = '12px';
+        container.setAttribute('data-placeholder', 'Nenhum responsável selecionado');
+    } else {
+        container.style.display = 'flex';
+        container.style.alignItems = 'flex-start';
+        container.style.justifyContent = 'flex-start';
+        container.style.color = 'inherit';
+        container.style.fontSize = 'inherit';
+        container.removeAttribute('data-placeholder');
+    }
+}
+
+function prepararDadosResponsaveis(prefix) {
+    const hidden = document.getElementById(prefix + 'ResponsavelHidden');
+    if (!hidden) return { ids: [], nomes: '' };
+    
+    try {
+        const ids = JSON.parse(hidden.value) || [];
+        const nomes = getNomesResponsaveis(ids);
+        return { ids, nomes };
+    } catch (e) {
+        return { ids: [], nomes: '' };
+    }
+}
+
+function getNomesResponsaveis(ids) {
+    if (!ids || ids.length === 0) return '';
+    const select = document.getElementById('eventoResponsavel') || document.getElementById('reservaResponsavel');
+    if (!select) return '';
+    
+    const nomes = [];
+    ids.forEach(id => {
+        const option = select.querySelector(`option[value="${id}"]`);
+        if (option) {
+            nomes.push(option.textContent.split(' (')[0].trim());
+        }
+    });
+    return nomes.join(', ');
+}
+
+function getNomesResponsaveisEdit(ids, selectId) {
+    if (!ids || ids.length === 0) return '';
+    const select = document.getElementById(selectId);
+    if (!select) return '';
+    
+    const nomes = [];
+    ids.forEach(id => {
+        const option = select.querySelector(`option[value="${id}"]`);
+        if (option) {
+            nomes.push(option.textContent.split(' (')[0].trim());
+        }
+    });
+    return nomes.join(', ');
+}
+
+async function verificarDemandaMultiplosResponsaveis(responsaveisIds, data, duracao = 60) {
+    if (!responsaveisIds || responsaveisIds.length === 0) {
+        return { ok: true, conflitos: [], mensagem: '' };
+    }
+    
+    const conflitos = [];
+    let temConflito = false;
+    
+    for (const id of responsaveisIds) {
+        const colaborador = colaboradoresCache.find(c => c.id === id);
+        if (!colaborador) {
+            conflitos.push(`❌ Colaborador não encontrado (ID: ${id})`);
+            temConflito = true;
+            continue;
+        }
+        
+        if (colaborador.ativo === false) {
+            conflitos.push(`❌ ${colaborador.nome} está inativo`);
+            temConflito = true;
+            continue;
+        }
+        
+        if (colaboradorEstaDeFerias(id)) {
+            conflitos.push(`⚠️ ${colaborador.nome} está em férias`);
+            temConflito = true;
+            continue;
+        }
+        
+        const demanda = await verificarDemandaColaborador(id, data, duracao);
+        if (demanda.error) {
+            conflitos.push(`❌ ${colaborador.nome}: ${demanda.error}`);
+            temConflito = true;
+            continue;
+        }
+        
+        if (demanda.nivelDemanda === 'critica') {
+            conflitos.push(`🚨 ${colaborador.nome}: Demanda crítica - ${demanda.eventosDia} eventos hoje (limite ${demanda.limiteDiario})`);
+            temConflito = true;
+        } else if (demanda.nivelDemanda === 'alta') {
+            conflitos.push(`⚠️ ${colaborador.nome}: Alta demanda - ${demanda.eventosDia} eventos hoje`);
+            temConflito = true;
+        }
+    }
+    
+    return {
+        ok: !temConflito,
+        conflitos: conflitos,
+        mensagem: conflitos.join('\n')
+    };
 }
 
 // ==================== LISTA DE COLABORADORES ====================
@@ -1069,7 +1369,7 @@ async function salvarEdicaoColaborador() {
             console.log(`🔄 Atualizando eventos do colaborador: ${colaboradorAntigo.nome} -> ${nome}`);
             
             const eventosSnapshot = await db.collection('eventosAgenda')
-                .where('responsavelId', '==', id)
+                .where('responsavelId', 'array-contains', id)
                 .get();
             
             let eventosAtualizados = 0;
@@ -1077,10 +1377,26 @@ async function salvarEdicaoColaborador() {
             
             eventosSnapshot.forEach(doc => {
                 const eventoRef = db.collection('eventosAgenda').doc(doc.id);
+                const evento = doc.data();
+                let responsaveisIds = evento.responsavelId || [];
+                let responsaveisNomes = evento.responsavelNome || '';
+                
+                if (Array.isArray(responsaveisIds)) {
+                    const index = responsaveisIds.indexOf(id);
+                    if (index !== -1) {
+                        const nomesArray = responsaveisNomes.split(', ');
+                        if (nomesArray[index]) {
+                            nomesArray[index] = nome;
+                            responsaveisNomes = nomesArray.join(', ');
+                        }
+                    }
+                }
+                
                 batch.update(eventoRef, {
-                    responsavelNome: nome,
-                    responsavelEmail: email,
-                    responsavelCargo: cargo || '',
+                    responsavelNome: responsaveisNomes,
+                    responsavelPrimeiroNome: nome,
+                    responsavelPrimeiroEmail: email,
+                    responsavelPrimeiroCargo: cargo || '',
                     atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 eventosAtualizados++;
@@ -1098,52 +1414,6 @@ async function salvarEdicaoColaborador() {
     } catch (error) {
         console.error("Erro ao salvar edição:", error);
         alert('❌ Erro ao salvar: ' + error.message);
-    }
-}
-
-async function atualizarEventosColaborador(colaboradorId) {
-    const colaborador = colaboradoresCache.find(c => c.id === colaboradorId);
-    if (!colaborador) {
-        alert('❌ Colaborador não encontrado!');
-        return;
-    }
-
-    if (!confirm(`Deseja atualizar todos os eventos do colaborador "${colaborador.nome}" com os dados atuais?`)) {
-        return;
-    }
-
-    try {
-        const eventosSnapshot = await db.collection('eventosAgenda')
-            .where('responsavelId', '==', colaboradorId)
-            .get();
-        
-        if (eventosSnapshot.empty) {
-            alert('ℹ️ Nenhum evento encontrado para este colaborador.');
-            return;
-        }
-
-        let eventosAtualizados = 0;
-        const batch = db.batch();
-        
-        eventosSnapshot.forEach(doc => {
-            const eventoRef = db.collection('eventosAgenda').doc(doc.id);
-            batch.update(eventoRef, {
-                responsavelNome: colaborador.nome,
-                responsavelEmail: colaborador.email,
-                responsavelCargo: colaborador.cargo || '',
-                atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            eventosAtualizados++;
-        });
-        
-        if (eventosAtualizados > 0) {
-            await batch.commit();
-            alert(`✅ ${eventosAtualizados} eventos atualizados com sucesso!`);
-        }
-        
-    } catch (error) {
-        console.error("Erro ao atualizar eventos:", error);
-        alert('❌ Erro ao atualizar eventos: ' + error.message);
     }
 }
 
@@ -1391,7 +1661,6 @@ function atualizarListaEventos(snapshot) {
         const statusTextColor = STATUS_TEXT_COLORS[status] || '#1e293b';
         const statusIcon = STATUS_ICONS[status] || 'fa-circle';
 
-        // Verificar se faz parte de um período
         let infoPeriodo = '';
         if (e.eventoPeriodo && e.eventoGrupoId) {
             infoPeriodo = `
@@ -1400,6 +1669,10 @@ function atualizarListaEventos(snapshot) {
                 </span>
             `;
         }
+
+        const temMultiplosResponsaveis = Array.isArray(e.responsavelId) && e.responsavelId.length > 1;
+        const qtdeResponsaveis = Array.isArray(e.responsavelId) ? e.responsavelId.length : 1;
+        const nomesResponsaveis = Array.isArray(e.responsavelNome) ? e.responsavelNome.join(', ') : (e.responsavelNome || 'Não definido');
 
         let botoesStatus = '';
         if (status === 'designado') {
@@ -1464,6 +1737,11 @@ function atualizarListaEventos(snapshot) {
                         ${TIPO_LABELS[e.tipo] || e.tipo}
                     </span>
                     ${infoPeriodo}
+                    ${temMultiplosResponsaveis ? `
+                        <span class="status-badge" style="background: #ede9fe; color: #7c3aed; font-weight: 600;">
+                            👥 ${qtdeResponsaveis} responsáveis
+                        </span>
+                    ` : ''}
                 </div>
                 <span class="status-badge" style="background: ${statusColor}; color: ${statusTextColor}; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
                     <i class="fas ${statusIcon}"></i>
@@ -1482,10 +1760,11 @@ function atualizarListaEventos(snapshot) {
             <div style="margin: 6px 0; padding: 8px 12px; background: #f0f7ff; border-radius: 8px; border-left: 3px solid #2563eb;">
                 <p style="font-size: 14px; font-weight: 500; color: #1e293b;">
                     <i class="fas fa-user-tie" style="color: #2563eb;"></i> 
-                    ${e.responsavelNome || 'Não definido'}
-                    ${e.responsavelCargo ? ` - ${e.responsavelCargo}` : ''}
+                    ${nomesResponsaveis}
                 </p>
-                ${e.responsavelEmail ? `<p style="font-size: 12px; color: #64748b; margin-top: 2px;"><i class="fas fa-envelope"></i> ${e.responsavelEmail}</p>` : ''}
+                <p style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                    <i class="fas fa-users"></i> ${qtdeResponsaveis} responsável(is) designado(s)
+                </p>
             </div>
             
             ${e.descricao ? `<p style="color: #475569; font-size: 14px; margin: 4px 0;"><i class="fas fa-info-circle" style="color: #64748b;"></i> ${e.descricao}</p>` : ''}
@@ -1560,7 +1839,6 @@ async function alterarStatus(eventoId, novoStatus) {
 
         const evento = doc.data();
         
-        // Verificar se é uma transição válida
         const transicoesValidas = {
             'designado': ['em_andamento', 'cancelado'],
             'em_andamento': ['realizado', 'cancelado'],
@@ -1592,8 +1870,6 @@ async function alterarStatus(eventoId, novoStatus) {
         });
 
         alert(`✅ Status alterado para "${statusLabels[novoStatus]}" com sucesso!`);
-        
-        // Recarregar a lista de eventos
         aplicarFiltrosCompletos();
 
     } catch (error) {
@@ -1609,7 +1885,7 @@ function filtrarPorStatus(status) {
     aplicarFiltrosCompletos();
 }
 
-// ==================== APLICAR FILTROS COMPLETOS (COM PERÍODO) ====================
+// ==================== APLICAR FILTROS COMPLETOS ====================
 function aplicarFiltrosCompletos() {
     const dataInicio = document.getElementById('filtroEventoDataInicio')?.value || filtroEventoDataInicio;
     const dataFim = document.getElementById('filtroEventoDataFim')?.value || filtroEventoDataFim;
@@ -1619,7 +1895,6 @@ function aplicarFiltrosCompletos() {
     filtroEventoDataFim = dataFim;
     filtroStatusAtual = statusFiltro;
 
-    // Validação: se a data inicial for maior que a data final
     if (dataInicio && dataFim && dataInicio > dataFim) {
         alert('⚠️ A data inicial não pode ser maior que a data final.');
         return;
@@ -1632,10 +1907,8 @@ function aplicarFiltrosCompletos() {
         unsubscribeEventos();
     }
 
-    // Construir a query base
     let query = db.collection('eventosAgenda').orderBy('data', 'asc');
 
-    // Aplicar filtro de período
     if (dataInicio && dataFim) {
         const inicio = dataInicio + 'T00:00:00.000Z';
         const fim = dataFim + 'T23:59:59.999Z';
@@ -1647,7 +1920,6 @@ function aplicarFiltrosCompletos() {
         const fim = dataFim + 'T23:59:59.999Z';
         query = query.where('data', '<=', fim);
     } else {
-        // Padrão: mostrar apenas HOJE
         const hoje = new Date();
         const dataHoje = hoje.toISOString().split('T')[0];
         const inicio = dataHoje + 'T00:00:00.000Z';
@@ -1661,7 +1933,6 @@ function aplicarFiltrosCompletos() {
             eventos.push({ id: doc.id, ...doc.data() });
         });
         
-        // Aplicar filtro de status (client-side)
         if (statusFiltro) {
             eventos = eventos.filter(e => e.status === statusFiltro);
         }
@@ -1692,7 +1963,6 @@ function aplicarFiltrosCompletos() {
         atualizarListaEventos(snapshotSimulado);
         atualizarContadorStatus(snapshotSimulado);
         
-        // Atualizar a exibição da data
         if (dataInicio && dataFim) {
             atualizarDataExibicaoPeriodo(dataInicio, dataFim);
         } else if (dataInicio) {
@@ -1788,7 +2058,6 @@ function limparFiltrosEventos() {
     filtroEventoDataFim = '';
     filtroStatusAtual = '';
     
-    // Voltar para HOJE (padrão)
     const hoje = new Date();
     const dataHoje = hoje.toISOString().split('T')[0];
     document.getElementById('filtroEventoDataInicio').value = dataHoje;
@@ -4005,7 +4274,7 @@ function gerarDatasPeriodoEvento(dataInicio, dataFim) {
     return datas;
 }
 
-// ==================== ADICIONAR EVENTO (COM PERÍODO) ====================
+// ==================== ADICIONAR EVENTO (COM PERÍODO E MÚLTIPLOS RESPONSÁVEIS) ====================
 async function adicionarEventoPeriodo() {
     const tipoPeriodo = document.getElementById('eventoTipoPeriodo').value;
     const horario = document.getElementById('eventoHorario').value;
@@ -4013,24 +4282,22 @@ async function adicionarEventoPeriodo() {
     const titulo = document.getElementById('eventoTitulo').value.trim();
     const ticket = document.getElementById('eventoTicket').value.trim();
     const municipio = document.getElementById('eventoMunicipio').value.trim();
-    const responsavelId = document.getElementById('eventoResponsavel').value;
     const participantes = document.getElementById('eventoParticipantes').value;
     const duracao = parseInt(document.getElementById('eventoDuracao').value) || 60;
     const descricao = document.getElementById('eventoDescricao').value;
     const local = document.getElementById('eventoLocal').value;
 
-    // Validar campos obrigatórios
     if (!horario || !tipo || !titulo) {
         alert('Preencha os campos obrigatórios: Horário, Tipo e Título.');
         return;
     }
 
-    if (!responsavelId) {
-        alert('Selecione um colaborador responsável para este evento.');
+    const responsaveisData = prepararDadosResponsaveis('evento');
+    if (responsaveisData.ids.length === 0) {
+        alert('Selecione pelo menos um colaborador responsável para este evento.');
         return;
     }
 
-    // Validar data(s)
     let datasEvento = [];
     if (tipoPeriodo === 'unica') {
         const data = document.getElementById('eventoData').value;
@@ -4052,58 +4319,20 @@ async function adicionarEventoPeriodo() {
         }
     }
 
-    // Buscar colaborador
-    const colaborador = colaboradoresCache.find(c => c.id === responsavelId);
-    if (!colaborador) {
-        alert('Colaborador selecionado não encontrado.');
-        return;
-    }
-
-    if (colaborador.ativo === false) {
-        alert('Este colaborador está inativo. Por favor, selecione um colaborador ativo.');
-        return;
-    }
-
-    // Verificar conflitos e demanda para cada data
-    let conflitosEncontrados = [];
-    let datasComAltaDemanda = [];
+    let todosConflitos = [];
+    let datasComProblema = [];
     
     for (const data of datasEvento) {
-        // Verificar conflitos
-        const conflitos = await verificarTodosConflitos(data, horario, duracao);
-        if (conflitos.temConflito) {
-            conflitosEncontrados.push(formatarDataParaExibicaoSimples(data));
-        }
-        
-        // Verificar demanda
-        if (colaboradorEstaDeFerias(responsavelId)) {
-            if (!confirm(`⚠️ O colaborador "${colaborador.nome}" está em férias na data ${formatarDataParaExibicaoSimples(data)}. Deseja continuar?`)) {
-                return;
-            }
-        }
-        
-        const demanda = await verificarDemandaColaborador(responsavelId, data, duracao);
-        if (demanda.nivelDemanda === 'critica' || demanda.nivelDemanda === 'alta') {
-            datasComAltaDemanda.push(formatarDataParaExibicaoSimples(data));
+        const resultado = await verificarDemandaMultiplosResponsaveis(responsaveisData.ids, data, duracao);
+        if (!resultado.ok) {
+            datasComProblema.push(formatarDataParaExibicaoSimples(data));
+            todosConflitos.push(`📅 ${formatarDataParaExibicaoSimples(data)}:\n${resultado.mensagem}`);
         }
     }
 
-    if (conflitosEncontrados.length > 0) {
-        const msg = `⚠️ Conflito(s) de horário encontrado(s) nas seguintes datas:\n\n${conflitosEncontrados.join('\n')}\n\nDeseja continuar mesmo assim?`;
+    if (todosConflitos.length > 0) {
+        const msg = `⚠️ Foram encontrados os seguintes problemas:\n\n${todosConflitos.join('\n\n')}\n\nDeseja continuar mesmo assim?`;
         if (!confirm(msg)) {
-            return;
-        }
-    }
-
-    // Verificar demanda alta
-    if (datasComAltaDemanda.length > 0) {
-        const podeContinuar = await verificarDemandaAntesDeSalvar(
-            responsavelId,
-            colaborador.nome,
-            datasEvento[0],
-            duracao
-        );
-        if (!podeContinuar) {
             return;
         }
     }
@@ -4119,16 +4348,20 @@ async function adicionarEventoPeriodo() {
             const dataEvento = new Date(Date.UTC(ano, mes - 1, dia, hora, minuto, 0));
             const dataISO = dataEvento.toISOString();
 
+            const primeiroResponsavel = colaboradoresCache.find(c => c.id === responsaveisData.ids[0]);
+            
             const dados = {
                 data: dataISO,
                 tipo: tipo,
                 titulo: titulo,
                 ticket: ticket || '',
                 municipio: municipio || '',
-                responsavelId: responsavelId,
-                responsavelNome: colaborador.nome,
-                responsavelEmail: colaborador.email,
-                responsavelCargo: colaborador.cargo || '',
+                responsavelId: responsaveisData.ids,
+                responsavelNome: responsaveisData.nomes,
+                responsavelPrimeiroId: responsaveisData.ids[0],
+                responsavelPrimeiroNome: primeiroResponsavel?.nome || '',
+                responsavelPrimeiroEmail: primeiroResponsavel?.email || '',
+                responsavelPrimeiroCargo: primeiroResponsavel?.cargo || '',
                 participantes: parseInt(participantes) || 1,
                 duracao: duracao,
                 descricao: descricao || '',
@@ -4145,18 +4378,16 @@ async function adicionarEventoPeriodo() {
             batch.set(docRef, dados);
             eventosCriados++;
 
-            // Bloquear horários automaticamente
             await bloquearHorariosAutomaticamente(data, horario, duracao, titulo);
         }
 
         await batch.commit();
 
         const msg = eventosCriados > 1 
-            ? `✅ ${eventosCriados} eventos criados com sucesso para o período selecionado! Os horários foram bloqueados automaticamente.` 
-            : '✅ Evento adicionado à agenda com sucesso! Os horários foram bloqueados automaticamente.';
+            ? `✅ ${eventosCriados} eventos criados com sucesso para o período selecionado! ${responsaveisData.ids.length} responsável(is) designado(s).` 
+            : `✅ Evento adicionado à agenda com sucesso! ${responsaveisData.ids.length} responsável(is) designado(s).`;
         alert(msg);
 
-        // Limpar formulário
         document.getElementById('eventoData').value = '';
         document.getElementById('eventoDataInicio').value = '';
         document.getElementById('eventoDataFim').value = '';
@@ -4168,7 +4399,10 @@ async function adicionarEventoPeriodo() {
         document.getElementById('eventoDuracao').value = 60;
         document.getElementById('eventoDescricao').value = '';
         document.getElementById('eventoLocal').value = '';
-        document.getElementById('eventoResponsavel').value = '';
+        
+        const container = document.getElementById('eventoResponsavelTags');
+        if (container) container.innerHTML = '';
+        document.getElementById('eventoResponsavelHidden').value = '[]';
 
     } catch (error) {
         console.error("Erro ao adicionar evento:", error);
@@ -4176,9 +4410,7 @@ async function adicionarEventoPeriodo() {
     }
 }
 
-// ==================== ADICIONAR EVENTO (ORIGINAL - MANTIDO PARA COMPATIBILIDADE) ====================
 async function adicionarEvento() {
-    // Redirecionar para a nova função com período
     await adicionarEventoPeriodo();
 }
 
@@ -4199,6 +4431,8 @@ function editarEvento(id) {
             const dataEvento = new Date(evento.data);
             const dataStr = dataEvento.toISOString().split('T')[0];
             const horaStr = dataEvento.toTimeString().slice(0, 5);
+            
+            const responsaveisIds = Array.isArray(evento.responsavelId) ? evento.responsavelId : (evento.responsavelId ? [evento.responsavelId] : []);
             
             const card = document.getElementById(`card-evento-${id}`);
             if (!card) return;
@@ -4251,16 +4485,21 @@ function editarEvento(id) {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label><i class="fas fa-user-tie"></i> Responsável *</label>
-                    <select id="edit-responsavel-${id}" required>
+                    <label><i class="fas fa-user-tie"></i> Responsável(is) *</label>
+                    <select id="edit-responsavel-${id}" style="margin-bottom: 8px;">
                         <option value="">Selecione um colaborador...</option>
                         ${colaboradoresCache.filter(c => c.ativo !== false).map(c => `
-                            <option value="${c.id}" ${c.id === evento.responsavelId ? 'selected' : ''}>
+                            <option value="${c.id}" ${responsaveisIds.includes(c.id) ? 'selected' : ''}>
                                 ${c.nome} ${c.cargo ? ' - ' + c.cargo : ''}
                                 ${colaboradorEstaDeFerias(c.id) ? ' 🏖️' : ''}
                             </option>
                         `).join('')}
                     </select>
+                    <div id="edit-responsavel-tags-${id}" class="edit-responsavel-tags" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; min-height: 32px; border: 1px dashed #e2e8f0; border-radius: 8px; background: #fafbfc;"></div>
+                    <input type="hidden" id="edit-responsavel-hidden-${id}" value='${JSON.stringify(responsaveisIds)}'>
+                    <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                        <i class="fas fa-info-circle"></i> Selecione um ou mais colaboradores para este evento.
+                    </p>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -4281,7 +4520,7 @@ function editarEvento(id) {
                     <input type="text" id="edit-local-${id}" value="${evento.local || ''}" placeholder="Sala, endereço ou link (ex: Zoom, Meet)">
                 </div>
                 <div class="edit-actions">
-                    <button class="btn-edit-save" onclick="salvarEdicao('${id}')">
+                    <button class="btn-edit-save" onclick="salvarEdicaoMultiResponsavel('${id}')">
                         <i class="fas fa-save"></i> Salvar Alterações
                     </button>
                     <button class="btn-edit-cancel" onclick="fecharEdicao()">
@@ -4292,6 +4531,10 @@ function editarEvento(id) {
             
             card.appendChild(editContainer);
             
+            setTimeout(() => {
+                initMultiSelectEdit(id);
+            }, 100);
+            
         })
         .catch(error => {
             console.error("Erro ao carregar evento para edição:", error);
@@ -4299,27 +4542,153 @@ function editarEvento(id) {
         });
 }
 
-// ==================== SALVAR EDIÇÃO DE EVENTO ====================
-async function salvarEdicao(id) {
+function initMultiSelectEdit(id) {
+    const selectId = `edit-responsavel-${id}`;
+    const containerId = `edit-responsavel-tags-${id}`;
+    const hiddenId = `edit-responsavel-hidden-${id}`;
+    
+    const select = document.getElementById(selectId);
+    const container = document.getElementById(containerId);
+    const hidden = document.getElementById(hiddenId);
+    
+    if (!select || !container || !hidden) return;
+    
+    container.innerHTML = '';
+    
+    let valores = [];
+    try {
+        valores = JSON.parse(hidden.value) || [];
+    } catch (e) {
+        valores = [];
+    }
+    
+    valores.forEach(idVal => {
+        const option = select.querySelector(`option[value="${idVal}"]`);
+        if (option) {
+            const nome = option.textContent;
+            const emFerias = option.style.color === '#f59e0b';
+            adicionarTagResponsavelEdit(container, idVal, nome, emFerias, selectId, containerId, hiddenId);
+        }
+    });
+    
+    select.onchange = function() {
+        const selectedValue = this.value;
+        if (selectedValue) {
+            const option = this.options[this.selectedIndex];
+            const nome = option.textContent;
+            const emFerias = option.style.color === '#f59e0b';
+            
+            let valoresAtuais = [];
+            try {
+                valoresAtuais = JSON.parse(hidden.value) || [];
+            } catch (e) {
+                valoresAtuais = [];
+            }
+            
+            if (!valoresAtuais.includes(selectedValue)) {
+                valoresAtuais.push(selectedValue);
+                hidden.value = JSON.stringify(valoresAtuais);
+                adicionarTagResponsavelEdit(container, selectedValue, nome, emFerias, selectId, containerId, hiddenId);
+            }
+            this.value = '';
+        }
+    };
+}
+
+function adicionarTagResponsavelEdit(container, id, nome, emFerias = false, selectId, containerId, hiddenId) {
+    const tag = document.createElement('div');
+    tag.className = `responsavel-tag ${emFerias ? 'ferias' : ''}`;
+    tag.style.cssText = `
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        background: ${emFerias ? '#fef3c7' : '#eef2ff'};
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        color: ${emFerias ? '#d97706' : '#1d4ed8'};
+        border: 1px solid ${emFerias ? '#fcd34d' : '#bfdbfe'};
+        margin: 2px;
+        cursor: default;
+        transition: all 0.2s;
+    `;
+    
+    const nomeLimpo = nome.split(' (')[0].trim();
+    
+    tag.innerHTML = `
+        <i class="fas ${emFerias ? 'fa-umbrella-beach' : 'fa-user'}" style="font-size: 10px; color: ${emFerias ? '#d97706' : '#1d4ed8'};"></i>
+        ${nomeLimpo}
+        ${emFerias ? '<span style="font-size: 10px; color: #d97706;">(Férias)</span>' : ''}
+        <button type="button" onclick="removerTagEdit('${id}', '${containerId}', '${hiddenId}')" style="
+            background: none;
+            border: none;
+            color: ${emFerias ? '#d97706' : '#1d4ed8'};
+            cursor: pointer;
+            font-size: 12px;
+            padding: 0 2px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(tag);
+}
+
+function removerTagEdit(id, containerId, hiddenId) {
+    const container = document.getElementById(containerId);
+    const hidden = document.getElementById(hiddenId);
+    
+    if (container) {
+        const tags = container.querySelectorAll('.responsavel-tag');
+        tags.forEach(tag => {
+            const btn = tag.querySelector('button');
+            if (btn && btn.onclick && btn.onclick.toString().includes(id)) {
+                tag.remove();
+            }
+        });
+    }
+    
+    if (hidden) {
+        try {
+            const valores = JSON.parse(hidden.value) || [];
+            const novosValores = valores.filter(v => v !== id);
+            hidden.value = JSON.stringify(novosValores);
+        } catch (e) {
+            console.error('Erro ao remover responsável:', e);
+        }
+    }
+}
+
+async function salvarEdicaoMultiResponsavel(id) {
     const data = document.getElementById(`edit-data-${id}`).value;
     const horario = document.getElementById(`edit-horario-${id}`).value;
     const tipo = document.getElementById(`edit-tipo-${id}`).value;
     const titulo = document.getElementById(`edit-titulo-${id}`).value;
     const ticket = document.getElementById(`edit-ticket-${id}`).value.trim();
     const municipio = document.getElementById(`edit-municipio-${id}`).value.trim();
-    const responsavelId = document.getElementById(`edit-responsavel-${id}`).value;
     const participantes = document.getElementById(`edit-participantes-${id}`).value;
     const duracao = parseInt(document.getElementById(`edit-duracao-${id}`).value) || 60;
     const descricao = document.getElementById(`edit-descricao-${id}`).value;
     const local = document.getElementById(`edit-local-${id}`).value;
 
-    if (!data || !horario || !tipo || !titulo) {
-        alert('Preencha os campos obrigatórios: Data, Horário, Tipo e Título.');
+    const hidden = document.getElementById(`edit-responsavel-hidden-${id}`);
+    let responsaveisIds = [];
+    try {
+        responsaveisIds = JSON.parse(hidden.value) || [];
+    } catch (e) {
+        responsaveisIds = [];
+    }
+    
+    if (responsaveisIds.length === 0) {
+        alert('Selecione pelo menos um colaborador responsável para este evento.');
         return;
     }
 
-    if (!responsavelId) {
-        alert('Selecione um colaborador responsável para este evento.');
+    if (!data || !horario || !tipo || !titulo) {
+        alert('Preencha os campos obrigatórios: Data, Horário, Tipo e Título.');
         return;
     }
 
@@ -4356,37 +4725,16 @@ async function salvarEdicao(id) {
         }
     }
 
-    if (colaboradorEstaDeFerias(responsavelId)) {
-        if (!confirm('⚠️ Este colaborador está em férias. Deseja continuar mesmo assim?')) {
+    const resultadoDemanda = await verificarDemandaMultiplosResponsaveis(responsaveisIds, data, duracao);
+    if (!resultadoDemanda.ok) {
+        if (!confirm(`⚠️ Problemas encontrados:\n\n${resultadoDemanda.mensagem}\n\nDeseja continuar mesmo assim?`)) {
             return;
         }
     }
 
-    const colaborador = colaboradoresCache.find(c => c.id === responsavelId);
-    if (!colaborador) {
-        alert('Colaborador selecionado não encontrado.');
-        return;
-    }
-
-    if (colaborador.ativo === false) {
-        alert('Este colaborador está inativo. Por favor, selecione um colaborador ativo.');
-        return;
-    }
-
-    const podeContinuar = await verificarDemandaAntesDeSalvar(
-        responsavelId,
-        colaborador.nome,
-        data,
-        duracao
-    );
-
-    if (!podeContinuar) {
-        return;
-    }
-
-    if (!confirm('Tem certeza que deseja salvar as alterações deste evento?')) {
-        return;
-    }
+    const selectId = `edit-responsavel-${id}`;
+    const nomesResponsaveis = getNomesResponsaveisEdit(responsaveisIds, selectId);
+    const primeiroResponsavel = colaboradoresCache.find(c => c.id === responsaveisIds[0]);
 
     try {
         const [ano, mes, dia] = data.split('-').map(Number);
@@ -4401,10 +4749,12 @@ async function salvarEdicao(id) {
             titulo: titulo,
             ticket: ticket || '',
             municipio: municipio || '',
-            responsavelId: responsavelId,
-            responsavelNome: colaborador.nome,
-            responsavelEmail: colaborador.email,
-            responsavelCargo: colaborador.cargo || '',
+            responsavelId: responsaveisIds,
+            responsavelNome: nomesResponsaveis,
+            responsavelPrimeiroId: responsaveisIds[0],
+            responsavelPrimeiroNome: primeiroResponsavel?.nome || '',
+            responsavelPrimeiroEmail: primeiroResponsavel?.email || '',
+            responsavelPrimeiroCargo: primeiroResponsavel?.cargo || '',
             participantes: parseInt(participantes) || 1,
             duracao: duracao,
             descricao: descricao || '',
@@ -4417,7 +4767,7 @@ async function salvarEdicao(id) {
         await removerBloqueiosAutomaticos(id);
         await bloquearHorariosAutomaticamente(data, horario, duracao, titulo);
 
-        alert('✅ Evento atualizado com sucesso! Os horários foram ajustados automaticamente.');
+        alert(`✅ Evento atualizado com sucesso! ${responsaveisIds.length} responsável(is) designado(s).`);
         fecharEdicao();
 
     } catch (error) {
@@ -4738,6 +5088,8 @@ function atualizarProximosEventos(eventos) {
             if (isHoje) labelData = '🔥 Hoje';
             else if (isAmanha) labelData = '📅 Amanhã';
 
+            const nomesResponsaveis = Array.isArray(e.responsavelNome) ? e.responsavelNome.join(', ') : (e.responsavelNome || 'Não definido');
+
             const item = document.createElement('div');
             item.className = 'evento-item';
             item.innerHTML = `
@@ -4745,7 +5097,7 @@ function atualizarProximosEventos(eventos) {
                     <span class="evento-badge" style="background: ${TIPO_BORDER_COLORS[e.tipo] || '#2563eb'};"></span>
                     <div>
                         <div class="evento-nome">${e.titulo}</div>
-                        <div class="evento-detalhe">${TIPO_LABELS[e.tipo] || e.tipo} · ${e.responsavelNome || 'Não definido'}</div>
+                        <div class="evento-detalhe">${TIPO_LABELS[e.tipo] || e.tipo} · ${nomesResponsaveis}</div>
                     </div>
                 </div>
                 <div class="evento-data">
@@ -4955,71 +5307,8 @@ async function corrigirDatasEventos() {
     }
 }
 
-// ==================== FUNÇÕES DE NAVEGAÇÃO DE DATA ====================
-function buscarEventosPorData(data) {
-    if (!data) {
-        const hoje = new Date();
-        data = hoje.toISOString().split('T')[0];
-    }
-    
-    document.getElementById('filtroEventoDataInicio').value = data;
-    document.getElementById('filtroEventoDataFim').value = data;
-    filtroEventoDataInicio = data;
-    filtroEventoDataFim = data;
-    aplicarFiltrosCompletos();
-}
+// ==================== RESERVAS DE SALAS ====================
 
-function navegarData(direcao) {
-    const dataInicio = document.getElementById('filtroEventoDataInicio').value;
-    let dataAtual = dataInicio || new Date().toISOString().split('T')[0];
-    
-    const dataObj = new Date(dataAtual + 'T00:00:00');
-    dataObj.setDate(dataObj.getDate() + direcao);
-    
-    const novaData = dataObj.toISOString().split('T')[0];
-    document.getElementById('filtroEventoDataInicio').value = novaData;
-    document.getElementById('filtroEventoDataFim').value = novaData;
-    filtroEventoDataInicio = novaData;
-    filtroEventoDataFim = novaData;
-    buscarEventosPorData(novaData);
-}
-
-function irParaHoje() {
-    const hoje = new Date();
-    const dataHoje = hoje.toISOString().split('T')[0];
-    document.getElementById('filtroEventoDataInicio').value = dataHoje;
-    document.getElementById('filtroEventoDataFim').value = dataHoje;
-    filtroEventoDataInicio = dataHoje;
-    filtroEventoDataFim = dataHoje;
-    buscarEventosPorData(dataHoje);
-}
-
-function atualizarDataExibicao(data) {
-    const el = document.getElementById('dataExibicao');
-    if (el) {
-        const hoje = new Date();
-        const hojeStr = hoje.toISOString().split('T')[0];
-        const dataObj = new Date(data + 'T00:00:00');
-        
-        let label = '📅 ' + dataObj.toLocaleDateString('pt-BR', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric' 
-        });
-        
-        if (data === hojeStr) {
-            label = '🔥 HOJE - ' + label;
-        }
-        
-        el.textContent = label;
-        el.style.color = data === hojeStr ? '#2563eb' : '#64748b';
-        el.style.fontWeight = data === hojeStr ? '600' : '400';
-    }
-}
-
-// ==================== RESERVAS DE SALAS - FUNÇÕES CORRIGIDAS ====================
-
-// ==================== INICIAR LISTENER DE RESERVAS ====================
 function iniciarListenerReservas() {
     if (unsubscribeReservas) {
         unsubscribeReservas();
@@ -5055,7 +5344,6 @@ function iniciarListenerReservas() {
     }
 }
 
-// ==================== FUNÇÃO PARA ALTERNAR TIPO DE RESERVA ====================
 function togglePeriodoReserva() {
     const tipo = document.getElementById('reservaTipoPeriodo').value;
     
@@ -5077,7 +5365,6 @@ function togglePeriodoReserva() {
     }
 }
 
-// ==================== FUNÇÃO GERAR DATAS DO PERÍODO ====================
 function gerarDatasPeriodo(dataInicio, dataFim) {
     const datas = [];
     const inicio = new Date(dataInicio + 'T00:00:00');
@@ -5108,7 +5395,6 @@ function gerarDatasPeriodo(dataInicio, dataFim) {
     return datas;
 }
 
-// ==================== FUNÇÃO SALVAR RESERVA ====================
 async function salvarReserva() {
     console.log('💾 salvarReserva chamada');
     
@@ -5117,7 +5403,6 @@ async function salvarReserva() {
     const capacidade = parseInt(document.getElementById('reservaCapacidade').value) || 4;
     const horario = document.getElementById('reservaHorario').value;
     const duracao = parseInt(document.getElementById('reservaDuracao').value) || 60;
-    const responsavelId = document.getElementById('reservaResponsavel').value;
     const titulo = document.getElementById('reservaTitulo').value.trim();
     const descricao = document.getElementById('reservaDescricao').value.trim();
     const status = document.getElementById('reservaStatus').value;
@@ -5126,8 +5411,14 @@ async function salvarReserva() {
     const municipio = document.getElementById('reservaMunicipio').value.trim();
     const tipoPeriodo = document.getElementById('reservaTipoPeriodo').value;
 
-    if (!sala || !horario || !responsavelId || !titulo) {
-        alert('❌ Preencha todos os campos obrigatórios: Sala, Horário, Responsável e Título.');
+    const responsaveisData = prepararDadosResponsaveis('reserva');
+    if (responsaveisData.ids.length === 0) {
+        alert('Selecione pelo menos um colaborador responsável para esta reserva.');
+        return;
+    }
+
+    if (!sala || !horario || !titulo) {
+        alert('❌ Preencha todos os campos obrigatórios: Sala, Horário e Título.');
         return;
     }
 
@@ -5150,16 +5441,6 @@ async function salvarReserva() {
         if (datasReserva.length === 0) {
             return;
         }
-    }
-
-    const colaborador = colaboradoresCache.find(c => c.id === responsavelId);
-    if (!colaborador) {
-        alert('❌ Colaborador não encontrado!');
-        return;
-    }
-    if (colaborador.ativo === false) {
-        alert('❌ Este colaborador está inativo. Selecione um colaborador ativo.');
-        return;
     }
 
     let conflitosEncontrados = [];
@@ -5185,15 +5466,19 @@ async function salvarReserva() {
     }
 
     try {
+        const primeiroResponsavel = colaboradoresCache.find(c => c.id === responsaveisData.ids[0]);
+        
         const dadosBase = {
             sala: sala,
             capacidade: capacidade || SALAS_CAPACIDADE[sala] || 4,
             horario: horario,
             duracao: duracao,
-            responsavelId: responsavelId,
-            responsavelNome: colaborador.nome,
-            responsavelEmail: colaborador.email,
-            responsavelCargo: colaborador.cargo || '',
+            responsavelId: responsaveisData.ids,
+            responsavelNome: responsaveisData.nomes,
+            responsavelPrimeiroId: responsaveisData.ids[0],
+            responsavelPrimeiroNome: primeiroResponsavel?.nome || '',
+            responsavelPrimeiroEmail: primeiroResponsavel?.email || '',
+            responsavelPrimeiroCargo: primeiroResponsavel?.cargo || '',
             titulo: titulo,
             descricao: descricao || '',
             status: status || 'pendente',
@@ -5230,8 +5515,8 @@ async function salvarReserva() {
         }
 
         const msg = reservasCriadas > 1 
-            ? `✅ ${reservasCriadas} reservas criadas com sucesso para o período selecionado!` 
-            : '✅ Reserva criada com sucesso!';
+            ? `✅ ${reservasCriadas} reservas criadas com sucesso para o período selecionado! ${responsaveisData.ids.length} responsável(is) designado(s).` 
+            : `✅ Reserva criada com sucesso! ${responsaveisData.ids.length} responsável(is) designado(s).`;
         alert(msg);
 
         fecharModalReserva();
@@ -5242,7 +5527,6 @@ async function salvarReserva() {
     }
 }
 
-// ==================== FUNÇÃO ABRIR MODAL RESERVA ====================
 function abrirModalReserva(reservaId = null) {
     console.log('🔧 abrirModalReserva chamada com id:', reservaId);
     
@@ -5269,6 +5553,10 @@ function abrirModalReserva(reservaId = null) {
     document.getElementById('reservaTipoPeriodo').value = 'unica';
     togglePeriodoReserva();
     
+    const container = document.getElementById('reservaResponsavelTags');
+    if (container) container.innerHTML = '';
+    document.getElementById('reservaResponsavelHidden').value = '[]';
+    
     if (reservaId) {
         titulo.textContent = '✏️ Editar Reserva de Sala';
         const reserva = reservasCache.find(r => r.id === reservaId);
@@ -5279,7 +5567,10 @@ function abrirModalReserva(reservaId = null) {
             document.getElementById('reservaData').value = reserva.data || '';
             document.getElementById('reservaHorario').value = reserva.horario || '';
             document.getElementById('reservaDuracao').value = reserva.duracao || 60;
-            document.getElementById('reservaResponsavel').value = reserva.responsavelId || '';
+            
+            const responsaveisIds = Array.isArray(reserva.responsavelId) ? reserva.responsavelId : (reserva.responsavelId ? [reserva.responsavelId] : []);
+            document.getElementById('reservaResponsavelHidden').value = JSON.stringify(responsaveisIds);
+            
             document.getElementById('reservaTitulo').value = reserva.titulo || '';
             document.getElementById('reservaDescricao').value = reserva.descricao || '';
             document.getElementById('reservaStatus').value = reserva.status || 'pendente';
@@ -5313,9 +5604,12 @@ function abrirModalReserva(reservaId = null) {
     };
     
     modal.style.display = 'flex';
+    
+    setTimeout(() => {
+        initMultiSelectResponsaveis('reservaResponsavel', 'reservaResponsavelTags', 'reservaResponsavelHidden');
+    }, 200);
 }
 
-// ==================== FUNÇÃO FECHAR MODAL RESERVA ====================
 function fecharModalReserva() {
     const modal = document.getElementById('modalReserva');
     if (modal) {
@@ -5324,7 +5618,6 @@ function fecharModalReserva() {
     reservaEmEdicao = null;
 }
 
-// ==================== FUNÇÃO EDITAR RESERVA ====================
 function editarReserva(id) {
     console.log('✏️ editarReserva chamada com id:', id);
     if (!id) {
@@ -5335,7 +5628,6 @@ function editarReserva(id) {
     abrirModalReserva(id);
 }
 
-// ==================== FUNÇÃO EXCLUIR RESERVA ====================
 function excluirReserva(id) {
     console.log('🗑️ excluirReserva chamada com id:', id);
     if (!id) {
@@ -5399,7 +5691,6 @@ function excluirReserva(id) {
     }
 }
 
-// ==================== FUNÇÃO ALTERAR STATUS RESERVA ====================
 async function alterarStatusReserva(id, novoStatus) {
     console.log('🔄 alterarStatusReserva chamada com id:', id, 'status:', novoStatus);
     if (!id) {
@@ -5434,7 +5725,6 @@ async function alterarStatusReserva(id, novoStatus) {
     }
 }
 
-// ==================== FUNÇÃO VERIFICAR CONFLITO RESERVA ====================
 function verificarConflitoReserva(reserva) {
     if (!reserva || !reserva.horario) {
         return false;
@@ -5460,7 +5750,6 @@ function verificarConflitoReserva(reserva) {
     });
 }
 
-// ==================== FUNÇÕES DE FILTRO DE RESERVAS ====================
 function filtrarReservas() {
     filtroReservaDataInicio = document.getElementById('filtroReservaDataInicio').value || '';
     filtroReservaDataFim = document.getElementById('filtroReservaDataFim').value || '';
@@ -5516,7 +5805,6 @@ function limparFiltrosReservas() {
     atualizarStatsReservas();
 }
 
-// ==================== ATUALIZAR LISTA DE RESERVAS ====================
 function atualizarListaReservas() {
     const container = document.getElementById('listaReservas');
     if (!container) return;
@@ -5612,6 +5900,10 @@ function atualizarListaReservas() {
         const isPassado = dataReserva < hoje;
 
         const temConflito = verificarConflitoReserva(r);
+        
+        const temMultiplosResponsaveis = Array.isArray(r.responsavelId) && r.responsavelId.length > 1;
+        const qtdeResponsaveis = Array.isArray(r.responsavelId) ? r.responsavelId.length : 1;
+        const nomesResponsaveis = Array.isArray(r.responsavelNome) ? r.responsavelNome.join(', ') : (r.responsavelNome || 'Não definido');
 
         let infoPeriodo = '';
         if (r.reservaPeriodo && r.reservaGrupoId && grupos[r.reservaGrupoId]) {
@@ -5656,6 +5948,11 @@ function atualizarListaReservas() {
                     ${temConflito ? `<span class="status-badge" style="background: #fee2e2; color: #dc2626; font-weight: 600;">⚠️ Conflito</span>` : ''}
                     ${isPassado && r.status !== 'cancelada' ? `<span class="status-badge" style="background: #e2e8f0; color: #64748b; font-weight: 600;">📅 Passado</span>` : ''}
                     ${infoPeriodo}
+                    ${temMultiplosResponsaveis ? `
+                        <span class="status-badge" style="background: #ede9fe; color: #7c3aed; font-weight: 600;">
+                            👥 ${qtdeResponsaveis} responsáveis
+                        </span>
+                    ` : ''}
                 </div>
                 <span class="status-badge" style="background: #f1f5f9; color: #475569;">
                     ${salaLabel}
@@ -5676,9 +5973,11 @@ function atualizarListaReservas() {
             <div style="margin: 6px 0; padding: 8px 12px; background: #f0f7ff; border-radius: 8px; border-left: 3px solid #2563eb;">
                 <p style="font-size: 14px; font-weight: 500; color: #1e293b;">
                     <i class="fas fa-user-tie" style="color: #2563eb;"></i> 
-                    ${r.responsavelNome || 'Não definido'}
+                    ${nomesResponsaveis}
                 </p>
-                ${r.responsavelEmail ? `<p style="font-size: 12px; color: #64748b; margin-top: 2px;"><i class="fas fa-envelope"></i> ${r.responsavelEmail}</p>` : ''}
+                <p style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                    <i class="fas fa-users"></i> ${qtdeResponsaveis} responsável(is) designado(s)
+                </p>
             </div>
 
             ${r.descricao ? `<p style="color: #475569; font-size: 14px; margin: 4px 0;"><i class="fas fa-info-circle" style="color: #64748b;"></i> ${r.descricao}</p>` : ''}
@@ -5702,7 +6001,6 @@ function atualizarListaReservas() {
     });
 }
 
-// ==================== ATUALIZAR STATS RESERVAS ====================
 function atualizarStatsReservas() {
     let reservasFiltradas = [...reservasCache];
 
@@ -5889,6 +6187,7 @@ window.adicionarEvento = adicionarEvento;
 window.adicionarEventoPeriodo = adicionarEventoPeriodo;
 window.editarEvento = editarEvento;
 window.salvarEdicao = salvarEdicao;
+window.salvarEdicaoMultiResponsavel = salvarEdicaoMultiResponsavel;
 window.fecharEdicao = fecharEdicao;
 window.excluirEvento = excluirEvento;
 window.cadastrarColaborador = cadastrarColaborador;
@@ -5932,6 +6231,12 @@ window.iniciarListenerReservas = iniciarListenerReservas;
 
 window.togglePeriodoEvento = togglePeriodoEvento;
 window.gerarDatasPeriodoEvento = gerarDatasPeriodoEvento;
+
+window.initMultiSelectResponsaveis = initMultiSelectResponsaveis;
+window.prepararDadosResponsaveis = prepararDadosResponsaveis;
+window.verificarDemandaMultiplosResponsaveis = verificarDemandaMultiplosResponsaveis;
+window.removerTagResponsavel = removerTagResponsavel;
+window.removerTagEdit = removerTagEdit;
 
 window.carregarConfiguracoesDemanda = carregarConfiguracoesDemanda;
 window.salvarConfiguracoesDemanda = salvarConfiguracoesDemanda;
