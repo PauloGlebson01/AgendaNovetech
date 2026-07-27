@@ -1544,6 +1544,64 @@ function atualizarContadorStatus(snapshot) {
     if (countTotal) countTotal.textContent = total;
 }
 
+// ==================== ALTERAR STATUS DO EVENTO ====================
+async function alterarStatus(eventoId, novoStatus) {
+    if (!eventoId || !novoStatus) {
+        console.error("❌ ID do evento ou status não fornecido");
+        return;
+    }
+
+    try {
+        const doc = await db.collection('eventosAgenda').doc(eventoId).get();
+        if (!doc.exists) {
+            alert('❌ Evento não encontrado!');
+            return;
+        }
+
+        const evento = doc.data();
+        
+        // Verificar se é uma transição válida
+        const transicoesValidas = {
+            'designado': ['em_andamento', 'cancelado'],
+            'em_andamento': ['realizado', 'cancelado'],
+            'realizado': ['designado'],
+            'cancelado': ['designado']
+        };
+
+        if (!transicoesValidas[evento.status]?.includes(novoStatus)) {
+            alert(`❌ Transição de status inválida: "${STATUS_LABELS[evento.status]}" -> "${STATUS_LABELS[novoStatus]}"`);
+            return;
+        }
+
+        const statusLabels = {
+            'designado': '📋 Designado',
+            'em_andamento': '🔄 Em Andamento',
+            'realizado': '✅ Realizado',
+            'cancelado': '❌ Cancelado'
+        };
+
+        if (!confirm(`Deseja alterar o status do evento "${evento.titulo}" de "${statusLabels[evento.status]}" para "${statusLabels[novoStatus]}"?`)) {
+            return;
+        }
+
+        await db.collection('eventosAgenda').doc(eventoId).update({
+            status: novoStatus,
+            statusAtualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            statusAtualizadoPor: currentUser?.uid || 'sistema',
+            statusAtualizadoPorNome: currentUser?.nome || 'sistema'
+        });
+
+        alert(`✅ Status alterado para "${statusLabels[novoStatus]}" com sucesso!`);
+        
+        // Recarregar a lista de eventos
+        aplicarFiltrosCompletos();
+
+    } catch (error) {
+        console.error("❌ Erro ao alterar status:", error);
+        alert('❌ Erro ao alterar status: ' + error.message);
+    }
+}
+
 // ==================== FILTROS POR STATUS ====================
 function filtrarPorStatus(status) {
     document.getElementById('filtroStatus').value = status;
@@ -4118,17 +4176,11 @@ async function adicionarEventoPeriodo() {
     }
 }
 
-// ==================== FUNÇÕES DE VERIFICAÇÃO DE DEMANDA ====================
-// (Já existentes no código, mantidas)
-
 // ==================== ADICIONAR EVENTO (ORIGINAL - MANTIDO PARA COMPATIBILIDADE) ====================
 async function adicionarEvento() {
     // Redirecionar para a nova função com período
     await adicionarEventoPeriodo();
 }
-
-// ==================== FUNÇÕES DE VERIFICAÇÃO DE DEMANDA ====================
-// (Já existentes no código, mantidas)
 
 // ==================== EDIÇÃO DE EVENTOS ====================
 function editarEvento(id) {
@@ -5843,8 +5895,8 @@ window.cadastrarColaborador = cadastrarColaborador;
 window.toggleColaborador = toggleColaborador;
 window.confirmarExcluirColaborador = confirmarExcluirColaborador;
 window.filtrarAgenda = filtrarAgenda;
-window.filtrarPorStatus = filtrarPorStatus;
 window.alterarStatus = alterarStatus;
+window.filtrarPorStatus = filtrarPorStatus;
 window.limparFiltros = limparFiltros;
 window.verAgendaPublica = verAgendaPublica;
 window.salvarConfiguracoes = salvarConfiguracoes;
@@ -5970,13 +6022,4 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(iniciarObservadorMenu, 500);
 });
 
-console.log('✅ Todas as funções de reservas foram exportadas com sucesso!');
-console.log('  - editarReserva:', typeof window.editarReserva);
-console.log('  - excluirReserva:', typeof window.excluirReserva);
-console.log('  - alterarStatusReserva:', typeof window.alterarStatusReserva);
-console.log('  - salvarReserva:', typeof window.salvarReserva);
-console.log('  - abrirModalReserva:', typeof window.abrirModalReserva);
-console.log('  - fecharModalReserva:', typeof window.fecharModalReserva);
-console.log('  - togglePeriodoReserva:', typeof window.togglePeriodoReserva);
-console.log('  - togglePeriodoEvento:', typeof window.togglePeriodoEvento);
-console.log('  - adicionarEventoPeriodo:', typeof window.adicionarEventoPeriodo);
+console.log('✅ Todas as funções foram exportadas com sucesso!');
