@@ -2482,6 +2482,323 @@ input:-ms-input-placeholder {
     }
 }
 
+        /* ==================== RESPONSÁVEIS MÚLTIPLOS ==================== */
+        .responsavel-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: #eef2ff;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            margin: 2px;
+            cursor: default;
+            transition: all 0.2s;
+        }
+
+        .responsavel-tag:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+        }
+
+        .responsavel-tag.ferias {
+            background: #fef3c7;
+            color: #d97706;
+            border-color: #fcd34d;
+        }
+
+        .responsavel-tag.ferias .remove-btn {
+            color: #d97706;
+        }
+
+        #eventoResponsavelTags,
+        #reservaResponsavelTags,
+        .edit-responsavel-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 4px 8px;
+            min-height: 32px;
+            border: 1px dashed #e2e8f0;
+            border-radius: 8px;
+            background: #fafbfc;
+            align-items: center;
+        }
+
+        #eventoResponsavelTags:empty::before,
+        #reservaResponsavelTags:empty::before,
+        .edit-responsavel-tags:empty::before {
+            content: 'Nenhum responsável selecionado';
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .edit-responsavel-tags:empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        /* ==================== FROTA ==================== */
+        .frota-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .frota-stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            border: 1px solid #eef2ff;
+            text-align: center;
+        }
+
+        .frota-stat-card .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .frota-stat-card .stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .frota-stat-card .stat-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        /* ==================== RELATÓRIOS FROTA ==================== */
+#relatorioResultado table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+#relatorioResultado table th {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-weight: 600;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+#relatorioResultado table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #475569;
+}
+
+#relatorioResultado table tr:hover td {
+    background: #f8fafc;
+}
+
+#relatorioResultado table .total-row {
+    background: #f1f5f9;
+    font-weight: 600;
+}
+
+#relatorioResultado table .total-row td {
+    border-top: 2px solid #e2e8f0;
+    color: #0f172a;
+}
+
+.relatorio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.relatorio-header h3 {
+    margin: 0;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.relatorio-periodo {
+    font-size: 13px;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 4px 14px;
+    border-radius: 20px;
+}
+
+.relatorio-resumo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.relatorio-resumo-item {
+    background: #f8fafc;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border-left: 4px solid #2563eb;
+}
+
+.relatorio-resumo-item .label {
+    font-size: 11px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.relatorio-resumo-item .value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.relatorio-resumo-item .value.verde { color: #059669; }
+.relatorio-resumo-item .value.vermelho { color: #dc2626; }
+.relatorio-resumo-item .value.azul { color: #2563eb; }
+.relatorio-resumo-item .value.laranja { color: #d97706; }
+
+@media print {
+    .topbar, .sidebar, .btn-primary, .btn-secondary, .btn-sm, .frota-stats, .tabs {
+        display: none !important;
+    }
+    .main-content {
+        padding: 20px !important;
+        max-height: none !important;
+    }
+    #relatorioResultado table {
+        font-size: 11px;
+    }
+    #relatorioResultado table th,
+    #relatorioResultado table td {
+        padding: 4px 8px;
+    }
+}
+
+/* ==================== RELATÓRIOS FROTA ==================== */
+#relatorioResultado table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+#relatorioResultado table th {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-weight: 600;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+#relatorioResultado table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #475569;
+}
+
+#relatorioResultado table tr:hover td {
+    background: #f8fafc;
+}
+
+#relatorioResultado table .total-row {
+    background: #f1f5f9;
+    font-weight: 600;
+}
+
+#relatorioResultado table .total-row td {
+    border-top: 2px solid #e2e8f0;
+    color: #0f172a;
+}
+
+.relatorio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.relatorio-header h3 {
+    margin: 0;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.relatorio-periodo {
+    font-size: 13px;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 4px 14px;
+    border-radius: 20px;
+}
+
+.relatorio-resumo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.relatorio-resumo-item {
+    background: #f8fafc;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border-left: 4px solid #2563eb;
+}
+
+.relatorio-resumo-item .label {
+    font-size: 11px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.relatorio-resumo-item .value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.relatorio-resumo-item .value.verde { color: #059669; }
+.relatorio-resumo-item .value.vermelho { color: #dc2626; }
+.relatorio-resumo-item .value.azul { color: #2563eb; }
+.relatorio-resumo-item .value.laranja { color: #d97706; }
+
+@media print {
+    .topbar, .sidebar, .btn-primary, .btn-secondary, .btn-sm, .frota-stats, .tabs {
+        display: none !important;
+    }
+    .main-content {
+        padding: 20px !important;
+        max-height: none !important;
+    }
+    #relatorioResultado table {
+        font-size: 11px;
+    }
+    #relatorioResultado table th,
+    #relatorioResultado table td {
+        padding: 4px 8px;
+    }
+}
+
 .status-counter .counter-item .count.designado { color: #1d4ed8; }
 .status-counter .counter-item .count.em_andamento { color: #d97706; }
 .status-counter .counter-item .count.realizado { color: #059669; }

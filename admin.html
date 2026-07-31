@@ -12,69 +12,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <style>
-        /* ==================== RESPONSÁVEIS MÚLTIPLOS ==================== */
-        .responsavel-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            background: #eef2ff;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            color: #1d4ed8;
-            border: 1px solid #bfdbfe;
-            margin: 2px;
-            cursor: default;
-            transition: all 0.2s;
-        }
-
-        .responsavel-tag:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
-        }
-
-        .responsavel-tag.ferias {
-            background: #fef3c7;
-            color: #d97706;
-            border-color: #fcd34d;
-        }
-
-        .responsavel-tag.ferias .remove-btn {
-            color: #d97706;
-        }
-
-        #eventoResponsavelTags,
-        #reservaResponsavelTags,
-        .edit-responsavel-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            padding: 4px 8px;
-            min-height: 32px;
-            border: 1px dashed #e2e8f0;
-            border-radius: 8px;
-            background: #fafbfc;
-            align-items: center;
-        }
-
-        #eventoResponsavelTags:empty::before,
-        #reservaResponsavelTags:empty::before,
-        .edit-responsavel-tags:empty::before {
-            content: 'Nenhum responsável selecionado';
-            color: #94a3b8;
-            font-size: 12px;
-        }
-
-        .edit-responsavel-tags:empty {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #94a3b8;
-            font-size: 12px;
-        }
-    </style>
+    <!-- Bibliotecas para exportação Excel e PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 
 <body>
@@ -139,6 +80,12 @@
                     </li>
                     <li id="menuReservas" data-section="reservas">
                         <i class="fas fa-door-open"></i> Reservas de Salas
+                    </li>
+                    <li id="menuFrota" data-section="frota">
+                        <i class="fas fa-truck"></i> Controle de Frota
+                    </li>
+                    <li id="menuRelatoriosFrota" data-section="relatoriosfrota">
+                        <i class="fas fa-file-alt"></i> Relatórios Frota
                     </li>
                     <li id="menuAgenda" data-section="agenda">
                         <i class="fas fa-calendar-plus"></i> Gerenciar Agenda
@@ -294,6 +241,465 @@
                             <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #2563eb;"></i>
                             <p style="margin-top: 12px; color: #94a3b8;">Carregando reservas...</p>
                         </div>
+                    </div>
+                </section>
+
+                <!-- Seção: Controle de Frota -->
+                <section id="frotaSection" class="section">
+                    <h2><i class="fas fa-truck"></i> Controle de Frota</h2>
+                    
+                    <!-- Stats da Frota -->
+                    <div class="frota-stats">
+                        <div class="frota-stat-card">
+                            <div class="stat-icon">🚗</div>
+                            <div class="stat-number" id="frotaTotalVeiculos">0</div>
+                            <div class="stat-label">Veículos</div>
+                        </div>
+                        <div class="frota-stat-card">
+                            <div class="stat-icon">🔧</div>
+                            <div class="stat-number" id="frotaTotalManutencoes">0</div>
+                            <div class="stat-label">Manutenções</div>
+                        </div>
+                        <div class="frota-stat-card">
+                            <div class="stat-icon">⛽</div>
+                            <div class="stat-number" id="frotaTotalAbastecimentos">0</div>
+                            <div class="stat-label">Abastecimentos</div>
+                        </div>
+                        <div class="frota-stat-card">
+                            <div class="stat-icon">📋</div>
+                            <div class="stat-number" id="frotaTotalMultas">0</div>
+                            <div class="stat-label">Multas</div>
+                        </div>
+                        <div class="frota-stat-card">
+                            <div class="stat-icon">📅</div>
+                            <div class="stat-number" id="frotaTotalAgendamentos">0</div>
+                            <div class="stat-label">Agendamentos</div>
+                        </div>
+                    </div>
+
+                    <!-- Abas da Frota -->
+                    <div class="tabs" style="margin-bottom: 24px;">
+                        <button class="tab-btn active" data-tab="frota_veiculos" onclick="trocarAbaFrota('frota_veiculos')">
+                            <i class="fas fa-car"></i> Veículos
+                        </button>
+                        <button class="tab-btn" data-tab="frota_manutencoes" onclick="trocarAbaFrota('frota_manutencoes')">
+                            <i class="fas fa-tools"></i> Manutenções
+                        </button>
+                        <button class="tab-btn" data-tab="frota_abastecimentos" onclick="trocarAbaFrota('frota_abastecimentos')">
+                            <i class="fas fa-gas-pump"></i> Abastecimentos
+                        </button>
+                        <button class="tab-btn" data-tab="frota_multas" onclick="trocarAbaFrota('frota_multas')">
+                            <i class="fas fa-gavel"></i> Multas
+                        </button>
+                        <button class="tab-btn" data-tab="frota_agendamentos" onclick="trocarAbaFrota('frota_agendamentos')">
+                            <i class="fas fa-calendar-check"></i> Agendamentos
+                        </button>
+                    </div>
+
+                    <!-- TAB: Veículos -->
+                    <div id="frota_veiculosTab" class="tab-content active">
+                        <div class="form-card" style="max-width: 100%; margin-bottom: 30px;">
+                            <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-plus-circle" style="color: #2563eb;"></i> Cadastrar Veículo
+                            </h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-car"></i> Marca <span class="required">*</span></label>
+                                    <input type="text" id="veiculoMarca" placeholder="Ex: Toyota, Ford, etc" required>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-car"></i> Modelo <span class="required">*</span></label>
+                                    <input type="text" id="veiculoModelo" placeholder="Ex: Corolla, Fiesta, etc" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-id-card"></i> Placa <span class="required">*</span></label>
+                                    <input type="text" id="veiculoPlaca" placeholder="Ex: ABC-1234" required style="text-transform: uppercase;">
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-calendar-alt"></i> Ano</label>
+                                    <input type="number" id="veiculoAno" placeholder="2024" min="1990" max="2099">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-palette"></i> Cor</label>
+                                    <input type="text" id="veiculoCor" placeholder="Ex: Prata, Preto, Branco">
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-road"></i> Quilometragem Atual (km)</label>
+                                    <input type="number" id="veiculoKm" placeholder="0" min="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-info-circle"></i> Observações</label>
+                                <textarea id="veiculoObservacoes" rows="2" placeholder="Informações adicionais sobre o veículo..."></textarea>
+                            </div>
+                            <button class="btn-primary" onclick="cadastrarVeiculo()">
+                                <i class="fas fa-save"></i> Cadastrar Veículo
+                            </button>
+                        </div>
+
+                        <h3 style="margin: 24px 0 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-list" style="color: #2563eb;"></i> Veículos Cadastrados
+                            <span id="totalVeiculos" style="font-size: 14px; color: #94a3b8; font-weight: 400;">(0)</span>
+                        </h3>
+                        <div id="listaVeiculos" class="cards-grid"></div>
+                    </div>
+
+                    <!-- TAB: Manutenções -->
+                    <div id="frota_manutencoesTab" class="tab-content">
+                        <div class="form-card" style="max-width: 100%; margin-bottom: 30px;">
+                            <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-tools" style="color: #f59e0b;"></i> Registrar Manutenção
+                            </h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-car"></i> Veículo <span class="required">*</span></label>
+                                    <select id="manutencaoVeiculo" required>
+                                        <option value="">Selecione um veículo...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
+                                    <input type="date" id="manutencaoData" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-tag"></i> Tipo de Manutenção <span class="required">*</span></label>
+                                    <select id="manutencaoTipo" required>
+                                        <option value="preventiva">🛡️ Preventiva</option>
+                                        <option value="corretiva">🔧 Corretiva</option>
+                                        <option value="emergencial">🚨 Emergencial</option>
+                                        <option value="revisao">📋 Revisão Periódica</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-dollar-sign"></i> Valor (R$)</label>
+                                    <input type="number" id="manutencaoValor" placeholder="0,00" step="0.01" min="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-info-circle"></i> Descrição do Serviço <span class="required">*</span></label>
+                                <textarea id="manutencaoDescricao" rows="2" placeholder="Descreva o serviço realizado..." required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-user-cog"></i> Responsável / Oficina</label>
+                                <input type="text" id="manutencaoResponsavel" placeholder="Nome do mecânico ou oficina">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-road"></i> Quilometragem na manutenção</label>
+                                <input type="number" id="manutencaoKm" placeholder="0" min="0">
+                            </div>
+                            <button class="btn-primary" onclick="registrarManutencao()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                <i class="fas fa-save"></i> Registrar Manutenção
+                            </button>
+                        </div>
+
+                        <h3 style="margin: 24px 0 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-history" style="color: #f59e0b;"></i> Histórico de Manutenções
+                        </h3>
+                        <div id="listaManutencoes" class="cards-grid"></div>
+                    </div>
+
+                    <!-- TAB: Abastecimentos -->
+                    <div id="frota_abastecimentosTab" class="tab-content">
+                        <div class="form-card" style="max-width: 100%; margin-bottom: 30px;">
+                            <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-gas-pump" style="color: #10b981;"></i> Registrar Abastecimento
+                            </h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-car"></i> Veículo <span class="required">*</span></label>
+                                    <select id="abastecimentoVeiculo" required>
+                                        <option value="">Selecione um veículo...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
+                                    <input type="date" id="abastecimentoData" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-gas-pump"></i> Combustível <span class="required">*</span></label>
+                                    <select id="abastecimentoCombustivel" required>
+                                        <option value="gasolina">⛽ Gasolina</option>
+                                        <option value="etanol">🌽 Etanol</option>
+                                        <option value="diesel">🛢️ Diesel</option>
+                                        <option value="gnv">🔵 GNV</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-dollar-sign"></i> Valor Total (R$) <span class="required">*</span></label>
+                                    <input type="number" id="abastecimentoValor" placeholder="0,00" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-tachometer-alt"></i> Litros <span class="required">*</span></label>
+                                    <input type="number" id="abastecimentoLitros" placeholder="0,00" step="0.01" min="0" required>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-road"></i> Quilometragem Atual <span class="required">*</span></label>
+                                    <input type="number" id="abastecimentoKm" placeholder="0" min="0" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-info-circle"></i> Observações</label>
+                                <textarea id="abastecimentoObservacoes" rows="2" placeholder="Ex: Posto, forma de pagamento, etc"></textarea>
+                            </div>
+                            <button class="btn-primary" onclick="registrarAbastecimento()" style="background: linear-gradient(135deg, #10b981, #059669);">
+                                <i class="fas fa-save"></i> Registrar Abastecimento
+                            </button>
+                        </div>
+
+                        <h3 style="margin: 24px 0 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-chart-line" style="color: #10b981;"></i> Histórico de Abastecimentos
+                        </h3>
+                        <div id="listaAbastecimentos" class="cards-grid"></div>
+                    </div>
+
+                    <!-- TAB: Multas -->
+                    <div id="frota_multasTab" class="tab-content">
+                        <div class="form-card" style="max-width: 100%; margin-bottom: 30px;">
+                            <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-gavel" style="color: #ef4444;"></i> Registrar Multa
+                            </h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-car"></i> Veículo <span class="required">*</span></label>
+                                    <select id="multaVeiculo" required>
+                                        <option value="">Selecione um veículo...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-calendar-day"></i> Data da Infração <span class="required">*</span></label>
+                                    <input type="date" id="multaData" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-ticket-alt"></i> Número da Multa <span class="required">*</span></label>
+                                    <input type="text" id="multaNumero" placeholder="Ex: 1234567890" required>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-dollar-sign"></i> Valor (R$) <span class="required">*</span></label>
+                                    <input type="number" id="multaValor" placeholder="0,00" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-tag"></i> Tipo de Infração</label>
+                                    <select id="multaTipo">
+                                        <option value="leve">🟢 Leve</option>
+                                        <option value="media">🟡 Média</option>
+                                        <option value="grave">🟠 Grave</option>
+                                        <option value="gravissima">🔴 Gravíssima</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-info-circle"></i> Status</label>
+                                    <select id="multaStatus">
+                                        <option value="pendente">⏳ Pendente</option>
+                                        <option value="pago">✅ Pago</option>
+                                        <option value="contestando">⚖️ Contestando</option>
+                                        <option value="vencido">❌ Vencido</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-info-circle"></i> Descrição</label>
+                                <textarea id="multaDescricao" rows="2" placeholder="Descreva a infração..."></textarea>
+                            </div>
+                            <button class="btn-primary" onclick="registrarMulta()" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                                <i class="fas fa-save"></i> Registrar Multa
+                            </button>
+                        </div>
+
+                        <h3 style="margin: 24px 0 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-list" style="color: #ef4444;"></i> Multas Registradas
+                        </h3>
+                        <div id="listaMultas" class="cards-grid"></div>
+                    </div>
+
+                    <!-- TAB: Agendamento de Veículos -->
+                    <div id="frota_agendamentosTab" class="tab-content">
+                        <div class="form-card" style="max-width: 100%; margin-bottom: 30px;">
+                            <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-calendar-plus" style="color: #2563eb;"></i> Registrar Agendamento de Veículo
+                            </h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
+                                    <input type="date" id="agendamentoData" required>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-clock"></i> Horário Saída <span class="required">*</span></label>
+                                    <input type="time" id="agendamentoHorarioSaida" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-clock"></i> Horário Retorno</label>
+                                    <input type="time" id="agendamentoHorarioRetorno">
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-user-tie"></i> Colaborador Responsável <span class="required">*</span></label>
+                                    <select id="agendamentoColaborador" required>
+                                        <option value="">Selecione um colaborador...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-truck"></i> Veículo <span class="required">*</span></label>
+                                    <select id="agendamentoVeiculo" required>
+                                        <option value="">Selecione um veículo...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-flag-checkered"></i> Tipo de Saída <span class="required">*</span></label>
+                                    <select id="agendamentoTipo" required>
+                                        <option value="reuniao">📋 Reunião</option>
+                                        <option value="visita_cliente">👤 Visita a Cliente</option>
+                                        <option value="entrega">📦 Entrega</option>
+                                        <option value="coleta">📦 Coleta</option>
+                                        <option value="servico">🔧 Serviço Técnico</option>
+                                        <option value="treinamento">🎓 Treinamento</option>
+                                        <option value="outro">📌 Outro</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Destino / Local <span class="required">*</span></label>
+                                <input type="text" id="agendamentoDestino" placeholder="Ex: João Pessoa - PB, Rua das Flores, 123" required>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-info-circle"></i> Motivo / Observações</label>
+                                <textarea id="agendamentoObservacoes" rows="2" placeholder="Descreva o motivo da saída..."></textarea>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-road"></i> KM Saída</label>
+                                    <input type="number" id="agendamentoKmSaida" placeholder="0" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-road"></i> KM Retorno</label>
+                                    <input type="number" id="agendamentoKmRetorno" placeholder="0" min="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-tag"></i> Status</label>
+                                <select id="agendamentoStatus">
+                                    <option value="agendado">📋 Agendado</option>
+                                    <option value="em_andamento">🔄 Em Andamento</option>
+                                    <option value="concluido">✅ Concluído</option>
+                                    <option value="cancelado">❌ Cancelado</option>
+                                </select>
+                            </div>
+                            <button class="btn-primary" onclick="registrarAgendamentoVeiculo()" style="background: linear-gradient(135deg, #2563eb, #1e40af);">
+                                <i class="fas fa-save"></i> Registrar Agendamento
+                            </button>
+                        </div>
+
+                        <h3 style="margin: 24px 0 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-list" style="color: #2563eb;"></i> Histórico de Agendamentos
+                            <span id="totalAgendamentos" style="font-size: 14px; color: #94a3b8; font-weight: 400;">(0)</span>
+                        </h3>
+                        
+                        <!-- Filtros de Agendamentos -->
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: white; padding: 12px 16px; border-radius: 12px; border: 1px solid #eef2ff; margin-bottom: 16px;">
+                            <input type="date" id="filtroAgendamentoDataInicio" style="padding: 6px 12px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
+                            <span style="color: #94a3b8;">até</span>
+                            <input type="date" id="filtroAgendamentoDataFim" style="padding: 6px 12px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
+                            <select id="filtroAgendamentoStatus" style="padding: 6px 12px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                                <option value="">Todos os status</option>
+                                <option value="agendado">📋 Agendado</option>
+                                <option value="em_andamento">🔄 Em Andamento</option>
+                                <option value="concluido">✅ Concluído</option>
+                                <option value="cancelado">❌ Cancelado</option>
+                            </select>
+                            <button class="btn-sm btn-info" onclick="filtrarAgendamentos()">
+                                <i class="fas fa-filter"></i> Filtrar
+                            </button>
+                            <button class="btn-sm btn-cancelar" onclick="limparFiltrosAgendamentos()">
+                                <i class="fas fa-undo"></i> Limpar
+                            </button>
+                        </div>
+
+                        <div id="listaAgendamentos" class="cards-grid"></div>
+                    </div>
+                </section>
+
+                <!-- Seção: Relatórios Frota -->
+                <section id="relatoriosfrotaSection" class="section">
+                    <h2><i class="fas fa-file-alt"></i> Relatórios da Frota</h2>
+                    
+                    <div style="margin-bottom: 20px; background: white; padding: 20px 24px; border-radius: 12px; border: 1px solid #eef2ff;">
+                        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+                            <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
+                                <label style="font-size: 13px; font-weight: 500; color: #1e293b;">📅 Data Início</label>
+                                <input type="date" id="relatorioDataInicio" style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; width: 100%;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
+                                <label style="font-size: 13px; font-weight: 500; color: #1e293b;">📅 Data Fim</label>
+                                <input type="date" id="relatorioDataFim" style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; width: 100%;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
+                                <label style="font-size: 13px; font-weight: 500; color: #1e293b;">📋 Tipo de Relatório</label>
+                                <select id="relatorioTipo" style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; width: 100%;">
+                                    <option value="geral">📊 Geral da Frota</option>
+                                    <option value="manutencoes">🔧 Manutenções</option>
+                                    <option value="abastecimentos">⛽ Abastecimentos</option>
+                                    <option value="multas">📋 Multas</option>
+                                    <option value="completo">📑 Relatório Completo</option>
+                                </select>
+                            </div>
+                            <button class="btn-primary" onclick="gerarRelatorioFrota()" style="width: auto; padding: 10px 32px; margin-bottom: 0;">
+                                <i class="fas fa-file-alt"></i> Gerar Relatório
+                            </button>
+                            <button class="btn-secondary" onclick="exportarRelatorioExcel()" style="width: auto; padding: 10px 24px; margin-bottom: 0; background: #217346; color: white;">
+                                <i class="fas fa-file-excel"></i> Exportar Excel
+                            </button>
+                            <button class="btn-secondary" onclick="exportarRelatorioPDF()" style="width: auto; padding: 10px 24px; margin-bottom: 0; background: #dc3545; color: white;">
+                                <i class="fas fa-file-pdf"></i> Exportar PDF
+                            </button>
+                            <button class="btn-secondary" onclick="imprimirRelatorio()" style="width: auto; padding: 10px 24px; margin-bottom: 0; background: #8b5cf6; color: white;">
+                                <i class="fas fa-print"></i> Imprimir
+                            </button>
+                        </div>
+                        <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="btn-sm" onclick="definirPeriodoHoje()" style="background: #2563eb; color: white;">🔥 Hoje</button>
+                            <button class="btn-sm" onclick="definirPeriodoSemana()" style="background: #7c3aed; color: white;">📆 Esta Semana</button>
+                            <button class="btn-sm" onclick="definirPeriodoMes()" style="background: #059669; color: white;">📆 Este Mês</button>
+                            <button class="btn-sm" onclick="definirPeriodoUltimos30Dias()" style="background: #d97706; color: white;">📆 Últimos 30 Dias</button>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard de Resumo -->
+                    <div id="relatorioDashboard" class="dashboard-stats" style="display: none; margin-bottom: 20px;">
+                        <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-truck"></i></div><div class="stat-number" id="relTotalVeiculos">0</div><div class="stat-label">Total Veículos</div></div>
+                        <div class="stat-card"><div class="stat-icon yellow"><i class="fas fa-tools"></i></div><div class="stat-number" id="relTotalManutencoes">0</div><div class="stat-label">Manutenções</div></div>
+                        <div class="stat-card"><div class="stat-icon green"><i class="fas fa-gas-pump"></i></div><div class="stat-number" id="relTotalAbastecimentos">0</div><div class="stat-label">Abastecimentos</div></div>
+                        <div class="stat-card"><div class="stat-icon red"><i class="fas fa-gavel"></i></div><div class="stat-number" id="relTotalMultas">0</div><div class="stat-label">Multas</div></div>
+                        <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-dollar-sign"></i></div><div class="stat-number" id="relTotalGasto">R$ 0,00</div><div class="stat-label">Total Gastos</div></div>
+                    </div>
+
+                    <!-- Resultado do Relatório -->
+                    <div id="relatorioResultado" style="display: none;">
+                        <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #eef2ff; overflow-x: auto;">
+                            <div id="relatorioConteudo"></div>
+                        </div>
+                    </div>
+
+                    <!-- Placeholder -->
+                    <div id="relatorioPlaceholder" style="background: white; border-radius: 16px; padding: 60px 20px; text-align: center; border: 2px dashed #e2e8f0;">
+                        <i class="fas fa-file-alt" style="font-size: 64px; color: #cbd5e1;"></i>
+                        <h3 style="margin-top: 16px; color: #475569;">Nenhum relatório gerado</h3>
+                        <p style="color: #94a3b8;">Selecione um período e tipo de relatório para visualizar os dados da frota.</p>
                     </div>
                 </section>
 
@@ -1037,6 +1443,8 @@
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
     <script src="admin-approval.js"></script>
+    <script src="frota.js"></script>
+    <script src="frota-relatorios.js"></script>
     
     <script>
         console.log('✅ Página admin.html carregada com sucesso!');
@@ -1058,6 +1466,19 @@
             } else {
                 console.log('✅ Todas as funções de reservas estão disponíveis!');
             }
+            
+            console.log('🔍 Verificando funções de frota...');
+            console.log('  - cadastrarVeiculo:', typeof window.cadastrarVeiculo);
+            console.log('  - registrarManutencao:', typeof window.registrarManutencao);
+            console.log('  - registrarAbastecimento:', typeof window.registrarAbastecimento);
+            console.log('  - registrarMulta:', typeof window.registrarMulta);
+            console.log('  - registrarAgendamentoVeiculo:', typeof window.registrarAgendamentoVeiculo);
+            
+            console.log('🔍 Verificando funções de relatórios...');
+            console.log('  - gerarRelatorioFrota:', typeof window.gerarRelatorioFrota);
+            console.log('  - exportarRelatorioExcel:', typeof window.exportarRelatorioExcel);
+            console.log('  - exportarRelatorioPDF:', typeof window.exportarRelatorioPDF);
+            console.log('  - imprimirRelatorio:', typeof window.imprimirRelatorio);
         }, 2000);
     </script>
 </body>

@@ -277,6 +277,8 @@ function forcarAtualizacaoMenu(userData) {
     const menuDashboard = document.getElementById('menuDashboard');
     const menuSolicitacoes = document.getElementById('menuSolicitacoes');
     const menuReservas = document.getElementById('menuReservas');
+    const menuFrota = document.getElementById('menuFrota');
+    const menuRelatoriosFrota = document.getElementById('menuRelatoriosFrota');
     const menuAgenda = document.getElementById('menuAgenda');
     const menuColaboradores = document.getElementById('menuColaboradores');
     const menuVerAgenda = document.getElementById('menuVerAgenda');
@@ -313,10 +315,13 @@ function forcarAtualizacaoMenu(userData) {
     }
     
     if (isAdmin) {
+        // ✅ ADMIN - Mostra todos os menus
         showMenu(menuDashboard);
         showMenu(menuSolicitacoes);
         showMenu(menuColaboradores);
         showMenu(menuConfig);
+        showMenu(menuFrota);
+        showMenu(menuRelatoriosFrota);
         
         if (solicBadge) {
             solicBadge.style.display = 'inline-block';
@@ -325,10 +330,13 @@ function forcarAtualizacaoMenu(userData) {
         console.log("✅ Menu ADMIN carregado com sucesso!");
         
     } else {
+        // ❌ COLABORADOR - Oculta menus restritos
         hideMenu(menuDashboard);
         hideMenu(menuSolicitacoes);
         hideMenu(menuColaboradores);
         hideMenu(menuConfig);
+        hideMenu(menuFrota);
+        hideMenu(menuRelatoriosFrota);
         
         if (solicBadge) {
             solicBadge.style.display = 'none';
@@ -337,6 +345,7 @@ function forcarAtualizacaoMenu(userData) {
         console.log("✅ Menu COLABORADOR carregado com sucesso!");
     }
     
+    // ✅ Menus visíveis para ambos os perfis
     showMenu(menuReservas);
     showMenu(menuAgenda);
     showMenu(menuVerAgenda);
@@ -455,6 +464,14 @@ auth.onAuthStateChanged(async (user) => {
                     if (typeof iniciarListenerSolicitacoes === 'function') {
                         iniciarListenerSolicitacoes();
                     }
+                    // Inicializar Frota apenas para ADMIN
+                    setTimeout(() => {
+                        if (typeof iniciarFrota === 'function') {
+                            iniciarFrota();
+                        }
+                    }, 1500);
+                } else {
+                    console.log("👤 Colaborador logado - Módulos restritos não serão inicializados.");
                 }
             }
         } catch (error) {
@@ -779,6 +796,15 @@ async function carregarAdmin() {
             initMultiSelectResponsaveis('eventoResponsavel', 'eventoResponsavelTags', 'eventoResponsavelHidden');
             initMultiSelectResponsaveis('reservaResponsavel', 'reservaResponsavelTags', 'reservaResponsavelHidden');
         }, 300);
+        
+        // Inicializar Frota apenas para ADMIN
+        if (currentUser.tipo === 'admin') {
+            setTimeout(() => {
+                if (typeof iniciarFrota === 'function') {
+                    iniciarFrota();
+                }
+            }, 1000);
+        }
         
     } catch (error) {
         console.error("Erro ao carregar admin:", error);
@@ -1366,46 +1392,7 @@ async function salvarEdicaoColaborador() {
         });
 
         if (colaboradorAntigo && colaboradorAntigo.nome !== nome) {
-            console.log(`🔄 Atualizando eventos do colaborador: ${colaboradorAntigo.nome} -> ${nome}`);
-            
-            const eventosSnapshot = await db.collection('eventosAgenda')
-                .where('responsavelId', 'array-contains', id)
-                .get();
-            
-            let eventosAtualizados = 0;
-            const batch = db.batch();
-            
-            eventosSnapshot.forEach(doc => {
-                const eventoRef = db.collection('eventosAgenda').doc(doc.id);
-                const evento = doc.data();
-                let responsaveisIds = evento.responsavelId || [];
-                let responsaveisNomes = evento.responsavelNome || '';
-                
-                if (Array.isArray(responsaveisIds)) {
-                    const index = responsaveisIds.indexOf(id);
-                    if (index !== -1) {
-                        const nomesArray = responsaveisNomes.split(', ');
-                        if (nomesArray[index]) {
-                            nomesArray[index] = nome;
-                            responsaveisNomes = nomesArray.join(', ');
-                        }
-                    }
-                }
-                
-                batch.update(eventoRef, {
-                    responsavelNome: responsaveisNomes,
-                    responsavelPrimeiroNome: nome,
-                    responsavelPrimeiroEmail: email,
-                    responsavelPrimeiroCargo: cargo || '',
-                    atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                eventosAtualizados++;
-            });
-            
-            if (eventosAtualizados > 0) {
-                await batch.commit();
-                console.log(`✅ ${eventosAtualizados} eventos atualizados com o novo nome do colaborador`);
-            }
+            await atualizarEventosColaborador(id, nome);
         }
 
         alert('✅ Colaborador atualizado com sucesso!');
@@ -1414,6 +1401,88 @@ async function salvarEdicaoColaborador() {
     } catch (error) {
         console.error("Erro ao salvar edição:", error);
         alert('❌ Erro ao salvar: ' + error.message);
+    }
+}
+
+// ==================== FUNÇÃO PARA ATUALIZAR EVENTOS DO COLABORADOR ====================
+async function atualizarEventosColaborador(colaboradorId, novoNome) {
+    if (!colaboradorId || !novoNome) {
+        console.warn('⚠️ atualizarEventosColaborador: parâmetros inválidos');
+        return;
+    }
+
+    try {
+        console.log(`🔄 Atualizando eventos do colaborador: ${colaboradorId} -> ${novoNome}`);
+        
+        const eventosSnapshot = await db.collection('eventosAgenda')
+            .where('responsavelId', 'array-contains', colaboradorId)
+            .get();
+        
+        let eventosAtualizados = 0;
+        const batch = db.batch();
+        
+        eventosSnapshot.forEach(doc => {
+            const eventoRef = db.collection('eventosAgenda').doc(doc.id);
+            const evento = doc.data();
+            let responsaveisIds = evento.responsavelId || [];
+            let responsaveisNomes = evento.responsavelNome || '';
+            
+            if (Array.isArray(responsaveisIds)) {
+                const index = responsaveisIds.indexOf(colaboradorId);
+                if (index !== -1) {
+                    const nomesArray = responsaveisNomes.split(', ');
+                    if (nomesArray[index]) {
+                        nomesArray[index] = novoNome;
+                        responsaveisNomes = nomesArray.join(', ');
+                    }
+                }
+            }
+            
+            batch.update(eventoRef, {
+                responsavelNome: responsaveisNomes,
+                responsavelPrimeiroNome: novoNome,
+                atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            eventosAtualizados++;
+        });
+        
+        // Também atualizar reservas
+        const reservasSnapshot = await db.collection('reservasSalas')
+            .where('responsavelId', 'array-contains', colaboradorId)
+            .get();
+        
+        reservasSnapshot.forEach(doc => {
+            const reservaRef = db.collection('reservasSalas').doc(doc.id);
+            const reserva = doc.data();
+            let responsaveisIds = reserva.responsavelId || [];
+            let responsaveisNomes = reserva.responsavelNome || '';
+            
+            if (Array.isArray(responsaveisIds)) {
+                const index = responsaveisIds.indexOf(colaboradorId);
+                if (index !== -1) {
+                    const nomesArray = responsaveisNomes.split(', ');
+                    if (nomesArray[index]) {
+                        nomesArray[index] = novoNome;
+                        responsaveisNomes = nomesArray.join(', ');
+                    }
+                }
+            }
+            
+            batch.update(reservaRef, {
+                responsavelNome: responsaveisNomes,
+                responsavelPrimeiroNome: novoNome,
+                atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            eventosAtualizados++;
+        });
+        
+        if (eventosAtualizados > 0) {
+            await batch.commit();
+            console.log(`✅ ${eventosAtualizados} eventos/reservas atualizados com o novo nome do colaborador`);
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao atualizar eventos do colaborador:', error);
     }
 }
 
@@ -6176,6 +6245,28 @@ function debugMenu() {
         });
     });
     console.log("=== FIM DEBUG ===");
+}
+
+// ==================== FUNÇÕES DE FALLBACK PARA EDIÇÃO ====================
+// Corrige o erro "salvarEdicao is not defined"
+
+// Fallback para salvarEdicao
+function salvarEdicao(id) {
+    console.log('🔄 salvarEdicao (fallback) chamado para ID:', id);
+    if (typeof salvarEdicaoMultiResponsavel === 'function') {
+        salvarEdicaoMultiResponsavel(id);
+    } else {
+        console.warn('⚠️ salvarEdicaoMultiResponsavel não encontrada');
+        alert('Erro: Função de edição não disponível. Recarregue a página e tente novamente.');
+    }
+}
+
+// Garantir que salvarEdicaoMultiResponsavel esteja disponível
+if (typeof salvarEdicaoMultiResponsavel === 'undefined') {
+    window.salvarEdicaoMultiResponsavel = function(id) {
+        console.log('⚠️ salvarEdicaoMultiResponsavel (fallback) chamado para ID:', id);
+        alert('Função de edição não disponível. Recarregue a página.');
+    };
 }
 
 // ==================== EXPOR FUNÇÕES GLOBAIS ====================
