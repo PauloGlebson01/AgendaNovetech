@@ -1773,6 +1773,7 @@ function atualizarListaEventos(snapshot) {
         const card = document.createElement('div');
         card.className = 'card';
         card.id = `card-evento-${e.id}`;
+        card.dataset.eventoId = e.id; // <-- ADICIONADO PARA ANEXOS
         card.style.borderLeft = `4px solid ${TIPO_BORDER_COLORS[e.tipo] || '#2563eb'}`;
         
         let infoExtra = '';
@@ -6248,9 +6249,6 @@ function debugMenu() {
 }
 
 // ==================== FUNÇÕES DE FALLBACK PARA EDIÇÃO ====================
-// Corrige o erro "salvarEdicao is not defined"
-
-// Fallback para salvarEdicao
 function salvarEdicao(id) {
     console.log('🔄 salvarEdicao (fallback) chamado para ID:', id);
     if (typeof salvarEdicaoMultiResponsavel === 'function') {
@@ -6261,7 +6259,6 @@ function salvarEdicao(id) {
     }
 }
 
-// Garantir que salvarEdicaoMultiResponsavel esteja disponível
 if (typeof salvarEdicaoMultiResponsavel === 'undefined') {
     window.salvarEdicaoMultiResponsavel = function(id) {
         console.log('⚠️ salvarEdicaoMultiResponsavel (fallback) chamado para ID:', id);

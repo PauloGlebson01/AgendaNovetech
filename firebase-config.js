@@ -23,11 +23,13 @@ if (typeof firebase !== 'undefined' && !firebase.apps.length) {
 // ==================== INICIALIZAR SERVIÇOS ====================
 let auth = null;
 let db = null;
+let storage = null;
 
 if (typeof firebase !== 'undefined') {
     try {
         auth = firebase.auth();
         db = firebase.firestore();
+        storage = firebase.storage(); // <-- ADICIONADO: Inicializa o Storage
         
         // Configurar Firestore
         db.settings({
@@ -40,17 +42,19 @@ if (typeof firebase !== 'undefined') {
             
         console.log("✅ Firestore inicializado com sucesso!");
         console.log("✅ Auth inicializado com sucesso!");
+        console.log("✅ Storage inicializado com sucesso!");
     } catch (error) {
-        console.error("❌ Erro ao inicializar Firestore:", error);
+        console.error("❌ Erro ao inicializar serviços:", error);
     }
 } else {
     console.error("❌ Firebase não está disponível para inicializar os serviços");
 }
 
 // ==================== EXPORTAR PARA USO GLOBAL ====================
-// Tornar auth e db disponíveis globalmente
+// Tornar auth, db e storage disponíveis globalmente
 window.auth = auth;
 window.db = db;
+window.storage = storage;
 
 // Também disponibilizar via variáveis globais (para compatibilidade)
 window.firebase = firebase;
@@ -58,5 +62,6 @@ window.firebase = firebase;
 console.log("📦 Firebase Config carregado:", {
     firebase: typeof firebase !== 'undefined' ? '✅' : '❌',
     auth: auth ? '✅' : '❌',
-    db: db ? '✅' : '❌'
+    db: db ? '✅' : '❌',
+    storage: storage ? '✅' : '❌'
 });

@@ -1147,6 +1147,7 @@ function atualizarListaAgendamentos() {
         const card = document.createElement('div');
         card.className = 'card';
         card.style.borderLeft = `4px solid ${status === 'cancelado' ? '#94a3b8' : '#2563eb'}`;
+        card.dataset.eventoId = a.id; // <-- ADICIONADO PARA ANEXOS
         
         // Verificar se está atrasado
         const hoje = new Date().toISOString().split('T')[0];
@@ -1205,6 +1206,62 @@ function atualizarListaAgendamentos() {
                 </button>
             </div>
         `;
+
+        // ==================== ADICIONAR BOTÃO DE ANEXOS ====================
+        const actionsDiv = card.querySelector('div[style*="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;"]');
+        if (actionsDiv) {
+            // Verificar se já tem anexos
+            let anexosDoItem = [];
+            if (typeof anexosCache !== 'undefined') {
+                anexosDoItem = anexosCache.filter(an => an.eventoId === a.id && an.tipo === 'veiculo');
+            }
+            
+            if (anexosDoItem.length > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'anexos-indicador';
+                badge.style.cssText = `
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    background: #dbeafe;
+                    color: #1d4ed8;
+                    padding: 2px 10px;
+                    border-radius: 12px;
+                    font-size: 11px;
+                    font-weight: 500;
+                `;
+                badge.innerHTML = `<i class="fas fa-paperclip"></i> ${anexosDoItem.length} anexo(s)`;
+                actionsDiv.appendChild(badge);
+            }
+            
+            const btnAnexos = document.createElement('button');
+            btnAnexos.className = 'btn-sm';
+            btnAnexos.style.cssText = `
+                background: #8b5cf6;
+                color: white;
+                border: none;
+                padding: 6px 14px;
+                border-radius: 8px;
+                font-size: 13px;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-family: inherit;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            `;
+            btnAnexos.innerHTML = '<i class="fas fa-paperclip"></i> Anexos';
+            btnAnexos.onclick = function(e) {
+                e.stopPropagation();
+                if (typeof abrirModalAnexos === 'function') {
+                    abrirModalAnexos(a.id, 'veiculo');
+                } else {
+                    mostrarNotificacao('⚠️ Módulo de anexos não disponível.', 'warning');
+                }
+            };
+            actionsDiv.appendChild(btnAnexos);
+        }
+
         container.appendChild(card);
     });
 }

@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <!-- Bibliotecas para exportação Excel e PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1440,15 +1441,146 @@
         </div>
     </div>
 
+    <!-- Modal de Anexos (Comprovantes) -->
+    <div id="modalAnexos" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <i class="fas fa-paperclip" style="color: #8b5cf6;"></i>
+                <span id="modalAnexosTitulo">Anexos</span>
+                <button onclick="document.getElementById('modalAnexos').style.display='none'" style="
+                    margin-left: auto;
+                    background: none;
+                    border: none;
+                    font-size: 24px;
+                    cursor: pointer;
+                    color: #94a3b8;
+                ">
+                    <i class="fas fa-times"></i>
+                </button>
+            </h3>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                Gerencie os comprovantes e recibos deste evento.
+            </p>
+            
+            <!-- Lista de anexos -->
+            <div id="listaAnexos" style="margin-bottom: 16px; max-height: 300px; overflow-y: auto;"></div>
+            
+            <!-- Área de upload -->
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #0f172a;">
+                    <i class="fas fa-upload" style="color: #2563eb;"></i> Adicionar Comprovante
+                </h4>
+                <div id="uploadAnexosArea" style="
+                    border: 2px dashed #e2e8f0;
+                    border-radius: 12px;
+                    padding: 24px;
+                    text-align: center;
+                    background: #fafbfc;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                ">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: #94a3b8;"></i>
+                    <p style="margin: 8px 0 4px; color: #475569; font-weight: 500;">
+                        Clique ou arraste arquivos aqui
+                    </p>
+                    <p style="font-size: 12px; color: #94a3b8;">
+                        Formatos: JPG, PNG, GIF, WEBP • Máx: 10MB
+                    </p>
+                    <!-- ==================== ALTERAÇÃO AQUI: capture e accept para câmera ==================== -->
+                    <input type="file" id="uploadAnexosInput" accept="image/*" capture="environment" style="display: none;">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
+                    <select id="anexoCategoria" style="
+                        padding: 8px 14px;
+                        border-radius: 8px;
+                        border: 2px solid #e2e8f0;
+                        font-family: inherit;
+                        background: #fafbfc;
+                        flex: 1;
+                        min-width: 140px;
+                    ">
+                        <option value="comprovante">📄 Comprovante</option>
+                        <option value="recibo">🧾 Recibo</option>
+                        <option value="nota_fiscal">📋 Nota Fiscal</option>
+                        <option value="comprovante_almoco">🍽️ Comprovante Almoço</option>
+                        <option value="comprovante_combustivel">⛽ Comprovante Combustível</option>
+                        <option value="comprovante_hospedagem">🏨 Comprovante Hospedagem</option>
+                        <option value="outro">📌 Outro</option>
+                    </select>
+                    <input type="text" id="anexoDescricao" placeholder="Descrição do comprovante..." style="
+                        padding: 8px 14px;
+                        border-radius: 8px;
+                        border: 2px solid #e2e8f0;
+                        font-family: inherit;
+                        background: #fafbfc;
+                        flex: 2;
+                        min-width: 180px;
+                    ">
+                    <button id="btnUploadAnexos" class="btn-primary" style="width: auto; padding: 10px 24px; white-space: nowrap;">
+                        <i class="fas fa-upload"></i> Enviar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Visualização de Imagem -->
+    <div id="modalVisualizacaoAnexo" class="modal">
+        <div class="modal-content" style="max-width: 800px; text-align: center;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <i class="fas fa-image" style="color: #2563eb;"></i>
+                <span id="visualizacaoAnexoTitulo">Visualizar</span>
+                <button onclick="fecharVisualizacaoAnexo()" style="
+                    margin-left: auto;
+                    background: none;
+                    border: none;
+                    font-size: 24px;
+                    cursor: pointer;
+                    color: #94a3b8;
+                ">
+                    <i class="fas fa-times"></i>
+                </button>
+            </h3>
+            <div id="visualizacaoAnexoInfo" style="font-size: 13px; color: #94a3b8; margin-bottom: 12px;"></div>
+            <img id="visualizacaoAnexoImg" src="" alt="Visualização" style="
+                max-width: 100%;
+                max-height: 70vh;
+                border-radius: 8px;
+                border: 1px solid #e2e8f0;
+            ">
+            <div style="margin-top: 12px; display: flex; gap: 10px; justify-content: center;">
+                <button onclick="fecharVisualizacaoAnexo()" class="modal-btn-cancelar" style="padding: 8px 24px;">
+                    <i class="fas fa-times"></i> Fechar
+                </button>
+                <button onclick="baixarAnexoVisualizacao()" class="btn-aprovar" style="padding: 8px 24px; border-radius: 8px; border: none; background: #10b981; color: white; cursor: pointer; font-weight: 600;">
+                    <i class="fas fa-download"></i> Baixar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
     <script src="admin-approval.js"></script>
     <script src="frota.js"></script>
     <script src="frota-relatorios.js"></script>
+    <script src="anexos.js"></script>
     
     <script>
         console.log('✅ Página admin.html carregada com sucesso!');
         console.log('✅ Aguardando carregamento do script.js...');
+        
+        // Inicializar módulo de anexos
+        setTimeout(() => {
+            if (typeof criarModaisAnexos === 'function') {
+                criarModaisAnexos();
+                console.log('✅ Modais de anexos criados!');
+            }
+            if (typeof iniciarListenerAnexos === 'function') {
+                iniciarListenerAnexos();
+                console.log('✅ Listener de anexos iniciado!');
+            }
+        }, 2000);
         
         setTimeout(function() {
             console.log('🔍 Verificando funções de reservas após carregamento...');
@@ -1479,6 +1611,12 @@
             console.log('  - exportarRelatorioExcel:', typeof window.exportarRelatorioExcel);
             console.log('  - exportarRelatorioPDF:', typeof window.exportarRelatorioPDF);
             console.log('  - imprimirRelatorio:', typeof window.imprimirRelatorio);
+            
+            console.log('🔍 Verificando funções de anexos...');
+            console.log('  - abrirModalAnexos:', typeof window.abrirModalAnexos);
+            console.log('  - visualizarAnexo:', typeof window.visualizarAnexo);
+            console.log('  - baixarAnexo:', typeof window.baixarAnexo);
+            console.log('  - excluirAnexo:', typeof window.excluirAnexo);
         }, 2000);
     </script>
 </body>
