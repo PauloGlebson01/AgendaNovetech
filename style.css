@@ -2839,52 +2839,38 @@ input:-ms-input-placeholder {
     }
 }
 
-/* ==================== CORREÇÃO DEFINITIVA DE VAZAMENTO MOBILE (FROTA) ==================== */
+/* ==================== CORREÇÃO DE VAZAMENTO DE DATAS/HORÁRIOS NO MOBILE ==================== */
 @media (max-width: 768px) {
-    /* Ajusta o container principal para não estourar a tela */
-    #frotaSection .form-card {
-        padding: 16px !important; /* Reduz o padding lateral para caber mais conteúdo */
-        width: 100% !important;
-        box-sizing: border-box !important;
-        max-width: 100vw !important; /* Garante que não passe da largura da viewport */
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-    }
-
-    /* Força os inputs a não vazarem */
-    #frotaSection .form-group input,
-    #frotaSection .form-group select,
-    #frotaSection .form-group textarea {
+    /* Corrige inputs de data e hora que estão esticando para fora da tela */
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"] {
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
+        height: auto !important;
+        min-height: 48px !important; /* Garante uma altura confortável para toque */
+        padding: 12px 14px !important; /* Ajusta o padding interno para não estourar */
+        margin: 0 !important;
         font-size: 16px !important; /* Evita zoom automático no iPhone */
+        appearance: none !important;
+        -webkit-appearance: none !important;
     }
 
-    /* Força as linhas duplas (ex: Marca/Modelo) a virarem uma única coluna */
-    #frotaSection .form-row {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 0 !important;
+    /* Corrige especificamente os inputs de horário e data dentro dos formulários da frota */
+    #frotaSection input[type="date"],
+    #frotaSection input[type="time"] {
         width: 100% !important;
+        display: block !important;
+        flex: none !important; /* Impede que o flexbox tente esticá-los */
     }
 
-    /* Garante que os botões não fiquem gigantes nem vazem */
-    #frotaSection .btn-primary {
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-        margin-top: 8px !important;
-        padding: 14px 10px !important; /* Reduz o padding para caber melhor */
-        font-size: 15px !important;
-        white-space: normal !important; /* Permite que o texto do botão quebre em duas linhas se necessário */
-        word-break: break-word !important;
-    }
-
-    /* Remove margem de elementos de texto dentro dos grupos */
+    /* Remove os paddings dos labels e containers para não somar na largura */
     #frotaSection .form-group {
-        margin-bottom: 16px !important;
         width: 100% !important;
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+        box-sizing: border-box !important;
     }
 }
 
