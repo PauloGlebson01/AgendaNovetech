@@ -2839,64 +2839,52 @@ input:-ms-input-placeholder {
     }
 }
 
-/* ==================== CORREÇÃO DE VAZAMENTO NO MOBILE (FROTA E RESERVAS) ==================== */
+/* ==================== CORREÇÃO DEFINITIVA DE VAZAMENTO MOBILE (FROTA) ==================== */
 @media (max-width: 768px) {
-    /* Impede que containers vazem para fora da tela */
-    .form-card, 
-    .card, 
-    .dashboard-stats, 
-    .frota-stats,
-    #frotaSection .tab-content {
+    /* Ajusta o container principal para não estourar a tela */
+    #frotaSection .form-card {
+        padding: 16px !important; /* Reduz o padding lateral para caber mais conteúdo */
         width: 100% !important;
-        max-width: 100% !important;
         box-sizing: border-box !important;
-        overflow-wrap: break-word !important;
+        max-width: 100vw !important; /* Garante que não passe da largura da viewport */
+        margin-left: 0 !important;
+        margin-right: 0 !important;
     }
 
-    /* Força as linhas do formulário a virarem uma única coluna no mobile */
-    .form-row {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 0 !important;
-        width: 100% !important;
-    }
-
-    /* Garante que inputs, selects e textareas nunca estiquem além da tela */
-    .form-group input,
-    .form-group select,
-    .form-group textarea,
-    .edit-form-container .form-group input,
-    .edit-form-container .form-group select,
-    .edit-form-container .form-group textarea,
+    /* Força os inputs a não vazarem */
     #frotaSection .form-group input,
     #frotaSection .form-group select,
     #frotaSection .form-group textarea {
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
-        min-width: unset !important;
+        font-size: 16px !important; /* Evita zoom automático no iPhone */
     }
 
-    /* Remove margens extras que podem causar estouro */
-    .form-group {
-        margin-bottom: 12px !important;
+    /* Força as linhas duplas (ex: Marca/Modelo) a virarem uma única coluna */
+    #frotaSection .form-row {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
         width: 100% !important;
     }
 
-    /* Ajuste específico para botões de ação para não vazarem */
-    .card-actions,
-    .action-buttons,
-    div[style*="display: flex; gap: 8px; flex-wrap: wrap;"] {
-        flex-wrap: wrap !important;
+    /* Garante que os botões não fiquem gigantes nem vazem */
+    #frotaSection .btn-primary {
         width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        margin-top: 8px !important;
+        padding: 14px 10px !important; /* Reduz o padding para caber melhor */
+        font-size: 15px !important;
+        white-space: normal !important; /* Permite que o texto do botão quebre em duas linhas se necessário */
+        word-break: break-word !important;
     }
-    
-    .card-actions button,
-    .action-buttons button,
-    div[style*="display: flex; gap: 8px; flex-wrap: wrap;"] button {
-        flex: 1 1 auto !important;
-        min-width: 0 !important;
-        width: auto !important;
+
+    /* Remove margem de elementos de texto dentro dos grupos */
+    #frotaSection .form-group {
+        margin-bottom: 16px !important;
+        width: 100% !important;
     }
 }
 
