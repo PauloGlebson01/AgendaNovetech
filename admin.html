@@ -25,7 +25,8 @@
             <div class="logo">
                 <img src="asstes/9Tech-perfil.jpg" alt="Novetech" class="logo-img" onerror="this.style.display='none';">
                 <i class="fas fa-calendar-alt" style="color: #2563eb; font-size: 24px;"></i>
-                <span style="font-weight: 700; font-size: 20px; color: #0f172a;">Agenda<span style="color: #2563eb;">Novetech</span></span>
+                <span style="font-weight: 700; font-size: 20px; color: #0f172a;">Agenda<span
+                        style="color: #2563eb;">Novetech</span></span>
             </div>
             <div class="user-info">
                 <i class="fas fa-user-shield" id="userIcon" style="transition: all 0.3s ease;"></i>
@@ -64,7 +65,7 @@
                         <i class="fas fa-chart-pie"></i> Dashboard
                     </li>
                     <li id="menuSolicitacoes" data-section="solicitacoes">
-                        <i class="fas fa-user-plus"></i> 
+                        <i class="fas fa-user-plus"></i>
                         Solicitações
                         <span id="solicitacoesBadge" style="
                             display: none;
@@ -106,36 +107,66 @@
                 <!-- Seção: Dashboard -->
                 <section id="dashboardSection" class="section active">
                     <h2><i class="fas fa-chart-pie"></i> Dashboard</h2>
-                    <div style="margin-bottom: 20px; background: white; padding: 16px 24px; border-radius: 12px; border: 1px solid #eef2ff;">
+                    <div
+                        style="margin-bottom: 20px; background: white; padding: 16px 24px; border-radius: 12px; border: 1px solid #eef2ff;">
                         <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-                                <span style="font-weight: 600; color: #1e293b; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                            <div
+                                style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                                <span
+                                    style="font-weight: 600; color: #1e293b; font-size: 14px; display: flex; align-items: center; gap: 6px;">
                                     <i class="fas fa-calendar-alt" style="color: #2563eb;"></i> Período:
                                 </span>
-                                <span id="periodoInfo" style="font-size: 13px; color: #94a3b8; font-weight: 400; padding: 2px 14px; background: #f8fafc; border-radius: 14px;">
+                                <span id="periodoInfo"
+                                    style="font-size: 13px; color: #94a3b8; font-weight: 400; padding: 2px 14px; background: #f8fafc; border-radius: 14px;">
                                     Mostrando todos os eventos
                                 </span>
                             </div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                                <button class="periodo-btn active" data-periodo="todos" onclick="filtrarPorPeriodo('todos')">📅 Todos</button>
-                                <button class="periodo-btn" data-periodo="hoje" onclick="filtrarPorPeriodo('hoje')">🔥 Hoje</button>
-                                <button class="periodo-btn" data-periodo="semana" onclick="filtrarPorPeriodo('semana')">📆 Semana</button>
-                                <button class="periodo-btn" data-periodo="mes" onclick="filtrarPorPeriodo('mes')">📆 Mês</button>
+                                <button class="periodo-btn active" data-periodo="todos"
+                                    onclick="filtrarPorPeriodo('todos')">📅 Todos</button>
+                                <button class="periodo-btn" data-periodo="hoje" onclick="filtrarPorPeriodo('hoje')">🔥
+                                    Hoje</button>
+                                <button class="periodo-btn" data-periodo="semana"
+                                    onclick="filtrarPorPeriodo('semana')">📆 Semana</button>
+                                <button class="periodo-btn" data-periodo="mes" onclick="filtrarPorPeriodo('mes')">📆
+                                    Mês</button>
                             </div>
                         </div>
                     </div>
                     <div class="dashboard-stats">
-                        <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-calendar-alt"></i></div><div class="stat-number" id="statTotal">0</div><div class="stat-label">Total de Eventos</div></div>
-                        <div class="stat-card"><div class="stat-icon green"><i class="fas fa-calendar-day"></i></div><div class="stat-number" id="statHoje">0</div><div class="stat-label">Eventos Hoje</div></div>
-                        <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-calendar-plus"></i></div><div class="stat-number" id="statFuturos">0</div><div class="stat-label">Eventos Futuros</div></div>
-                        <div class="stat-card"><div class="stat-icon yellow"><i class="fas fa-calendar-check"></i></div><div class="stat-number" id="statPassados">0</div><div class="stat-label">Eventos Passados</div></div>
-                        <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-tags"></i></div><div class="stat-number" id="statTipos">0</div><div class="stat-label">Tipos de Eventos</div></div>
+                        <div class="stat-card">
+                            <div class="stat-icon blue"><i class="fas fa-calendar-alt"></i></div>
+                            <div class="stat-number" id="statTotal">0</div>
+                            <div class="stat-label">Total de Eventos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green"><i class="fas fa-calendar-day"></i></div>
+                            <div class="stat-number" id="statHoje">0</div>
+                            <div class="stat-label">Eventos Hoje</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple"><i class="fas fa-calendar-plus"></i></div>
+                            <div class="stat-number" id="statFuturos">0</div>
+                            <div class="stat-label">Eventos Futuros</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon yellow"><i class="fas fa-calendar-check"></i></div>
+                            <div class="stat-number" id="statPassados">0</div>
+                            <div class="stat-label">Eventos Passados</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon orange"><i class="fas fa-tags"></i></div>
+                            <div class="stat-number" id="statTipos">0</div>
+                            <div class="stat-label">Tipos de Eventos</div>
+                        </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                         <div class="proximos-eventos">
                             <h3 style="display: flex; justify-content: space-between; align-items: center;">
-                                <span><i class="fas fa-umbrella-beach" style="color: #f59e0b;"></i> Profissionais em Férias</span>
-                                <button class="btn-sm btn-info" onclick="abrirModalFerias()" style="font-size: 12px; padding: 4px 12px;">
+                                <span><i class="fas fa-umbrella-beach" style="color: #f59e0b;"></i> Profissionais em
+                                    Férias</span>
+                                <button class="btn-sm btn-info" onclick="abrirModalFerias()"
+                                    style="font-size: 12px; padding: 4px 12px;">
                                     <i class="fas fa-plus"></i> Adicionar
                                 </button>
                             </h3>
@@ -172,10 +203,12 @@
                 <!-- Seção: Solicitações -->
                 <section id="solicitacoesSection" class="section">
                     <h2><i class="fas fa-user-plus"></i> Solicitações de Cadastro</h2>
-                    <div style="margin-bottom: 20px; padding: 16px 20px; background: #fef3c7; border-radius: 12px; border: 1px solid #fcd34d;">
+                    <div
+                        style="margin-bottom: 20px; padding: 16px 20px; background: #fef3c7; border-radius: 12px; border: 1px solid #fcd34d;">
                         <i class="fas fa-info-circle" style="color: #d97706;"></i>
                         <span style="color: #92400e; font-size: 14px;">
-                            Aqui estão os usuários que solicitaram acesso ao sistema. Aprove ou rejeite cada solicitação.
+                            Aqui estão os usuários que solicitaram acesso ao sistema. Aprove ou rejeite cada
+                            solicitação.
                         </span>
                     </div>
                     <div id="listaSolicitacoes" class="cards-grid">
@@ -189,25 +222,30 @@
                 <!-- Seção: Reservas de Salas -->
                 <section id="reservasSection" class="section">
                     <h2><i class="fas fa-door-open"></i> Reservas de Salas</h2>
-                    
-                    <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: white; padding: 16px 20px; border-radius: 12px; border: 1px solid #eef2ff;">
+
+                    <div
+                        style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: white; padding: 16px 20px; border-radius: 12px; border: 1px solid #eef2ff;">
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; flex: 1;">
                             <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                 <label style="font-size: 13px; color: #475569; font-weight: 500;">
                                     <i class="fas fa-calendar-alt"></i> De:
                                 </label>
-                                <input type="date" id="filtroReservaDataInicio" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
+                                <input type="date" id="filtroReservaDataInicio"
+                                    style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
                                 <label style="font-size: 13px; color: #475569; font-weight: 500; margin-left: 4px;">
                                     Até:
                                 </label>
-                                <input type="date" id="filtroReservaDataFim" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
+                                <input type="date" id="filtroReservaDataFim"
+                                    style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
                             </div>
-                            <select id="filtroReservaSala" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                            <select id="filtroReservaSala"
+                                style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
                                 <option value="">Todas as salas</option>
                                 <option value="sala_01">Sala 01</option>
                                 <option value="sala_02">Sala 02</option>
                             </select>
-                            <select id="filtroReservaStatus" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                            <select id="filtroReservaStatus"
+                                style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
                                 <option value="">Todos os status</option>
                                 <option value="pendente">🟡 Pendente</option>
                                 <option value="confirmada">🟢 Confirmada</option>
@@ -221,20 +259,38 @@
                             <button class="btn-sm btn-cancelar" onclick="limparFiltrosReservas()">
                                 <i class="fas fa-undo"></i> Limpar
                             </button>
-                            <button class="btn-sm" style="background: #2563eb; color: white;" onclick="filtrarReservasHoje()">
+                            <button class="btn-sm" style="background: #2563eb; color: white;"
+                                onclick="filtrarReservasHoje()">
                                 <i class="fas fa-calendar-day"></i> Hoje
                             </button>
                         </div>
-                        <button class="btn-primary" onclick="abrirModalReserva()" style="width: auto; padding: 10px 24px; white-space: nowrap;">
+                        <button class="btn-primary" onclick="abrirModalReserva()"
+                            style="width: auto; padding: 10px 24px; white-space: nowrap;">
                             <i class="fas fa-plus"></i> Nova Reserva
                         </button>
                     </div>
 
                     <div class="dashboard-stats" style="margin-bottom: 20px;">
-                        <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-calendar-day"></i></div><div class="stat-number" id="reservaTotalHoje">0</div><div class="stat-label">Reservas no Período</div></div>
-                        <div class="stat-card"><div class="stat-icon green"><i class="fas fa-check-circle"></i></div><div class="stat-number" id="reservaConfirmadas">0</div><div class="stat-label">Confirmadas</div></div>
-                        <div class="stat-card"><div class="stat-icon yellow"><i class="fas fa-clock"></i></div><div class="stat-number" id="reservaPendentes">0</div><div class="stat-label">Pendentes</div></div>
-                        <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-door-open"></i></div><div class="stat-number" id="reservaTotalSalas">0</div><div class="stat-label">Salas Disponíveis</div></div>
+                        <div class="stat-card">
+                            <div class="stat-icon blue"><i class="fas fa-calendar-day"></i></div>
+                            <div class="stat-number" id="reservaTotalHoje">0</div>
+                            <div class="stat-label">Reservas no Período</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                            <div class="stat-number" id="reservaConfirmadas">0</div>
+                            <div class="stat-label">Confirmadas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon yellow"><i class="fas fa-clock"></i></div>
+                            <div class="stat-number" id="reservaPendentes">0</div>
+                            <div class="stat-label">Pendentes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple"><i class="fas fa-door-open"></i></div>
+                            <div class="stat-number" id="reservaTotalSalas">0</div>
+                            <div class="stat-label">Salas Disponíveis</div>
+                        </div>
                     </div>
 
                     <div id="listaReservas" class="cards-grid">
@@ -248,7 +304,7 @@
                 <!-- Seção: Controle de Frota -->
                 <section id="frotaSection" class="section">
                     <h2><i class="fas fa-truck"></i> Controle de Frota</h2>
-                    
+
                     <!-- Stats da Frota -->
                     <div class="frota-stats">
                         <div class="frota-stat-card">
@@ -278,23 +334,41 @@
                         </div>
                     </div>
 
-                    <!-- Abas da Frota -->
-                    <div class="tabs" style="margin-bottom: 24px;">
-                        <button class="tab-btn active" data-tab="frota_veiculos" onclick="trocarAbaFrota('frota_veiculos')">
-                            <i class="fas fa-car"></i> Veículos
-                        </button>
-                        <button class="tab-btn" data-tab="frota_manutencoes" onclick="trocarAbaFrota('frota_manutencoes')">
-                            <i class="fas fa-tools"></i> Manutenções
-                        </button>
-                        <button class="tab-btn" data-tab="frota_abastecimentos" onclick="trocarAbaFrota('frota_abastecimentos')">
-                            <i class="fas fa-gas-pump"></i> Abastecimentos
-                        </button>
-                        <button class="tab-btn" data-tab="frota_multas" onclick="trocarAbaFrota('frota_multas')">
-                            <i class="fas fa-gavel"></i> Multas
-                        </button>
-                        <button class="tab-btn" data-tab="frota_agendamentos" onclick="trocarAbaFrota('frota_agendamentos')">
-                            <i class="fas fa-calendar-check"></i> Agendamentos
-                        </button>
+                    <!-- Abas da Frota (CORRIGIDAS COM BARRA DE ROLAGEM VISÍVEL) -->
+                    <div style="
+                            display: flex;
+                            overflow-x: auto;
+                            overflow-y: hidden;
+                            white-space: nowrap;
+                            margin-bottom: 24px;
+                            background: white;
+                            border-radius: 12px;
+                            padding: 4px 8px;
+                            border: 1px solid #eef2ff;
+                            -webkit-overflow-scrolling: touch;">
+
+                    <div style="display: flex; gap: 4px; flex-wrap: nowrap; width: 100%; padding-bottom: 4px;">
+                            <button class="tab-btn active" data-tab="frota_veiculos"
+                                onclick="trocarAbaFrota('frota_veiculos')" style="flex-shrink: 0;">
+                                <i class="fas fa-car"></i> Veículos
+                            </button>
+                            <button class="tab-btn" data-tab="frota_manutencoes"
+                                onclick="trocarAbaFrota('frota_manutencoes')" style="flex-shrink: 0;">
+                                <i class="fas fa-tools"></i> Manutenções
+                            </button>
+                            <button class="tab-btn" data-tab="frota_abastecimentos"
+                                onclick="trocarAbaFrota('frota_abastecimentos')" style="flex-shrink: 0;">
+                                <i class="fas fa-gas-pump"></i> Abastecimentos
+                            </button>
+                            <button class="tab-btn" data-tab="frota_multas" onclick="trocarAbaFrota('frota_multas')"
+                                style="flex-shrink: 0;">
+                                <i class="fas fa-gavel"></i> Multas
+                            </button>
+                            <button class="tab-btn" data-tab="frota_agendamentos"
+                                onclick="trocarAbaFrota('frota_agendamentos')" style="flex-shrink: 0;">
+                                <i class="fas fa-calendar-check"></i> Agendamentos
+                            </button>
+                        </div>
                     </div>
 
                     <!-- TAB: Veículos -->
@@ -310,13 +384,15 @@
                                 </div>
                                 <div class="form-group">
                                     <label><i class="fas fa-car"></i> Modelo <span class="required">*</span></label>
-                                    <input type="text" id="veiculoModelo" placeholder="Ex: Corolla, Fiesta, etc" required>
+                                    <input type="text" id="veiculoModelo" placeholder="Ex: Corolla, Fiesta, etc"
+                                        required>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
                                     <label><i class="fas fa-id-card"></i> Placa <span class="required">*</span></label>
-                                    <input type="text" id="veiculoPlaca" placeholder="Ex: ABC-1234" required style="text-transform: uppercase;">
+                                    <input type="text" id="veiculoPlaca" placeholder="Ex: ABC-1234" required
+                                        style="text-transform: uppercase;">
                                 </div>
                                 <div class="form-group">
                                     <label><i class="fas fa-calendar-alt"></i> Ano</label>
@@ -335,7 +411,8 @@
                             </div>
                             <div class="form-group">
                                 <label><i class="fas fa-info-circle"></i> Observações</label>
-                                <textarea id="veiculoObservacoes" rows="2" placeholder="Informações adicionais sobre o veículo..."></textarea>
+                                <textarea id="veiculoObservacoes" rows="2"
+                                    placeholder="Informações adicionais sobre o veículo..."></textarea>
                             </div>
                             <button class="btn-primary" onclick="cadastrarVeiculo()">
                                 <i class="fas fa-save"></i> Cadastrar Veículo
@@ -344,7 +421,8 @@
 
                         <h3 style="margin: 24px 0 16px; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-list" style="color: #2563eb;"></i> Veículos Cadastrados
-                            <span id="totalVeiculos" style="font-size: 14px; color: #94a3b8; font-weight: 400;">(0)</span>
+                            <span id="totalVeiculos"
+                                style="font-size: 14px; color: #94a3b8; font-weight: 400;">(0)</span>
                         </h3>
                         <div id="listaVeiculos" class="cards-grid"></div>
                     </div>
@@ -363,13 +441,15 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
+                                    <label><i class="fas fa-calendar-day"></i> Data <span
+                                            class="required">*</span></label>
                                     <input type="date" id="manutencaoData" required>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label><i class="fas fa-tag"></i> Tipo de Manutenção <span class="required">*</span></label>
+                                    <label><i class="fas fa-tag"></i> Tipo de Manutenção <span
+                                            class="required">*</span></label>
                                     <select id="manutencaoTipo" required>
                                         <option value="preventiva">🛡️ Preventiva</option>
                                         <option value="corretiva">🔧 Corretiva</option>
@@ -383,8 +463,10 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label><i class="fas fa-info-circle"></i> Descrição do Serviço <span class="required">*</span></label>
-                                <textarea id="manutencaoDescricao" rows="2" placeholder="Descreva o serviço realizado..." required></textarea>
+                                <label><i class="fas fa-info-circle"></i> Descrição do Serviço <span
+                                        class="required">*</span></label>
+                                <textarea id="manutencaoDescricao" rows="2"
+                                    placeholder="Descreva o serviço realizado..." required></textarea>
                             </div>
                             <div class="form-group">
                                 <label><i class="fas fa-user-cog"></i> Responsável / Oficina</label>
@@ -394,7 +476,8 @@
                                 <label><i class="fas fa-road"></i> Quilometragem na manutenção</label>
                                 <input type="number" id="manutencaoKm" placeholder="0" min="0">
                             </div>
-                            <button class="btn-primary" onclick="registrarManutencao()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <button class="btn-primary" onclick="registrarManutencao()"
+                                style="background: linear-gradient(135deg, #f59e0b, #d97706);">
                                 <i class="fas fa-save"></i> Registrar Manutenção
                             </button>
                         </div>
@@ -419,13 +502,15 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
+                                    <label><i class="fas fa-calendar-day"></i> Data <span
+                                            class="required">*</span></label>
                                     <input type="date" id="abastecimentoData" required>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label><i class="fas fa-gas-pump"></i> Combustível <span class="required">*</span></label>
+                                    <label><i class="fas fa-gas-pump"></i> Combustível <span
+                                            class="required">*</span></label>
                                     <select id="abastecimentoCombustivel" required>
                                         <option value="gasolina">⛽ Gasolina</option>
                                         <option value="etanol">🌽 Etanol</option>
@@ -434,25 +519,32 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label><i class="fas fa-dollar-sign"></i> Valor Total (R$) <span class="required">*</span></label>
-                                    <input type="number" id="abastecimentoValor" placeholder="0,00" step="0.01" min="0" required>
+                                    <label><i class="fas fa-dollar-sign"></i> Valor Total (R$) <span
+                                            class="required">*</span></label>
+                                    <input type="number" id="abastecimentoValor" placeholder="0,00" step="0.01" min="0"
+                                        required>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label><i class="fas fa-tachometer-alt"></i> Litros <span class="required">*</span></label>
-                                    <input type="number" id="abastecimentoLitros" placeholder="0,00" step="0.01" min="0" required>
+                                    <label><i class="fas fa-tachometer-alt"></i> Litros <span
+                                            class="required">*</span></label>
+                                    <input type="number" id="abastecimentoLitros" placeholder="0,00" step="0.01" min="0"
+                                        required>
                                 </div>
                                 <div class="form-group">
-                                    <label><i class="fas fa-road"></i> Quilometragem Atual <span class="required">*</span></label>
+                                    <label><i class="fas fa-road"></i> Quilometragem Atual <span
+                                            class="required">*</span></label>
                                     <input type="number" id="abastecimentoKm" placeholder="0" min="0" required>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label><i class="fas fa-info-circle"></i> Observações</label>
-                                <textarea id="abastecimentoObservacoes" rows="2" placeholder="Ex: Posto, forma de pagamento, etc"></textarea>
+                                <textarea id="abastecimentoObservacoes" rows="2"
+                                    placeholder="Ex: Posto, forma de pagamento, etc"></textarea>
                             </div>
-                            <button class="btn-primary" onclick="registrarAbastecimento()" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <button class="btn-primary" onclick="registrarAbastecimento()"
+                                style="background: linear-gradient(135deg, #10b981, #059669);">
                                 <i class="fas fa-save"></i> Registrar Abastecimento
                             </button>
                         </div>
@@ -477,18 +569,22 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label><i class="fas fa-calendar-day"></i> Data da Infração <span class="required">*</span></label>
+                                    <label><i class="fas fa-calendar-day"></i> Data da Infração <span
+                                            class="required">*</span></label>
                                     <input type="date" id="multaData" required>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label><i class="fas fa-ticket-alt"></i> Número da Multa <span class="required">*</span></label>
+                                    <label><i class="fas fa-ticket-alt"></i> Número da Multa <span
+                                            class="required">*</span></label>
                                     <input type="text" id="multaNumero" placeholder="Ex: 1234567890" required>
                                 </div>
                                 <div class="form-group">
-                                    <label><i class="fas fa-dollar-sign"></i> Valor (R$) <span class="required">*</span></label>
-                                    <input type="number" id="multaValor" placeholder="0,00" step="0.01" min="0" required>
+                                    <label><i class="fas fa-dollar-sign"></i> Valor (R$) <span
+                                            class="required">*</span></label>
+                                    <input type="number" id="multaValor" placeholder="0,00" step="0.01" min="0"
+                                        required>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -515,7 +611,8 @@
                                 <label><i class="fas fa-info-circle"></i> Descrição</label>
                                 <textarea id="multaDescricao" rows="2" placeholder="Descreva a infração..."></textarea>
                             </div>
-                            <button class="btn-primary" onclick="registrarMulta()" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                            <button class="btn-primary" onclick="registrarMulta()"
+                                style="background: linear-gradient(135deg, #ef4444, #dc2626);">
                                 <i class="fas fa-save"></i> Registrar Multa
                             </button>
                         </div>
@@ -530,15 +627,18 @@
                     <div id="frota_agendamentosTab" class="tab-content">
                         <div class="form-card" style="max-width: 100%; margin-bottom: 30px;">
                             <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
-                                <i class="fas fa-calendar-plus" style="color: #2563eb;"></i> Registrar Agendamento de Veículo
+                                <i class="fas fa-calendar-plus" style="color: #2563eb;"></i> Registrar Agendamento de
+                                Veículo
                             </h3>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label><i class="fas fa-calendar-day"></i> Data <span class="required">*</span></label>
+                                    <label><i class="fas fa-calendar-day"></i> Data <span
+                                            class="required">*</span></label>
                                     <input type="date" id="agendamentoData" required>
                                 </div>
                                 <div class="form-group">
-                                    <label><i class="fas fa-clock"></i> Horário Saída <span class="required">*</span></label>
+                                    <label><i class="fas fa-clock"></i> Horário Saída <span
+                                            class="required">*</span></label>
                                     <input type="time" id="agendamentoHorarioSaida" required>
                                 </div>
                             </div>
@@ -548,7 +648,8 @@
                                     <input type="time" id="agendamentoHorarioRetorno">
                                 </div>
                                 <div class="form-group">
-                                    <label><i class="fas fa-user-tie"></i> Colaborador Responsável <span class="required">*</span></label>
+                                    <label><i class="fas fa-user-tie"></i> Colaborador Responsável <span
+                                            class="required">*</span></label>
                                     <select id="agendamentoColaborador" required>
                                         <option value="">Selecione um colaborador...</option>
                                     </select>
@@ -562,7 +663,8 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label><i class="fas fa-flag-checkered"></i> Tipo de Saída <span class="required">*</span></label>
+                                    <label><i class="fas fa-flag-checkered"></i> Tipo de Saída <span
+                                            class="required">*</span></label>
                                     <select id="agendamentoTipo" required>
                                         <option value="reuniao">📋 Reunião</option>
                                         <option value="visita_cliente">👤 Visita a Cliente</option>
@@ -575,12 +677,15 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label><i class="fas fa-map-marker-alt"></i> Destino / Local <span class="required">*</span></label>
-                                <input type="text" id="agendamentoDestino" placeholder="Ex: João Pessoa - PB, Rua das Flores, 123" required>
+                                <label><i class="fas fa-map-marker-alt"></i> Destino / Local <span
+                                        class="required">*</span></label>
+                                <input type="text" id="agendamentoDestino"
+                                    placeholder="Ex: João Pessoa - PB, Rua das Flores, 123" required>
                             </div>
                             <div class="form-group">
                                 <label><i class="fas fa-info-circle"></i> Motivo / Observações</label>
-                                <textarea id="agendamentoObservacoes" rows="2" placeholder="Descreva o motivo da saída..."></textarea>
+                                <textarea id="agendamentoObservacoes" rows="2"
+                                    placeholder="Descreva o motivo da saída..."></textarea>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
@@ -601,22 +706,28 @@
                                     <option value="cancelado">❌ Cancelado</option>
                                 </select>
                             </div>
-                            <button class="btn-primary" onclick="registrarAgendamentoVeiculo()" style="background: linear-gradient(135deg, #2563eb, #1e40af);">
+                            <button class="btn-primary" onclick="registrarAgendamentoVeiculo()"
+                                style="background: linear-gradient(135deg, #2563eb, #1e40af);">
                                 <i class="fas fa-save"></i> Registrar Agendamento
                             </button>
                         </div>
 
                         <h3 style="margin: 24px 0 16px; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-list" style="color: #2563eb;"></i> Histórico de Agendamentos
-                            <span id="totalAgendamentos" style="font-size: 14px; color: #94a3b8; font-weight: 400;">(0)</span>
+                            <span id="totalAgendamentos"
+                                style="font-size: 14px; color: #94a3b8; font-weight: 400;">(0)</span>
                         </h3>
-                        
+
                         <!-- Filtros de Agendamentos -->
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: white; padding: 12px 16px; border-radius: 12px; border: 1px solid #eef2ff; margin-bottom: 16px;">
-                            <input type="date" id="filtroAgendamentoDataInicio" style="padding: 6px 12px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
+                        <div
+                            style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: white; padding: 12px 16px; border-radius: 12px; border: 1px solid #eef2ff; margin-bottom: 16px;">
+                            <input type="date" id="filtroAgendamentoDataInicio"
+                                style="padding: 6px 12px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
                             <span style="color: #94a3b8;">até</span>
-                            <input type="date" id="filtroAgendamentoDataFim" style="padding: 6px 12px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
-                            <select id="filtroAgendamentoStatus" style="padding: 6px 12px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                            <input type="date" id="filtroAgendamentoDataFim"
+                                style="padding: 6px 12px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
+                            <select id="filtroAgendamentoStatus"
+                                style="padding: 6px 12px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
                                 <option value="">Todos os status</option>
                                 <option value="agendado">📋 Agendado</option>
                                 <option value="em_andamento">🔄 Em Andamento</option>
@@ -638,20 +749,25 @@
                 <!-- Seção: Relatórios Frota -->
                 <section id="relatoriosfrotaSection" class="section">
                     <h2><i class="fas fa-file-alt"></i> Relatórios da Frota</h2>
-                    
-                    <div style="margin-bottom: 20px; background: white; padding: 20px 24px; border-radius: 12px; border: 1px solid #eef2ff;">
+
+                    <div
+                        style="margin-bottom: 20px; background: white; padding: 20px 24px; border-radius: 12px; border: 1px solid #eef2ff;">
                         <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
                             <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
                                 <label style="font-size: 13px; font-weight: 500; color: #1e293b;">📅 Data Início</label>
-                                <input type="date" id="relatorioDataInicio" style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; width: 100%;">
+                                <input type="date" id="relatorioDataInicio"
+                                    style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; width: 100%;">
                             </div>
                             <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
                                 <label style="font-size: 13px; font-weight: 500; color: #1e293b;">📅 Data Fim</label>
-                                <input type="date" id="relatorioDataFim" style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; width: 100%;">
+                                <input type="date" id="relatorioDataFim"
+                                    style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; width: 100%;">
                             </div>
                             <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
-                                <label style="font-size: 13px; font-weight: 500; color: #1e293b;">📋 Tipo de Relatório</label>
-                                <select id="relatorioTipo" style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; width: 100%;">
+                                <label style="font-size: 13px; font-weight: 500; color: #1e293b;">📋 Tipo de
+                                    Relatório</label>
+                                <select id="relatorioTipo"
+                                    style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; width: 100%;">
                                     <option value="geral">📊 Geral da Frota</option>
                                     <option value="manutencoes">🔧 Manutenções</option>
                                     <option value="abastecimentos">⛽ Abastecimentos</option>
@@ -659,48 +775,79 @@
                                     <option value="completo">📑 Relatório Completo</option>
                                 </select>
                             </div>
-                            <button class="btn-primary" onclick="gerarRelatorioFrota()" style="width: auto; padding: 10px 32px; margin-bottom: 0;">
+                            <button class="btn-primary" onclick="gerarRelatorioFrota()"
+                                style="width: auto; padding: 10px 32px; margin-bottom: 0;">
                                 <i class="fas fa-file-alt"></i> Gerar Relatório
                             </button>
-                            <button class="btn-secondary" onclick="exportarRelatorioExcel()" style="width: auto; padding: 10px 24px; margin-bottom: 0; background: #217346; color: white;">
+                            <button class="btn-secondary" onclick="exportarRelatorioExcel()"
+                                style="width: auto; padding: 10px 24px; margin-bottom: 0; background: #217346; color: white;">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
-                            <button class="btn-secondary" onclick="exportarRelatorioPDF()" style="width: auto; padding: 10px 24px; margin-bottom: 0; background: #dc3545; color: white;">
+                            <button class="btn-secondary" onclick="exportarRelatorioPDF()"
+                                style="width: auto; padding: 10px 24px; margin-bottom: 0; background: #dc3545; color: white;">
                                 <i class="fas fa-file-pdf"></i> Exportar PDF
                             </button>
-                            <button class="btn-secondary" onclick="imprimirRelatorio()" style="width: auto; padding: 10px 24px; margin-bottom: 0; background: #8b5cf6; color: white;">
+                            <button class="btn-secondary" onclick="imprimirRelatorio()"
+                                style="width: auto; padding: 10px 24px; margin-bottom: 0; background: #8b5cf6; color: white;">
                                 <i class="fas fa-print"></i> Imprimir
                             </button>
                         </div>
                         <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-                            <button class="btn-sm" onclick="definirPeriodoHoje()" style="background: #2563eb; color: white;">🔥 Hoje</button>
-                            <button class="btn-sm" onclick="definirPeriodoSemana()" style="background: #7c3aed; color: white;">📆 Esta Semana</button>
-                            <button class="btn-sm" onclick="definirPeriodoMes()" style="background: #059669; color: white;">📆 Este Mês</button>
-                            <button class="btn-sm" onclick="definirPeriodoUltimos30Dias()" style="background: #d97706; color: white;">📆 Últimos 30 Dias</button>
+                            <button class="btn-sm" onclick="definirPeriodoHoje()"
+                                style="background: #2563eb; color: white;">🔥 Hoje</button>
+                            <button class="btn-sm" onclick="definirPeriodoSemana()"
+                                style="background: #7c3aed; color: white;">📆 Esta Semana</button>
+                            <button class="btn-sm" onclick="definirPeriodoMes()"
+                                style="background: #059669; color: white;">📆 Este Mês</button>
+                            <button class="btn-sm" onclick="definirPeriodoUltimos30Dias()"
+                                style="background: #d97706; color: white;">📆 Últimos 30 Dias</button>
                         </div>
                     </div>
 
                     <!-- Dashboard de Resumo -->
                     <div id="relatorioDashboard" class="dashboard-stats" style="display: none; margin-bottom: 20px;">
-                        <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-truck"></i></div><div class="stat-number" id="relTotalVeiculos">0</div><div class="stat-label">Total Veículos</div></div>
-                        <div class="stat-card"><div class="stat-icon yellow"><i class="fas fa-tools"></i></div><div class="stat-number" id="relTotalManutencoes">0</div><div class="stat-label">Manutenções</div></div>
-                        <div class="stat-card"><div class="stat-icon green"><i class="fas fa-gas-pump"></i></div><div class="stat-number" id="relTotalAbastecimentos">0</div><div class="stat-label">Abastecimentos</div></div>
-                        <div class="stat-card"><div class="stat-icon red"><i class="fas fa-gavel"></i></div><div class="stat-number" id="relTotalMultas">0</div><div class="stat-label">Multas</div></div>
-                        <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-dollar-sign"></i></div><div class="stat-number" id="relTotalGasto">R$ 0,00</div><div class="stat-label">Total Gastos</div></div>
+                        <div class="stat-card">
+                            <div class="stat-icon blue"><i class="fas fa-truck"></i></div>
+                            <div class="stat-number" id="relTotalVeiculos">0</div>
+                            <div class="stat-label">Total Veículos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon yellow"><i class="fas fa-tools"></i></div>
+                            <div class="stat-number" id="relTotalManutencoes">0</div>
+                            <div class="stat-label">Manutenções</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green"><i class="fas fa-gas-pump"></i></div>
+                            <div class="stat-number" id="relTotalAbastecimentos">0</div>
+                            <div class="stat-label">Abastecimentos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon red"><i class="fas fa-gavel"></i></div>
+                            <div class="stat-number" id="relTotalMultas">0</div>
+                            <div class="stat-label">Multas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple"><i class="fas fa-dollar-sign"></i></div>
+                            <div class="stat-number" id="relTotalGasto">R$ 0,00</div>
+                            <div class="stat-label">Total Gastos</div>
+                        </div>
                     </div>
 
                     <!-- Resultado do Relatório -->
                     <div id="relatorioResultado" style="display: none;">
-                        <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #eef2ff; overflow-x: auto;">
+                        <div
+                            style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #eef2ff; overflow-x: auto;">
                             <div id="relatorioConteudo"></div>
                         </div>
                     </div>
 
                     <!-- Placeholder -->
-                    <div id="relatorioPlaceholder" style="background: white; border-radius: 16px; padding: 60px 20px; text-align: center; border: 2px dashed #e2e8f0;">
+                    <div id="relatorioPlaceholder"
+                        style="background: white; border-radius: 16px; padding: 60px 20px; text-align: center; border: 2px dashed #e2e8f0;">
                         <i class="fas fa-file-alt" style="font-size: 64px; color: #cbd5e1;"></i>
                         <h3 style="margin-top: 16px; color: #475569;">Nenhum relatório gerado</h3>
-                        <p style="color: #94a3b8;">Selecione um período e tipo de relatório para visualizar os dados da frota.</p>
+                        <p style="color: #94a3b8;">Selecione um período e tipo de relatório para visualizar os dados da
+                            frota.</p>
                     </div>
                 </section>
 
@@ -709,13 +856,15 @@
                     <h2><i class="fas fa-calendar-plus"></i> Adicionar Evento na Agenda</h2>
                     <div class="form-card">
                         <div class="form-group">
-                            <label><i class="fas fa-calendar-alt"></i> Tipo de Agendamento <span class="required">*</span></label>
+                            <label><i class="fas fa-calendar-alt"></i> Tipo de Agendamento <span
+                                    class="required">*</span></label>
                             <select id="eventoTipoPeriodo" required onchange="togglePeriodoEvento()">
                                 <option value="unica">📅 Data Única</option>
                                 <option value="periodo">📆 Período (várias datas)</option>
                             </select>
                             <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
-                                <i class="fas fa-info-circle"></i> Selecione "Período" para criar eventos em múltiplas datas consecutivas.
+                                <i class="fas fa-info-circle"></i> Selecione "Período" para criar eventos em múltiplas
+                                datas consecutivas.
                             </p>
                         </div>
 
@@ -727,17 +876,21 @@
                         <div id="eventoDataPeriodo" style="display: none;">
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label><i class="fas fa-calendar-day"></i> Data Início <span class="required">*</span></label>
+                                    <label><i class="fas fa-calendar-day"></i> Data Início <span
+                                            class="required">*</span></label>
                                     <input type="date" id="eventoDataInicio">
                                 </div>
                                 <div class="form-group">
-                                    <label><i class="fas fa-calendar-day"></i> Data Fim <span class="required">*</span></label>
+                                    <label><i class="fas fa-calendar-day"></i> Data Fim <span
+                                            class="required">*</span></label>
                                     <input type="date" id="eventoDataFim">
                                 </div>
                             </div>
-                            <div style="padding: 8px 12px; background: #f0f7ff; border-radius: 8px; font-size: 13px; color: #1e293b; margin-bottom: 12px;">
+                            <div
+                                style="padding: 8px 12px; background: #f0f7ff; border-radius: 8px; font-size: 13px; color: #1e293b; margin-bottom: 12px;">
                                 <i class="fas fa-info-circle" style="color: #2563eb;"></i>
-                                O evento será criado para <strong>todas as datas</strong> entre a data inicial e a data final.
+                                O evento será criado para <strong>todas as datas</strong> entre a data inicial e a data
+                                final.
                             </div>
                         </div>
 
@@ -760,7 +913,8 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label><i class="fas fa-comment"></i> Título / Assunto <span class="required">*</span></label>
+                            <label><i class="fas fa-comment"></i> Título / Assunto <span
+                                    class="required">*</span></label>
                             <input type="text" id="eventoTitulo" placeholder="Ex: Treinamento de Equipe" required>
                         </div>
                         <div class="form-row">
@@ -773,14 +927,17 @@
                                 <input type="text" id="eventoMunicipio" placeholder="Ex: João Pessoa">
                             </div>
                         </div>
-                        
+
                         <!-- MULTIPLOS RESPONSÁVEIS -->
                         <div class="form-group">
-                            <label><i class="fas fa-user-tie"></i> Responsável(is) <span class="required">*</span></label>
+                            <label><i class="fas fa-user-tie"></i> Responsável(is) <span
+                                    class="required">*</span></label>
                             <select id="eventoResponsavel" style="margin-bottom: 8px;">
                                 <option value="">Selecione um colaborador...</option>
                             </select>
-                            <div id="eventoResponsavelTags" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; min-height: 32px; border: 1px dashed #e2e8f0; border-radius: 8px; background: #fafbfc; align-items: center;"></div>
+                            <div id="eventoResponsavelTags"
+                                style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; min-height: 32px; border: 1px dashed #e2e8f0; border-radius: 8px; background: #fafbfc; align-items: center;">
+                            </div>
                             <input type="hidden" id="eventoResponsavelHidden" value="[]">
                             <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
                                 <i class="fas fa-info-circle"></i> Selecione um ou mais colaboradores para este evento.
@@ -840,7 +997,8 @@
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-info-circle"></i> Observações</label>
-                            <textarea id="colabObservacoes" rows="2" placeholder="Informações adicionais sobre o colaborador..."></textarea>
+                            <textarea id="colabObservacoes" rows="2"
+                                placeholder="Informações adicionais sobre o colaborador..."></textarea>
                         </div>
                         <button class="btn-primary" onclick="cadastrarColaborador()">
                             <i class="fas fa-save"></i> Cadastrar Colaborador
@@ -856,32 +1014,39 @@
                 <section id="listarSection" class="section">
                     <h2><i class="fas fa-list"></i> Agenda de Eventos</h2>
                     <div style="margin: 20px 0;">
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
-                            <button class="btn-sm" style="background: #e2e8f0; color: #475569;" onclick="navegarData(-1)">
+                        <div
+                            style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
+                            <button class="btn-sm" style="background: #e2e8f0; color: #475569;"
+                                onclick="navegarData(-1)">
                                 <i class="fas fa-chevron-left"></i> Dia Anterior
                             </button>
                             <button class="btn-sm" style="background: #2563eb; color: white;" onclick="irParaHoje()">
                                 <i class="fas fa-calendar-day"></i> Hoje
                             </button>
-                            <button class="btn-sm" style="background: #e2e8f0; color: #475569;" onclick="navegarData(1)">
+                            <button class="btn-sm" style="background: #e2e8f0; color: #475569;"
+                                onclick="navegarData(1)">
                                 Próximo Dia <i class="fas fa-chevron-right"></i>
                             </button>
                             <span style="font-size: 14px; color: #64748b; margin-left: 8px;" id="dataExibicao">
                                 <i class="fas fa-clock"></i> Exibindo eventos do dia
                             </span>
                         </div>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: white; padding: 16px 20px; border-radius: 12px; border: 1px solid #eef2ff;">
+                        <div
+                            style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: white; padding: 16px 20px; border-radius: 12px; border: 1px solid #eef2ff;">
                             <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                 <label style="font-size: 13px; color: #475569; font-weight: 500;">
                                     <i class="fas fa-calendar-alt"></i> De:
                                 </label>
-                                <input type="date" id="filtroEventoDataInicio" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
+                                <input type="date" id="filtroEventoDataInicio"
+                                    style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
                                 <label style="font-size: 13px; color: #475569; font-weight: 500; margin-left: 4px;">
                                     Até:
                                 </label>
-                                <input type="date" id="filtroEventoDataFim" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
+                                <input type="date" id="filtroEventoDataFim"
+                                    style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; width: 160px;">
                             </div>
-                            <select id="filtroStatus" style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; min-width: 160px;">
+                            <select id="filtroStatus"
+                                style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; min-width: 160px;">
                                 <option value="">Todos os status</option>
                                 <option value="designado">📋 Designado</option>
                                 <option value="em_andamento">🔄 Em Andamento</option>
@@ -894,27 +1059,39 @@
                             <button class="btn-sm btn-cancelar" onclick="limparFiltrosEventos()">
                                 <i class="fas fa-undo"></i> Limpar
                             </button>
-                            <button class="btn-sm" style="background: #2563eb; color: white;" onclick="filtrarEventosHoje()">
+                            <button class="btn-sm" style="background: #2563eb; color: white;"
+                                onclick="filtrarEventosHoje()">
                                 <i class="fas fa-calendar-day"></i> Hoje
                             </button>
-                            <button class="btn-sm" style="background: #10b981; color: white;" onclick="verAgendaPublica()">
+                            <button class="btn-sm" style="background: #10b981; color: white;"
+                                onclick="verAgendaPublica()">
                                 <i class="fas fa-external-link-alt"></i> Ver Página Pública
                             </button>
                         </div>
                         <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-                            <button class="btn-sm btn-designado" onclick="filtrarPorStatus('designado')">📋 Designados</button>
-                            <button class="btn-sm btn-em_andamento" onclick="filtrarPorStatus('em_andamento')">🔄 Em Andamento</button>
-                            <button class="btn-sm btn-realizado" onclick="filtrarPorStatus('realizado')">✅ Realizados</button>
-                            <button class="btn-sm btn-cancelado" onclick="filtrarPorStatus('cancelado')">❌ Cancelados</button>
-                            <button class="btn-sm" style="background: #f1f5f9; color: #475569;" onclick="limparFiltrosEventos()"><i class="fas fa-undo"></i> Todos</button>
+                            <button class="btn-sm btn-designado" onclick="filtrarPorStatus('designado')">📋
+                                Designados</button>
+                            <button class="btn-sm btn-em_andamento" onclick="filtrarPorStatus('em_andamento')">🔄 Em
+                                Andamento</button>
+                            <button class="btn-sm btn-realizado" onclick="filtrarPorStatus('realizado')">✅
+                                Realizados</button>
+                            <button class="btn-sm btn-cancelado" onclick="filtrarPorStatus('cancelado')">❌
+                                Cancelados</button>
+                            <button class="btn-sm" style="background: #f1f5f9; color: #475569;"
+                                onclick="limparFiltrosEventos()"><i class="fas fa-undo"></i> Todos</button>
                         </div>
                     </div>
                     <div id="statusCounter" class="status-counter">
-                        <div class="counter-item"><span>📋 Designados:</span><span class="count designado" id="countDesignado">0</span></div>
-                        <div class="counter-item"><span>🔄 Em Andamento:</span><span class="count em_andamento" id="countEmAndamento">0</span></div>
-                        <div class="counter-item"><span>✅ Realizados:</span><span class="count realizado" id="countRealizado">0</span></div>
-                        <div class="counter-item"><span>❌ Cancelados:</span><span class="count cancelado" id="countCancelado">0</span></div>
-                        <div class="counter-item" style="margin-left: auto; font-weight: 600;"><span>Total:</span><span style="color: #0f172a;" id="countTotal">0</span></div>
+                        <div class="counter-item"><span>📋 Designados:</span><span class="count designado"
+                                id="countDesignado">0</span></div>
+                        <div class="counter-item"><span>🔄 Em Andamento:</span><span class="count em_andamento"
+                                id="countEmAndamento">0</span></div>
+                        <div class="counter-item"><span>✅ Realizados:</span><span class="count realizado"
+                                id="countRealizado">0</span></div>
+                        <div class="counter-item"><span>❌ Cancelados:</span><span class="count cancelado"
+                                id="countCancelado">0</span></div>
+                        <div class="counter-item" style="margin-left: auto; font-weight: 600;"><span>Total:</span><span
+                                style="color: #0f172a;" id="countTotal">0</span></div>
                     </div>
                     <div id="listaEventosAdmin" class="cards-grid"></div>
                 </section>
@@ -922,7 +1099,7 @@
                 <!-- Seção: Configurações -->
                 <section id="configSection" class="section">
                     <h2><i class="fas fa-sliders-h"></i> Configurações da Agenda</h2>
-                    
+
                     <div class="form-card" style="margin-bottom: 30px;">
                         <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-calendar-week" style="color: #2563eb;"></i> Configurações Gerais
@@ -966,56 +1143,68 @@
                             Configure os limites de eventos por colaborador para receber alertas de alta demanda.
                         </p>
                         <div class="form-group" style="margin-bottom: 20px;">
-                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px;">
-                                <input type="checkbox" id="configDemandaAtivo" style="width: 20px; height: 20px; accent-color: #8b5cf6;">
+                            <label
+                                style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px;">
+                                <input type="checkbox" id="configDemandaAtivo"
+                                    style="width: 20px; height: 20px; accent-color: #8b5cf6;">
                                 <span>Ativar alertas de demanda</span>
                             </label>
                             <p style="font-size: 12px; color: #94a3b8; margin-top: 4px; margin-left: 30px;">
-                                Quando ativado, o sistema exibirá alertas ao adicionar eventos que ultrapassem os limites definidos.
+                                Quando ativado, o sistema exibirá alertas ao adicionar eventos que ultrapassem os
+                                limites definidos.
                             </p>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label><i class="fas fa-calendar-day"></i> Limite Diário</label>
                                 <input type="number" id="configLimiteDiario" value="5" min="1" max="20">
-                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Máximo de eventos por dia</p>
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Máximo de eventos por dia
+                                </p>
                             </div>
                             <div class="form-group">
                                 <label><i class="fas fa-calendar-week"></i> Limite Semanal</label>
                                 <input type="number" id="configLimiteSemanal" value="15" min="1" max="50">
-                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Máximo de eventos nos últimos 7 dias</p>
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Máximo de eventos nos
+                                    últimos 7 dias</p>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label><i class="fas fa-calendar-alt"></i> Limite Mensal</label>
                                 <input type="number" id="configLimiteMensal" value="30" min="1" max="100">
-                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Máximo de eventos nos últimos 30 dias</p>
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Máximo de eventos nos
+                                    últimos 30 dias</p>
                             </div>
                             <div class="form-group">
                                 <label><i class="fas fa-clock"></i> Carga Horária Máxima</label>
                                 <input type="number" id="configCargaHoraria" value="8" min="1" max="24">
-                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Horas máximas ocupadas por dia</p>
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Horas máximas ocupadas por
+                                    dia</p>
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
-                            <button class="btn-primary" onclick="salvarConfiguracoesDemanda()" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                            <button class="btn-primary" onclick="salvarConfiguracoesDemanda()"
+                                style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
                                 <i class="fas fa-save"></i> Salvar Configurações de Demanda
                             </button>
-                            <button class="btn-secondary" onclick="restaurarConfiguracoesDemandaPadrao()" style="width: auto; padding: 16px 24px;">
+                            <button class="btn-secondary" onclick="restaurarConfiguracoesDemandaPadrao()"
+                                style="width: auto; padding: 16px 24px;">
                                 <i class="fas fa-undo"></i> Restaurar Padrões
                             </button>
                         </div>
-                        <div style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div
+                            style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
                             <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #0f172a;">
                                 <i class="fas fa-info-circle" style="color: #8b5cf6;"></i> Limites Atuais
                             </h4>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; font-size: 13px; color: #475569;">
+                            <div
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; font-size: 13px; color: #475569;">
                                 <div><strong>Diário:</strong> <span id="displayLimiteDiario">5</span> eventos</div>
                                 <div><strong>Semanal:</strong> <span id="displayLimiteSemanal">15</span> eventos</div>
                                 <div><strong>Mensal:</strong> <span id="displayLimiteMensal">30</span> eventos</div>
                                 <div><strong>Carga Horária:</strong> <span id="displayCargaHoraria">8</span>h</div>
-                                <div><strong>Status:</strong> <span id="displayStatusDemanda" style="color: #10b981;">✅ Ativo</span></div>
+                                <div><strong>Status:</strong> <span id="displayStatusDemanda" style="color: #10b981;">✅
+                                        Ativo</span></div>
                             </div>
                         </div>
                     </div>
@@ -1029,26 +1218,30 @@
                         </p>
                         <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
                             <div style="flex: 1; min-width: 200px;">
-                                <label style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 14px; color: #1e293b;">
+                                <label
+                                    style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 14px; color: #1e293b;">
                                     <i class="fas fa-users"></i> Limite Máximo de Administradores
                                 </label>
-                                <input type="number" id="configLimiteAdmin" value="2" min="1" max="20" 
-                                       style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; font-size: 14px; background: #fafbfc;">
+                                <input type="number" id="configLimiteAdmin" value="2" min="1" max="20"
+                                    style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; font-family: inherit; font-size: 14px; background: #fafbfc;">
                             </div>
-                            <button class="btn-primary" onclick="salvarLimiteAdmin()" 
-                                    style="width: auto; padding: 12px 32px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); margin-top: 20px;">
+                            <button class="btn-primary" onclick="salvarLimiteAdmin()"
+                                style="width: auto; padding: 12px 32px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); margin-top: 20px;">
                                 <i class="fas fa-save"></i> Salvar Limite
                             </button>
                         </div>
-                        <div style="margin-top: 16px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div
+                            style="margin-top: 16px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
                             <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #0f172a;">
                                 <i class="fas fa-info-circle" style="color: #8b5cf6;"></i> Status Atual
                             </h4>
                             <div id="displayLimiteAdmin" style="font-size: 14px; color: #475569; line-height: 1.8;">
-                                <div><strong>Limite configurado:</strong> <span id="limiteAdminConfigurado">2</span> administradores</div>
+                                <div><strong>Limite configurado:</strong> <span id="limiteAdminConfigurado">2</span>
+                                    administradores</div>
                                 <div><strong>Administradores atuais:</strong> <span id="limiteAdminAtual">0</span></div>
                                 <div><strong>Vagas disponíveis:</strong> <span id="limiteAdminVagas">0</span></div>
-                                <div><strong>Status:</strong> <span id="limiteAdminStatus" style="color: #10b981;">✅ Disponível</span></div>
+                                <div><strong>Status:</strong> <span id="limiteAdminStatus" style="color: #10b981;">✅
+                                        Disponível</span></div>
                             </div>
                         </div>
                     </div>
@@ -1058,15 +1251,19 @@
                             <i class="fas fa-clock" style="color: #10b981;"></i> Gestão de Horários Disponíveis
                         </h3>
                         <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
-                            Configure os horários disponíveis para agendamento de reuniões e treinamentos. Os clientes poderão visualizar os slots disponíveis na agenda pública.
+                            Configure os horários disponíveis para agendamento de reuniões e treinamentos. Os clientes
+                            poderão visualizar os slots disponíveis na agenda pública.
                         </p>
                         <div class="form-group" style="margin-bottom: 20px;">
-                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px;">
-                                <input type="checkbox" id="configHorariosAtivo" style="width: 20px; height: 20px; accent-color: #10b981;">
+                            <label
+                                style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px;">
+                                <input type="checkbox" id="configHorariosAtivo"
+                                    style="width: 20px; height: 20px; accent-color: #10b981;">
                                 <span>Ativar exibição de horários disponíveis</span>
                             </label>
                             <p style="font-size: 12px; color: #94a3b8; margin-top: 4px; margin-left: 30px;">
-                                Quando ativado, os horários disponíveis serão exibidos na agenda pública para solicitação.
+                                Quando ativado, os horários disponíveis serão exibidos na agenda pública para
+                                solicitação.
                             </p>
                         </div>
                         <div class="form-group">
@@ -1080,41 +1277,50 @@
                                 <label><input type="checkbox" class="dias-disponiveis" value="6"> Sáb</label>
                                 <label><input type="checkbox" class="dias-disponiveis" value="7"> Dom</label>
                             </div>
-                            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Selecione os dias em que os agendamentos são permitidos.</p>
+                            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Selecione os dias em que os
+                                agendamentos são permitidos.</p>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label><i class="fas fa-hourglass-start"></i> Horário de Início</label>
                                 <input type="time" id="configHorarioInicio" value="08:00">
-                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Horário de início do expediente</p>
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Horário de início do
+                                    expediente</p>
                             </div>
                             <div class="form-group">
                                 <label><i class="fas fa-hourglass-end"></i> Horário de Fim</label>
                                 <input type="time" id="configHorarioFim" value="18:00">
-                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Horário de fim do expediente</p>
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Horário de fim do
+                                    expediente</p>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label><i class="fas fa-clock"></i> Intervalo entre slots (minutos)</label>
                                 <input type="number" id="configIntervaloSlots" value="60" min="15" max="120" step="15">
-                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Tempo entre cada horário disponível (ex: 60min)</p>
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Tempo entre cada horário
+                                    disponível (ex: 60min)</p>
                             </div>
                             <div class="form-group">
                                 <label><i class="fas fa-hourglass-half"></i> Duração padrão do evento (minutos)</label>
                                 <input type="number" id="configDuracaoSlot" value="60" min="15" max="240" step="15">
-                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Duração padrão de cada agendamento</p>
+                                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Duração padrão de cada
+                                    agendamento</p>
                             </div>
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-envelope"></i> E-mail para solicitações</label>
-                            <input type="email" id="configEmailSuporte" value="suporte@novetech.com.br" placeholder="email@empresa.com">
+                            <input type="email" id="configEmailSuporte" value="suporte@novetech.com.br"
+                                placeholder="email@empresa.com">
                             <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
-                                E-mail que receberá as solicitações de agendamento. <strong>Este e-mail será usado no botão de solicitação.</strong>
+                                E-mail que receberá as solicitações de agendamento. <strong>Este e-mail será usado no
+                                    botão de solicitação.</strong>
                             </p>
                         </div>
-                        <div style="margin-top: 20px; padding: 16px; background: #fef3c7; border-radius: 12px; border: 1px solid #fcd34d;">
-                            <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #92400e; display: flex; align-items: center; gap: 8px;">
+                        <div
+                            style="margin-top: 20px; padding: 16px; background: #fef3c7; border-radius: 12px; border: 1px solid #fcd34d;">
+                            <h4
+                                style="margin: 0 0 12px 0; font-size: 14px; color: #92400e; display: flex; align-items: center; gap: 8px;">
                                 <i class="fas fa-lock" style="color: #d97706;"></i>
                                 Gerenciar Horários Indisponíveis
                             </h4>
@@ -1122,14 +1328,18 @@
                                 Bloqueie horários específicos para que não apareçam como disponíveis na agenda pública.
                             </p>
                             <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                                <input type="date" id="bloqueioData" onchange="atualizarSelectBloqueioHorarios()" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
-                                <select id="bloqueioHorario" style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; min-width: 180px;">
+                                <input type="date" id="bloqueioData" onchange="atualizarSelectBloqueioHorarios()"
+                                    style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc;">
+                                <select id="bloqueioHorario"
+                                    style="padding: 8px 14px; border-radius: 8px; border: 2px solid #e2e8f0; font-family: inherit; background: #fafbfc; min-width: 180px;">
                                     <option value="">Selecione uma data primeiro...</option>
                                 </select>
-                                <button class="btn-sm" onclick="bloquearHorario()" style="background: #ef4444; color: white; padding: 8px 16px;">
+                                <button class="btn-sm" onclick="bloquearHorario()"
+                                    style="background: #ef4444; color: white; padding: 8px 16px;">
                                     <i class="fas fa-lock"></i> Bloquear
                                 </button>
-                                <button class="btn-sm" onclick="limparBloqueiosData()" style="background: #f59e0b; color: white; padding: 8px 16px;">
+                                <button class="btn-sm" onclick="limparBloqueiosData()"
+                                    style="background: #f59e0b; color: white; padding: 8px 16px;">
                                     <i class="fas fa-undo"></i> Limpar Bloqueios do Dia
                                 </button>
                             </div>
@@ -1139,40 +1349,52 @@
                                 </div>
                             </div>
                         </div>
-                        <div style="margin: 16px 0; padding: 12px 16px; background: #f0f7ff; border-radius: 10px; border-left: 4px solid #2563eb;">
+                        <div
+                            style="margin: 16px 0; padding: 12px 16px; background: #f0f7ff; border-radius: 10px; border-left: 4px solid #2563eb;">
                             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                 <i class="fas fa-link" style="color: #2563eb;"></i>
                                 <span style="font-weight: 500; color: #1e293b;">Link da agenda pública:</span>
-                                <a href="#" id="linkAgendaPublica" target="_blank" style="color: #2563eb; text-decoration: none; word-break: break-all;">
+                                <a href="#" id="linkAgendaPublica" target="_blank"
+                                    style="color: #2563eb; text-decoration: none; word-break: break-all;">
                                     Carregando...
                                 </a>
-                                <button onclick="copiarLinkAgendaPublica()" class="btn-sm btn-info" style="padding: 4px 12px; font-size: 12px;">
+                                <button onclick="copiarLinkAgendaPublica()" class="btn-sm btn-info"
+                                    style="padding: 4px 12px; font-size: 12px;">
                                     <i class="fas fa-copy"></i> Copiar
                                 </button>
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
-                            <button class="btn-primary" onclick="salvarConfiguracoesHorarios()" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <button class="btn-primary" onclick="salvarConfiguracoesHorarios()"
+                                style="background: linear-gradient(135deg, #10b981, #059669);">
                                 <i class="fas fa-save"></i> Salvar Configurações de Horários
                             </button>
-                            <button class="btn-secondary" onclick="restaurarConfiguracoesHorariosPadrao()" style="width: auto; padding: 16px 24px;">
+                            <button class="btn-secondary" onclick="restaurarConfiguracoesHorariosPadrao()"
+                                style="width: auto; padding: 16px 24px;">
                                 <i class="fas fa-undo"></i> Restaurar Padrões
                             </button>
-                            <button class="btn-secondary" onclick="visualizarHorariosDisponiveis()" style="width: auto; padding: 16px 24px; background: #8b5cf6; color: white;">
+                            <button class="btn-secondary" onclick="visualizarHorariosDisponiveis()"
+                                style="width: auto; padding: 16px 24px; background: #8b5cf6; color: white;">
                                 <i class="fas fa-eye"></i> Visualizar Horários
                             </button>
                         </div>
-                        <div style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div
+                            style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
                             <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #0f172a;">
                                 <i class="fas fa-info-circle" style="color: #10b981;"></i> Configurações Atuais
                             </h4>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; font-size: 13px; color: #475569;">
-                                <div><strong>Status:</strong> <span id="displayHorariosStatus" style="color: #10b981;">✅ Ativo</span></div>
-                                <div><strong>Dias:</strong> <span id="displayDiasDisponiveis">Seg, Ter, Qua, Qui, Sex</span></div>
-                                <div><strong>Horário:</strong> <span id="displayHorarioExpediente">08:00 - 18:00</span></div>
+                            <div
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; font-size: 13px; color: #475569;">
+                                <div><strong>Status:</strong> <span id="displayHorariosStatus" style="color: #10b981;">✅
+                                        Ativo</span></div>
+                                <div><strong>Dias:</strong> <span id="displayDiasDisponiveis">Seg, Ter, Qua, Qui,
+                                        Sex</span></div>
+                                <div><strong>Horário:</strong> <span id="displayHorarioExpediente">08:00 - 18:00</span>
+                                </div>
                                 <div><strong>Intervalo:</strong> <span id="displayIntervaloSlots">60 min</span></div>
                                 <div><strong>Duração:</strong> <span id="displayDuracaoSlot">60 min</span></div>
-                                <div><strong>E-mail:</strong> <span id="displayEmailSuporte">suporte@novetech.com.br</span></div>
+                                <div><strong>E-mail:</strong> <span
+                                        id="displayEmailSuporte">suporte@novetech.com.br</span></div>
                                 <div><strong>Bloqueios:</strong> <span id="displayTotalBloqueios">0</span></div>
                             </div>
                         </div>
@@ -1235,11 +1457,13 @@
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-info-circle"></i> Observações</label>
-                    <textarea id="editColabObservacoes" rows="2" placeholder="Informações adicionais sobre o colaborador..."></textarea>
+                    <textarea id="editColabObservacoes" rows="2"
+                        placeholder="Informações adicionais sobre o colaborador..."></textarea>
                 </div>
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" id="editColabAtivo" style="width: 18px; height: 18px; accent-color: #2563eb;">
+                        <input type="checkbox" id="editColabAtivo"
+                            style="width: 18px; height: 18px; accent-color: #2563eb;">
                         <span>Colaborador ativo</span>
                     </label>
                     <p style="font-size: 12px; color: #94a3b8; margin-top: 4px; margin-left: 28px;">
@@ -1314,7 +1538,7 @@
             </p>
             <form id="formReserva" onsubmit="return false;">
                 <input type="hidden" id="reservaId">
-                
+
                 <div class="form-group">
                     <label><i class="fas fa-calendar-alt"></i> Tipo de Reserva <span class="required">*</span></label>
                     <select id="reservaTipoPeriodo" required onchange="togglePeriodoReserva()">
@@ -1322,7 +1546,8 @@
                         <option value="periodo">📆 Período (várias datas)</option>
                     </select>
                     <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
-                        <i class="fas fa-info-circle"></i> Selecione "Período" para reservar a sala em múltiplas datas consecutivas.
+                        <i class="fas fa-info-circle"></i> Selecione "Período" para reservar a sala em múltiplas datas
+                        consecutivas.
                     </p>
                 </div>
 
@@ -1334,7 +1559,8 @@
                 <div id="reservaDataPeriodo" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
-                            <label><i class="fas fa-calendar-day"></i> Data Início <span class="required">*</span></label>
+                            <label><i class="fas fa-calendar-day"></i> Data Início <span
+                                    class="required">*</span></label>
                             <input type="date" id="reservaDataInicio">
                         </div>
                         <div class="form-group">
@@ -1342,7 +1568,8 @@
                             <input type="date" id="reservaDataFim">
                         </div>
                     </div>
-                    <div style="padding: 8px 12px; background: #f0f7ff; border-radius: 8px; font-size: 13px; color: #1e293b; margin-bottom: 12px;">
+                    <div
+                        style="padding: 8px 12px; background: #f0f7ff; border-radius: 8px; font-size: 13px; color: #1e293b; margin-bottom: 12px;">
                         <i class="fas fa-info-circle" style="color: #2563eb;"></i>
                         A reserva será criada para <strong>todas as datas</strong> entre a data inicial e a data final.
                     </div>
@@ -1368,18 +1595,21 @@
                         <input type="time" id="reservaHorario" required>
                     </div>
                     <div class="form-group">
-                        <label><i class="fas fa-hourglass-half"></i> Duração (min) <span class="required">*</span></label>
+                        <label><i class="fas fa-hourglass-half"></i> Duração (min) <span
+                                class="required">*</span></label>
                         <input type="number" id="reservaDuracao" value="60" min="15" step="15" required>
                     </div>
                 </div>
-                
+
                 <!-- MULTIPLOS RESPONSÁVEIS - RESERVAS -->
                 <div class="form-group">
                     <label><i class="fas fa-user-tie"></i> Responsável(is) <span class="required">*</span></label>
                     <select id="reservaResponsavel" style="margin-bottom: 8px;">
                         <option value="">Selecione um colaborador...</option>
                     </select>
-                    <div id="reservaResponsavelTags" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; min-height: 32px; border: 1px dashed #e2e8f0; border-radius: 8px; background: #fafbfc; align-items: center;"></div>
+                    <div id="reservaResponsavelTags"
+                        style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; min-height: 32px; border: 1px dashed #e2e8f0; border-radius: 8px; background: #fafbfc; align-items: center;">
+                    </div>
                     <input type="hidden" id="reservaResponsavelHidden" value="[]">
                     <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
                         <i class="fas fa-info-circle"></i> Selecione um ou mais colaboradores para esta reserva.
@@ -1417,7 +1647,8 @@
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-info-circle"></i> Descrição / Observações</label>
-                    <textarea id="reservaDescricao" rows="2" placeholder="Detalhes adicionais sobre a reserva..."></textarea>
+                    <textarea id="reservaDescricao" rows="2"
+                        placeholder="Detalhes adicionais sobre a reserva..."></textarea>
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-tag"></i> Status</label>
@@ -1461,10 +1692,10 @@
             <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
                 Gerencie os comprovantes e recibos deste evento.
             </p>
-            
+
             <!-- Lista de anexos -->
             <div id="listaAnexos" style="margin-bottom: 16px; max-height: 300px; overflow-y: auto;"></div>
-            
+
             <!-- Área de upload -->
             <div style="border-top: 1px solid #e2e8f0; padding-top: 16px;">
                 <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #0f172a;">
@@ -1486,8 +1717,9 @@
                     <p style="font-size: 12px; color: #94a3b8;">
                         Formatos: JPG, PNG, GIF, WEBP • Máx: 10MB
                     </p>
-                    <!-- ==================== ALTERAÇÃO AQUI: capture e accept para câmera ==================== -->
-                    <input type="file" id="uploadAnexosInput" accept="image/*" capture="environment" style="display: none;">
+                    <!-- Input configurado para abrir a câmera no celular -->
+                    <input type="file" id="uploadAnexosInput" accept="image/*" capture="environment"
+                        style="display: none;">
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
                     <select id="anexoCategoria" style="
@@ -1516,7 +1748,8 @@
                         flex: 2;
                         min-width: 180px;
                     ">
-                    <button id="btnUploadAnexos" class="btn-primary" style="width: auto; padding: 10px 24px; white-space: nowrap;">
+                    <button id="btnUploadAnexos" class="btn-primary"
+                        style="width: auto; padding: 10px 24px; white-space: nowrap;">
                         <i class="fas fa-upload"></i> Enviar
                     </button>
                 </div>
@@ -1552,7 +1785,8 @@
                 <button onclick="fecharVisualizacaoAnexo()" class="modal-btn-cancelar" style="padding: 8px 24px;">
                     <i class="fas fa-times"></i> Fechar
                 </button>
-                <button onclick="baixarAnexoVisualizacao()" class="btn-aprovar" style="padding: 8px 24px; border-radius: 8px; border: none; background: #10b981; color: white; cursor: pointer; font-weight: 600;">
+                <button onclick="baixarAnexoVisualizacao()" class="btn-aprovar"
+                    style="padding: 8px 24px; border-radius: 8px; border: none; background: #10b981; color: white; cursor: pointer; font-weight: 600;">
                     <i class="fas fa-download"></i> Baixar
                 </button>
             </div>
@@ -1565,11 +1799,11 @@
     <script src="frota.js"></script>
     <script src="frota-relatorios.js"></script>
     <script src="anexos.js"></script>
-    
+
     <script>
         console.log('✅ Página admin.html carregada com sucesso!');
         console.log('✅ Aguardando carregamento do script.js...');
-        
+
         // Inicializar módulo de anexos
         setTimeout(() => {
             if (typeof criarModaisAnexos === 'function') {
@@ -1581,8 +1815,8 @@
                 console.log('✅ Listener de anexos iniciado!');
             }
         }, 2000);
-        
-        setTimeout(function() {
+
+        setTimeout(function () {
             console.log('🔍 Verificando funções de reservas após carregamento...');
             console.log('  - editarReserva:', typeof window.editarReserva);
             console.log('  - excluirReserva:', typeof window.excluirReserva);
@@ -1592,26 +1826,26 @@
             console.log('  - fecharModalReserva:', typeof window.fecharModalReserva);
             console.log('  - togglePeriodoReserva:', typeof window.togglePeriodoReserva);
             console.log('  - initMultiSelectResponsaveis:', typeof window.initMultiSelectResponsaveis);
-            
+
             if (typeof window.editarReserva === 'undefined') {
                 console.warn('⚠️ Funções de reservas não encontradas! Verifique o script.js');
             } else {
                 console.log('✅ Todas as funções de reservas estão disponíveis!');
             }
-            
+
             console.log('🔍 Verificando funções de frota...');
             console.log('  - cadastrarVeiculo:', typeof window.cadastrarVeiculo);
             console.log('  - registrarManutencao:', typeof window.registrarManutencao);
             console.log('  - registrarAbastecimento:', typeof window.registrarAbastecimento);
             console.log('  - registrarMulta:', typeof window.registrarMulta);
             console.log('  - registrarAgendamentoVeiculo:', typeof window.registrarAgendamentoVeiculo);
-            
+
             console.log('🔍 Verificando funções de relatórios...');
             console.log('  - gerarRelatorioFrota:', typeof window.gerarRelatorioFrota);
             console.log('  - exportarRelatorioExcel:', typeof window.exportarRelatorioExcel);
             console.log('  - exportarRelatorioPDF:', typeof window.exportarRelatorioPDF);
             console.log('  - imprimirRelatorio:', typeof window.imprimirRelatorio);
-            
+
             console.log('🔍 Verificando funções de anexos...');
             console.log('  - abrirModalAnexos:', typeof window.abrirModalAnexos);
             console.log('  - visualizarAnexo:', typeof window.visualizarAnexo);

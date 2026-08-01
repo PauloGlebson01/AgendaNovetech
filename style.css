@@ -2799,6 +2799,107 @@ input:-ms-input-placeholder {
     }
 }
 
+/* ==================== CORREÇÃO DAS ABAS DA FROTA (PADRÃO SISTEMA) ==================== */
+#frotaSection .tab-btn {
+    background: transparent !important;
+    border: none !important;
+    padding: 10px 16px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    transition: all 0.2s !important;
+    cursor: pointer !important;
+    font-family: inherit !important;
+    font-size: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+#frotaSection .tab-btn:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+#frotaSection .tab-btn.active {
+    background: #eef2ff !important;
+    color: #2563eb !important;
+    box-shadow: none !important;
+}
+
+#frotaSection .tab-btn.active::after {
+    display: none !important;
+}
+
+/* Responsividade para mobile */
+@media (max-width: 768px) {
+    #frotaSection .tab-btn {
+        font-size: 13px !important;
+        padding: 8px 12px !important;
+    }
+}
+
+/* ==================== CORREÇÃO DE VAZAMENTO NO MOBILE (FROTA E RESERVAS) ==================== */
+@media (max-width: 768px) {
+    /* Impede que containers vazem para fora da tela */
+    .form-card, 
+    .card, 
+    .dashboard-stats, 
+    .frota-stats,
+    #frotaSection .tab-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-wrap: break-word !important;
+    }
+
+    /* Força as linhas do formulário a virarem uma única coluna no mobile */
+    .form-row {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Garante que inputs, selects e textareas nunca estiquem além da tela */
+    .form-group input,
+    .form-group select,
+    .form-group textarea,
+    .edit-form-container .form-group input,
+    .edit-form-container .form-group select,
+    .edit-form-container .form-group textarea,
+    #frotaSection .form-group input,
+    #frotaSection .form-group select,
+    #frotaSection .form-group textarea {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: unset !important;
+    }
+
+    /* Remove margens extras que podem causar estouro */
+    .form-group {
+        margin-bottom: 12px !important;
+        width: 100% !important;
+    }
+
+    /* Ajuste específico para botões de ação para não vazarem */
+    .card-actions,
+    .action-buttons,
+    div[style*="display: flex; gap: 8px; flex-wrap: wrap;"] {
+        flex-wrap: wrap !important;
+        width: 100% !important;
+    }
+    
+    .card-actions button,
+    .action-buttons button,
+    div[style*="display: flex; gap: 8px; flex-wrap: wrap;"] button {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        width: auto !important;
+    }
+}
+
 .status-counter .counter-item .count.designado { color: #1d4ed8; }
 .status-counter .counter-item .count.em_andamento { color: #d97706; }
 .status-counter .counter-item .count.realizado { color: #059669; }
