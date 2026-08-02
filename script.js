@@ -156,12 +156,10 @@ const STATUS_ICONS = {
 // ==================== CONSTANTES RESERVAS ====================
 const SALAS_LABELS = {
     'sala_01': '📋 Sala 01',
-    'sala_02': '📋 Sala 02',
 };
 
 const SALAS_CAPACIDADE = {
-    'sala_01': 8,
-    'sala_02': 12,
+    'sala_01': 0,
 };
 
 const RESERVA_STATUS_LABELS = {
@@ -5607,7 +5605,7 @@ function abrirModalReserva(reservaId = null) {
     
     document.getElementById('reservaId').value = '';
     document.getElementById('reservaSala').value = '';
-    document.getElementById('reservaCapacidade').value = 4;
+    document.getElementById('reservaCapacidade').value = 0;
     document.getElementById('reservaData').value = '';
     document.getElementById('reservaDataInicio').value = '';
     document.getElementById('reservaDataFim').value = '';
