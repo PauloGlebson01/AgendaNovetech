@@ -2923,6 +2923,15 @@ input:-ms-input-placeholder {
     }
 }
 
+/* Estilo para o menu de colaborador */
+#menuMinhaFrota i {
+    color: #8b5cf6;
+}
+
+#menuMinhaFrota.active i {
+    color: #7c3aed;
+}
+
 .status-counter .counter-item .count.designado { color: #1d4ed8; }
 .status-counter .counter-item .count.em_andamento { color: #d97706; }
 .status-counter .counter-item .count.realizado { color: #059669; }

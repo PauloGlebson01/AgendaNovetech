@@ -1,5 +1,5 @@
 // ==================== ANEXOS DE AGENDAMENTOS DE VEÍCULOS ====================
-// anexos.js - Versão com compressão de imagem para evitar limite de 1MB do Firestore
+// anexos.js - Versão com compressão de imagem e permissões por perfil
 
 // ==================== VARIÁVEIS ====================
 let anexosCache = [];
@@ -72,6 +72,11 @@ function atualizarIconesAnexos() {
     });
 }
 
+// ==================== VERIFICAR SE USUÁRIO É ADMIN ====================
+function isAdmin() {
+    return currentUser && currentUser.tipo === 'admin';
+}
+
 // ==================== ABRIR MODAL DE ANEXOS ====================
 function abrirModalAnexos(eventoId) {
     if (!eventoId) {
@@ -96,6 +101,9 @@ function abrirModalAnexos(eventoId) {
             titulo.textContent = `📎 Comprovantes - ${data.veiculoNome || 'Veículo'} (${data.destino || 'Sem destino'})`;
             
             modal.dataset.eventoId = eventoId;
+            
+            // 🔥 VERIFICAR SE É ADMIN PARA MOSTRAR BOTÃO DE EXCLUIR
+            const ehAdmin = isAdmin();
             
             if (anexosDoEvento.length === 0) {
                 lista.innerHTML = `
@@ -128,19 +136,8 @@ function abrirModalAnexos(eventoId) {
                     
                     const dataStr = anexo.dataCriacao ? new Date(anexo.dataCriacao.seconds * 1000).toLocaleString('pt-BR') : 'Data não disponível';
                     
-                    item.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
-                            <i class="fas ${icone}" style="color: ${cor}; font-size: 20px;"></i>
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="font-weight: 500; font-size: 14px; color: #0f172a; word-break: break-word;">
-                                    ${anexo.nomeOriginal || 'Comprovante'}
-                                </div>
-                                <div style="font-size: 12px; color: #94a3b8;">
-                                    ${anexo.categoria || 'Comprovante'} • ${dataStr}
-                                </div>
-                                ${anexo.descricao ? `<div style="font-size: 12px; color: #64748b; margin-top: 2px;">📝 ${anexo.descricao}</div>` : ''}
-                            </div>
-                        </div>
+                    // 🔥 BOTÕES: ADMIN tem todos, COLABORADOR só visualizar e baixar
+                    let botoesHTML = `
                         <div style="display: flex; gap: 6px; flex-shrink: 0; margin-left: 8px;">
                             ${isImagem ? `
                                 <button class="btn-sm btn-info" onclick="visualizarAnexo('${anexo.id}')" style="padding: 4px 10px; font-size: 11px;" title="Visualizar">
@@ -150,16 +147,79 @@ function abrirModalAnexos(eventoId) {
                             <button class="btn-sm btn-aprovar" onclick="baixarAnexo('${anexo.id}')" style="padding: 4px 10px; font-size: 11px; background: #10b981;" title="Baixar">
                                 <i class="fas fa-download"></i>
                             </button>
-                            <button class="btn-sm btn-rejeitar" onclick="excluirAnexo('${anexo.id}')" style="padding: 4px 10px; font-size: 11px;" title="Excluir">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            ${ehAdmin ? `
+                                <button class="btn-sm btn-rejeitar" onclick="excluirAnexo('${anexo.id}')" style="padding: 4px 10px; font-size: 11px;" title="Excluir">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            ` : ''}
                         </div>
+                    `;
+                    
+                    // Se não for admin, adiciona um indicador visual
+                    if (!ehAdmin) {
+                        botoesHTML = `
+                            <div style="display: flex; gap: 6px; flex-shrink: 0; margin-left: 8px;">
+                                ${isImagem ? `
+                                    <button class="btn-sm btn-info" onclick="visualizarAnexo('${anexo.id}')" style="padding: 4px 10px; font-size: 11px;" title="Visualizar">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                ` : ''}
+                                <button class="btn-sm btn-aprovar" onclick="baixarAnexo('${anexo.id}')" style="padding: 4px 10px; font-size: 11px; background: #10b981;" title="Baixar">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <span style="font-size: 10px; color: #94a3b8; display: flex; align-items: center; padding: 0 4px;">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                            </div>
+                        `;
+                    }
+                    
+                    item.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                            <i class="fas ${icone}" style="color: ${cor}; font-size: 20px;"></i>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 500; font-size: 14px; color: #0f172a; word-break: break-word;">
+                                    ${anexo.nomeOriginal || 'Comprovante'}
+                                </div>
+                                <div style="font-size: 12px; color: #94a3b8;">
+                                    ${anexo.categoria || 'Comprovante'} • ${dataStr}
+                                    ${!ehAdmin ? ` • <span style="color: #8b5cf6;"><i class="fas fa-user"></i> Você</span>` : ''}
+                                </div>
+                                ${anexo.descricao ? `<div style="font-size: 12px; color: #64748b; margin-top: 2px;">📝 ${anexo.descricao}</div>` : ''}
+                            </div>
+                        </div>
+                        ${botoesHTML}
                     `;
                     lista.appendChild(item);
                 });
             }
             
             configurarUploadAnexos(eventoId);
+            
+            // 🔥 Mostrar/esconder o select de categoria e descrição para colaboradores
+            const categoriaSelect = document.getElementById('anexoCategoria');
+            const descricaoInput = document.getElementById('anexoDescricao');
+            
+            if (!ehAdmin) {
+                // Para colaboradores, podemos pré-selecionar "comprovante" e esconder o select
+                if (categoriaSelect) {
+                    categoriaSelect.value = 'comprovante';
+                    categoriaSelect.style.opacity = '0.7';
+                    categoriaSelect.style.cursor = 'default';
+                }
+                // A descrição continua visível para o colaborador
+                if (descricaoInput) {
+                    descricaoInput.placeholder = 'Descreva o comprovante (opcional)...';
+                }
+            } else {
+                if (categoriaSelect) {
+                    categoriaSelect.style.opacity = '1';
+                    categoriaSelect.style.cursor = 'pointer';
+                }
+                if (descricaoInput) {
+                    descricaoInput.placeholder = 'Descrição do comprovante...';
+                }
+            }
             
             modal.style.display = 'flex';
         })
@@ -226,7 +286,6 @@ function configurarUploadAnexos(eventoId) {
 }
 
 // ==================== COMPRIMIR IMAGEM DA CÂMERA ====================
-// Reduz a resolução e qualidade da imagem para caber no limite de 1MB do Firestore
 function comprimirImagemCamera(file, maxLargura = 1024, qualidade = 0.6) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -238,7 +297,6 @@ function comprimirImagemCamera(file, maxLargura = 1024, qualidade = 0.6) {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
 
-                // Calcula as novas dimensões mantendo a proporção
                 let largura = img.width;
                 let altura = img.height;
                 
@@ -250,10 +308,8 @@ function comprimirImagemCamera(file, maxLargura = 1024, qualidade = 0.6) {
                 canvas.width = largura;
                 canvas.height = altura;
                 
-                // Desenha a imagem redimensionada no canvas
                 ctx.drawImage(img, 0, 0, largura, altura);
 
-                // Converte para JPEG com qualidade reduzida (resulta em ~200KB)
                 const dataUrl = canvas.toDataURL('image/jpeg', qualidade);
                 resolve(dataUrl);
             };
@@ -263,7 +319,7 @@ function comprimirImagemCamera(file, maxLargura = 1024, qualidade = 0.6) {
     });
 }
 
-// ==================== PROCESSAR UPLOAD DE ANEXOS (COM COMPRESSÃO) ====================
+// ==================== PROCESSAR UPLOAD DE ANEXOS ====================
 async function processarAnexos(eventoId) {
     const fileInput = document.getElementById('uploadAnexosInput');
     const categoria = document.getElementById('anexoCategoria').value;
@@ -276,14 +332,12 @@ async function processarAnexos(eventoId) {
     
     const file = fileInput.files[0];
     
-    // Validar tamanho (aumentei para 10MB antes da compressão)
     if (file.size > 10 * 1024 * 1024) {
         mostrarNotificacao('❌ O arquivo é muito grande (máx 10MB antes da compressão).', 'error');
         fileInput.value = '';
         return;
     }
     
-    // Validar tipo
     const tiposPermitidos = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!tiposPermitidos.includes(file.type)) {
         mostrarNotificacao('❌ Formato não permitido. Use JPG, PNG, GIF ou WEBP.', 'error');
@@ -297,17 +351,13 @@ async function processarAnexos(eventoId) {
     btnUpload.disabled = true;
     
     try {
-        // ==================== COMPRIMIR A IMAGEM AQUI ====================
-        // A função comprimirImagemCamera vai reduzir a foto para ~200KB
         const base64 = await comprimirImagemCamera(file, 1024, 0.6);
-        // =================================================================
 
-        // Agora o base64 está pequeno o suficiente para o Firestore!
         const dadosAnexo = {
             eventoId: eventoId,
             nomeOriginal: file.name,
-            tipo: 'image/jpeg', // Forçamos JPEG para garantir compatibilidade
-            tamanho: Math.round(base64.length * 0.75), // Tamanho aproximado após compressão
+            tipo: 'image/jpeg',
+            tamanho: Math.round(base64.length * 0.75),
             categoria: categoria || 'comprovante',
             descricao: descricao || '',
             dados: base64, 
@@ -318,7 +368,6 @@ async function processarAnexos(eventoId) {
         
         await db.collection(COLECAO_ANEXOS).add(dadosAnexo);
         
-        // Atualizar agendamento
         await db.collection('frota_agendamentos').doc(eventoId).update({
             temAnexos: true,
             qtdeAnexos: firebase.firestore.FieldValue.increment(1),
@@ -327,7 +376,6 @@ async function processarAnexos(eventoId) {
         
         mostrarNotificacao('✅ Comprovante anexado com sucesso!', 'success');
         
-        // Recarregar lista
         const modal = document.getElementById('modalAnexos');
         if (modal && modal.dataset.eventoId) {
             abrirModalAnexos(modal.dataset.eventoId);
@@ -342,16 +390,6 @@ async function processarAnexos(eventoId) {
         fileInput.value = '';
         document.getElementById('anexoDescricao').value = '';
     }
-}
-
-// ==================== CONVERTER PARA BASE64 (mantido para compatibilidade) ====================
-function converterParaBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
-    });
 }
 
 // ==================== VISUALIZAR ANEXO ====================
@@ -414,8 +452,14 @@ function baixarAnexoVisualizacao() {
     }
 }
 
-// ==================== EXCLUIR ANEXO ====================
+// ==================== EXCLUIR ANEXO (APENAS ADMIN) ====================
 function excluirAnexo(anexoId) {
+    // 🔥 VERIFICAR SE É ADMIN
+    if (!isAdmin()) {
+        mostrarNotificacao('❌ Apenas administradores podem excluir comprovantes.', 'error');
+        return;
+    }
+    
     const anexo = anexosCache.find(a => a.id === anexoId);
     if (!anexo) {
         mostrarNotificacao('❌ Anexo não encontrado.', 'error');
@@ -528,6 +572,10 @@ function criarModaisAnexos() {
                         <i class="fas fa-upload"></i> Anexar
                     </button>
                 </div>
+                <div id="avisoPermissaoAnexos" style="display: none; margin-top: 8px; padding: 6px 12px; background: #f1f5f9; border-radius: 6px; font-size: 12px; color: #64748b;">
+                    <i class="fas fa-info-circle"></i> 
+                    <span id="avisoPermissaoTexto">Apenas administradores podem excluir comprovantes.</span>
+                </div>
             </div>
         </div>
     `;
@@ -574,16 +622,14 @@ function criarModaisAnexos() {
     console.log('✅ Modais de comprovantes criados!');
 }
 
-// ==================== FUNÇÃO PARA MOSTRAR NOTIFICAÇÃO (CORRIGIDA) ====================
+// ==================== FUNÇÃO PARA MOSTRAR NOTIFICAÇÃO ====================
 function mostrarNotificacao(mensagem, tipo = 'info') {
-    // Verifica se existe uma função de notificação global já definida (do script.js)
     if (typeof window.mostrarNotificacao === 'function' && 
-        window.mostrarNotificacao !== mostrarNotificacao) { // Garante que não é ela mesma
+        window.mostrarNotificacao !== mostrarNotificacao) {
         window.mostrarNotificacao(mensagem, tipo);
         return;
     }
     
-    // Caso contrário, usa alert (simples e sem recursão)
     const prefixo = tipo === 'error' ? '❌ ' : tipo === 'success' ? '✅ ' : '';
     alert(prefixo + mensagem);
 }
@@ -599,5 +645,6 @@ window.baixarAnexoVisualizacao = baixarAnexoVisualizacao;
 window.criarModaisAnexos = criarModaisAnexos;
 window.processarAnexos = processarAnexos;
 window.mostrarNotificacao = mostrarNotificacao;
+window.isAdmin = isAdmin;
 
 console.log('✅ Módulo de Comprovantes carregado!');

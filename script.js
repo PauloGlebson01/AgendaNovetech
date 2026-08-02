@@ -245,18 +245,19 @@ function definirSecaoInicial(userData) {
         
         console.log("✅ Dashboard definido como seção inicial para ADMIN");
     } else {
-        const reservas = document.getElementById('reservasSection');
-        if (reservas) {
-            reservas.classList.add('active');
-            reservas.style.display = 'block';
+        // Para colaboradores, abrir a seção "Meus Agendamentos"
+        const minhafrota = document.getElementById('minhafrotaSection');
+        if (minhafrota) {
+            minhafrota.classList.add('active');
+            minhafrota.style.display = 'block';
         }
         
-        const menuReservas = document.getElementById('menuReservas');
-        if (menuReservas) {
-            menuReservas.classList.add('active');
+        const menuMinhaFrota = document.getElementById('menuMinhaFrota');
+        if (menuMinhaFrota) {
+            menuMinhaFrota.classList.add('active');
         }
         
-        console.log("✅ Reservas definido como seção inicial para COLABORADOR");
+        console.log("✅ Meus Agendamentos definido como seção inicial para COLABORADOR");
     }
 }
 
@@ -281,6 +282,7 @@ function forcarAtualizacaoMenu(userData) {
     const menuColaboradores = document.getElementById('menuColaboradores');
     const menuVerAgenda = document.getElementById('menuVerAgenda');
     const menuConfig = document.getElementById('menuConfig');
+    const menuMinhaFrota = document.getElementById('menuMinhaFrota');
     const solicBadge = document.getElementById('solicitacoesBadge');
     
     function hideMenu(el) {
@@ -320,6 +322,8 @@ function forcarAtualizacaoMenu(userData) {
         showMenu(menuConfig);
         showMenu(menuFrota);
         showMenu(menuRelatoriosFrota);
+        // Oculta o menu de colaborador (já tem o menu de frota completo)
+        hideMenu(menuMinhaFrota);
         
         if (solicBadge) {
             solicBadge.style.display = 'inline-block';
@@ -335,6 +339,9 @@ function forcarAtualizacaoMenu(userData) {
         hideMenu(menuConfig);
         hideMenu(menuFrota);
         hideMenu(menuRelatoriosFrota);
+        
+        // Mostra o menu de Meus Agendamentos
+        showMenu(menuMinhaFrota);
         
         if (solicBadge) {
             solicBadge.style.display = 'none';
@@ -470,6 +477,12 @@ auth.onAuthStateChanged(async (user) => {
                     }, 1500);
                 } else {
                     console.log("👤 Colaborador logado - Módulos restritos não serão inicializados.");
+                    // Inicializar Frota para Colaborador
+                    setTimeout(() => {
+                        if (typeof iniciarFrotaColaborador === 'function') {
+                            iniciarFrotaColaborador();
+                        }
+                    }, 1500);
                 }
             }
         } catch (error) {
@@ -800,6 +813,13 @@ async function carregarAdmin() {
             setTimeout(() => {
                 if (typeof iniciarFrota === 'function') {
                     iniciarFrota();
+                }
+            }, 1000);
+        } else {
+            // Inicializar Frota para Colaborador
+            setTimeout(() => {
+                if (typeof iniciarFrotaColaborador === 'function') {
+                    iniciarFrotaColaborador();
                 }
             }, 1000);
         }
@@ -1771,7 +1791,7 @@ function atualizarListaEventos(snapshot) {
         const card = document.createElement('div');
         card.className = 'card';
         card.id = `card-evento-${e.id}`;
-        card.dataset.eventoId = e.id; // <-- ADICIONADO PARA ANEXOS
+        card.dataset.eventoId = e.id;
         card.style.borderLeft = `4px solid ${TIPO_BORDER_COLORS[e.tipo] || '#2563eb'}`;
         
         let infoExtra = '';

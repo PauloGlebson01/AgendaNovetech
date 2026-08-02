@@ -98,6 +98,10 @@
                     <li id="menuVerAgenda" data-section="listar">
                         <i class="fas fa-list"></i> Ver Agenda
                     </li>
+                    <!-- NOVO MENU PARA COLABORADORES -->
+                    <li id="menuMinhaFrota" data-section="minhafrota">
+                        <i class="fas fa-truck"></i> Meus Agendamentos
+                    </li>
                     <li id="menuConfig" data-section="config">
                         <i class="fas fa-sliders-h"></i> Configurações
                     </li>
@@ -333,7 +337,7 @@
                         </div>
                     </div>
 
-                    <!-- Abas da Frota (CORRIGIDAS COM BARRA DE ROLAGEM VISÍVEL) -->
+                    <!-- Abas da Frota -->
                     <div style="
                             display: flex;
                             overflow-x: auto;
@@ -850,7 +854,7 @@
                     </div>
                 </section>
 
-                <!-- Seção: Gerenciar Agenda (COM PERÍODO) -->
+                <!-- Seção: Gerenciar Agenda -->
                 <section id="agendaSection" class="section">
                     <h2><i class="fas fa-calendar-plus"></i> Adicionar Evento na Agenda</h2>
                     <div class="form-card">
@@ -1007,6 +1011,26 @@
                         <i class="fas fa-list" style="color: #2563eb;"></i> Colaboradores Cadastrados
                     </h3>
                     <div id="listaColaboradores" class="cards-grid"></div>
+                </section>
+
+                <!-- Seção: Meus Agendamentos (Colaborador) -->
+                <section id="minhafrotaSection" class="section">
+                    <h2><i class="fas fa-truck"></i> Meus Agendamentos de Veículos</h2>
+                    
+                    <div style="margin-bottom: 20px; padding: 16px 20px; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe;">
+                        <i class="fas fa-info-circle" style="color: #2563eb;"></i>
+                        <span style="color: #1e293b; font-size: 14px;">
+                            Aqui estão todos os agendamentos de veículos que foram designados para você. 
+                            Clique em <strong>"Adicionar Comprovante"</strong> para anexar recibos e comprovantes de despesas.
+                        </span>
+                    </div>
+                    
+                    <div id="listaAgendamentosColaborador" class="cards-grid">
+                        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #2563eb;"></i>
+                            <p style="margin-top: 12px; color: #94a3b8;">Carregando seus agendamentos...</p>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Seção: Ver Agenda -->
@@ -1525,7 +1549,7 @@
         </div>
     </div>
 
-    <!-- Modal de Reserva de Sala (COM PERÍODO) -->
+    <!-- Modal de Reserva de Sala -->
     <div id="modalReserva" class="modal">
         <div class="modal-content" style="max-width: 650px;">
             <h3 style="display: flex; align-items: center; gap: 10px;">
@@ -1715,7 +1739,6 @@
                     <p style="font-size: 12px; color: #94a3b8;">
                         Formatos: JPG, PNG, GIF, WEBP • Máx: 10MB
                     </p>
-                    <!-- Input configurado para abrir a câmera no celular -->
                     <input type="file" id="uploadAnexosInput" accept="image/*" capture="environment"
                         style="display: none;">
                 </div>
@@ -1797,6 +1820,7 @@
     <script src="frota.js"></script>
     <script src="frota-relatorios.js"></script>
     <script src="anexos.js"></script>
+    <script src="colaborador-frota.js"></script>
 
     <script>
         console.log('✅ Página admin.html carregada com sucesso!');
@@ -1849,6 +1873,10 @@
             console.log('  - visualizarAnexo:', typeof window.visualizarAnexo);
             console.log('  - baixarAnexo:', typeof window.baixarAnexo);
             console.log('  - excluirAnexo:', typeof window.excluirAnexo);
+
+            console.log('🔍 Verificando funções de colaborador-frota...');
+            console.log('  - iniciarFrotaColaborador:', typeof window.iniciarFrotaColaborador);
+            console.log('  - abrirModalAnexosColaborador:', typeof window.abrirModalAnexosColaborador);
         }, 2000);
     </script>
 </body>
